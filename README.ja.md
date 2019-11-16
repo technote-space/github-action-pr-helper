@@ -13,14 +13,7 @@ PullRequest Helper for GitHub Actions.
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
-- [Screenshots](#screenshots)
-- [Installation](#installation)
-- [Options](#options)
-- [Action event details](#action-event-details)
-  - [Target events](#target-events)
-  - [condition](#condition)
-- [Addition](#addition)
-- [Sample GitHub Actions using this Action](#sample-github-actions-using-this-action)
+- [Usage](#usage)
 - [Author](#author)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
