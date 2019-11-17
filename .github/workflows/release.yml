@@ -10,28 +10,28 @@ jobs:
     name: Test before publish
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@master
-      with:
-        fetch-depth: 3
-    - name: Cache node modules
-      uses: actions/cache@v1
-      with:
-        path: ~/.cache/yarn
-        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-yarn-
-    - name: Install Package dependencies
-      run: yarn install
-    - name: Test
-      run: yarn test
-        - uses: 8398a7/action-slack@v1
-          with:
-            type: failure
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          if: failure()
+      - name: Checkout
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 3
+      - name: Cache node modules
+        uses: actions/cache@v1
+        with:
+          path: ~/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+      - name: Install Package dependencies
+        run: yarn install
+      - name: Test
+        run: yarn test
+      - uses: 8398a7/action-slack@v1
+        with:
+          type: failure
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: failure()
 
   release:
     name: Publish Package
@@ -95,7 +95,7 @@ jobs:
 
   slack:
     name: Slack
-    needs: [release-npm, release-gpr]
+    needs: release
     runs-on: ubuntu-latest
     steps:
       - uses: 8398a7/action-slack@v1
