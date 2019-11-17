@@ -1,5 +1,6 @@
 /* eslint-disable no-magic-numbers */
-import { testEnv, getContext, generateContext } from '@technote-space/github-action-test-helper';
+import { Context } from '@actions/github/lib/context';
+import { testEnv, generateContext } from '@technote-space/github-action-test-helper';
 import moment from 'moment';
 import path from 'path';
 import {
@@ -7,7 +8,6 @@ import {
 	getCommitName,
 	getCommitEmail,
 	replaceDirectory,
-	getPrBranchPrefix,
 	getPrBranchName,
 	getPrHeadRef,
 	isActionPr,
@@ -21,13 +21,52 @@ import {
 	filterGitStatus,
 	filterExtension,
 } from '../../src/utils/misc';
-import { DEFAULT_PR_BRANCH_PREFIX } from '../../src/constant';
+import { ActionContext, ActionDetails } from '../../src/types';
+
+const actionDetails: ActionDetails = {
+	actionName: 'Test Action',
+	actionOwner: 'octocat',
+	actionRepo: 'hello-world',
+};
+const getActionContext             = (context: Context, _actionDetails?: ActionDetails): ActionContext => ({
+	actionContext: context,
+	actionDetail: _actionDetails ?? actionDetails,
+});
+const generateActionContext        = (
+	settings: {
+		event?: string | undefined;
+		action?: string | undefined;
+		ref?: string | undefined;
+		sha?: string | undefined;
+		owner?: string | undefined;
+		repo?: string | undefined;
+	},
+	override?: object,
+	_actionDetails?: object,
+): ActionContext => getActionContext(
+	generateContext(settings, override),
+	_actionDetails ? Object.assign({}, actionDetails, _actionDetails) : undefined,
+);
+const prPayload                    = {
+	'pull_request': {
+		number: 11,
+		id: 21031067,
+		head: {
+			ref: 'change',
+		},
+		base: {
+			ref: 'master',
+		},
+		title: 'test title',
+		'html_url': 'http://example.com',
+	},
+};
 
 describe('isTargetContext', () => {
 	testEnv();
 
 	it('should return true 1', () => {
-		expect(isTargetContext(generateContext({
+		expect(isTargetContext(generateActionContext({
 			event: 'pull_request',
 			action: 'opened',
 		}, {
@@ -40,8 +79,7 @@ describe('isTargetContext', () => {
 	});
 
 	it('should return true 2', () => {
-		process.env.INPUT_INCLUDE_LABELS = 'label2';
-		expect(isTargetContext(generateContext({
+		expect(isTargetContext(generateActionContext({
 			event: 'pull_request',
 			action: 'synchronize',
 		}, {
@@ -50,12 +88,11 @@ describe('isTargetContext', () => {
 					labels: [{name: 'label1'}, {name: 'label2'}],
 				},
 			},
-		}))).toBe(true);
+		}, {includeLabels: ['label2']}))).toBe(true);
 	});
 
 	it('should return true 3', () => {
-		process.env.INPUT_INCLUDE_LABELS = 'label1,label2\nlabel3';
-		expect(isTargetContext(generateContext({
+		expect(isTargetContext(generateActionContext({
 			event: 'pull_request',
 			action: 'synchronize',
 		}, {
@@ -64,11 +101,11 @@ describe('isTargetContext', () => {
 					labels: [{name: 'label2'}],
 				},
 			},
-		}))).toBe(true);
+		}, {includeLabels: ['label1', 'label2', 'label3']}))).toBe(true);
 	});
 
 	it('should return true 4', () => {
-		expect(isTargetContext(generateContext({
+		expect(isTargetContext(generateActionContext({
 			event: 'pull_request',
 			action: 'opened',
 		}, {
@@ -81,7 +118,7 @@ describe('isTargetContext', () => {
 	});
 
 	it('should return true 5', () => {
-		expect(isTargetContext(generateContext({
+		expect(isTargetContext(generateActionContext({
 			event: 'pull_request',
 			action: 'closed',
 		}, {
@@ -94,21 +131,20 @@ describe('isTargetContext', () => {
 	});
 
 	it('should return true 6', () => {
-		expect(isTargetContext(generateContext({
+		expect(isTargetContext(generateActionContext({
 			event: 'schedule',
 		}))).toBe(true);
 	});
 
 	it('should return true 6', () => {
-		process.env.INPUT_TARGET_BRANCH_PREFIX = 'test/';
-		expect(isTargetContext(generateContext({
+		expect(isTargetContext(generateActionContext({
 			ref: 'heads/test/change',
 			event: 'push',
-		}))).toBe(true);
+		}, {}, {targetBranchPrefix: 'test/'}))).toBe(true);
 	});
 
 	it('should return false 1', () => {
-		expect(isTargetContext(generateContext({
+		expect(isTargetContext(generateActionContext({
 			ref: 'tags/test',
 			event: 'issues',
 			action: 'opened',
@@ -116,8 +152,7 @@ describe('isTargetContext', () => {
 	});
 
 	it('should return false 2', () => {
-		process.env.INPUT_INCLUDE_LABELS = 'test2';
-		expect(isTargetContext(generateContext({
+		expect(isTargetContext(generateActionContext({
 			event: 'pull_request',
 			action: 'opened',
 		}, {
@@ -126,12 +161,11 @@ describe('isTargetContext', () => {
 					labels: [{name: 'label1'}],
 				},
 			},
-		}))).toBe(false);
+		}, {includeLabels: 'test2'}))).toBe(false);
 	});
 
 	it('should return false 3', () => {
-		process.env.INPUT_INCLUDE_LABELS = 'label1';
-		expect(isTargetContext(generateContext({
+		expect(isTargetContext(generateActionContext({
 			ref: 'heads/master',
 			event: 'pull_request',
 			action: 'synchronize',
@@ -141,18 +175,18 @@ describe('isTargetContext', () => {
 					labels: [{name: 'label2'}],
 				},
 			},
-		}))).toBe(false);
+		}, {includeLabels: 'test1'}))).toBe(false);
 	});
 
 	it('should return false 4', () => {
-		expect(isTargetContext(generateContext({
+		expect(isTargetContext(generateActionContext({
 			event: 'pull_request',
 			action: 'closed',
 		}))).toBe(false);
 	});
 
 	it('should return false 5', () => {
-		expect(isTargetContext(generateContext({
+		expect(isTargetContext(generateActionContext({
 			ref: 'heads/test/change',
 			event: 'push',
 		}))).toBe(false);
@@ -163,12 +197,11 @@ describe('getCommitMessage', () => {
 	testEnv();
 
 	it('should get commit message', () => {
-		process.env.INPUT_COMMIT_MESSAGE = 'test';
-		expect(getCommitMessage()).toBe('test');
+		expect(getCommitMessage(generateActionContext({}, {}, {commitMessage: 'test'}))).toBe('test');
 	});
 
 	it('should throw error', () => {
-		expect(() => getCommitMessage()).toThrow();
+		expect(() => getCommitMessage(generateActionContext({}))).toThrow();
 	});
 });
 
@@ -176,13 +209,12 @@ describe('getCommitName', () => {
 	testEnv();
 
 	it('should get commit name', () => {
-		process.env.INPUT_COMMIT_NAME = 'test';
-		expect(getCommitName()).toBe('test');
+		expect(getCommitName(generateActionContext({}, {}, {commitName: 'test'}))).toBe('test');
 	});
 
 	it('should throw error', () => {
-		process.env.INPUT_COMMIT_NAME = '';
-		expect(() => getCommitName()).toThrow();
+		expect(() => getCommitName(generateActionContext({}))).toThrow();
+		expect(() => getCommitName(generateActionContext({}, {}, {commitName: ''}))).toThrow();
 	});
 });
 
@@ -190,13 +222,12 @@ describe('getCommitEmail', () => {
 	testEnv();
 
 	it('should get commit email', () => {
-		process.env.INPUT_COMMIT_EMAIL = 'test';
-		expect(getCommitEmail()).toBe('test');
+		expect(getCommitEmail(generateActionContext({}, {}, {commitEmail: 'test'}))).toBe('test');
 	});
 
 	it('should throw error', () => {
-		process.env.INPUT_COMMIT_EMAIL = '';
-		expect(() => getCommitEmail()).toThrow();
+		expect(() => getCommitEmail(generateActionContext({}))).toThrow();
+		expect(() => getCommitEmail(generateActionContext({}, {}, {commitEmail: ''}))).toThrow();
 	});
 });
 
@@ -214,60 +245,42 @@ describe('replaceDirectory', () => {
 		process.env.GITHUB_WORKSPACE = path.resolve('test-dir');
 		const workDir                = path.resolve('test-dir');
 
-		expect(replaceDirectory(`cp -a ${workDir}/test1 ${workDir}/test2`)).toBe('cp -a <Working Directory>/test1 <Working Directory>/test2');
-	});
-});
-
-describe('getPrBranchPrefix', () => {
-	testEnv();
-
-	it('should get branch prefix', () => {
-		process.env.INPUT_PR_BRANCH_PREFIX = 'test-prefix/';
-		expect(getPrBranchPrefix()).toBe('test-prefix/');
-	});
-
-	it('should get default', () => {
-		expect(getPrBranchPrefix()).toBe(DEFAULT_PR_BRANCH_PREFIX);
+		expect(replaceDirectory(`cp -a ${workDir}/test1 ${workDir}/test2`)).toBe('cp -a [Working Directory]/test1 [Working Directory]/test2');
 	});
 });
 
 describe('getPrBranchName', () => {
 	testEnv();
-	const context = getContext({
-		payload: {
-			'pull_request': {
-				number: 11,
-				id: 21031067,
-				head: {
-					ref: 'change',
-				},
-				base: {
-					ref: 'master',
-				},
-				title: 'title',
-				'html_url': 'url',
-			},
-		},
+
+	it('should get pr branch name', () => {
+		expect(getPrBranchName(generateActionContext({event: 'pull_request'}, {
+			payload: prPayload,
+		}, {
+			prBranchName: '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}-${PR_TITLE}-${PR_URL}',
+		}))).toBe('hello-world/11-21031067-change-master-test title-http://example.com');
 	});
 
-	it('should get branch name', () => {
-		process.env.INPUT_PR_BRANCH_NAME = '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}-${PR_TITLE}-${PR_URL}';
-		expect(getPrBranchName(context)).toBe('create-pr-action/11-21031067-change-master-title-url');
+	it('should get push branch name', () => {
+		expect(getPrBranchName(generateActionContext({event: 'push'}, {ref: 'heads/test-ref'}, {
+			prBranchName: '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}-${PR_TITLE}-${PR_URL}',
+		}))).toBe('test-ref');
 	});
 
 	it('should throw error', () => {
-		expect(() => getPrBranchName(context)).toThrow();
+		expect(() => getPrBranchName(generateActionContext({}))).toThrow();
+		expect(() => getPrBranchName(generateActionContext({}, {}, {prBranchName: ''}))).toThrow();
 	});
 
 	it('should throw error', () => {
-		process.env.INPUT_PR_BRANCH_NAME = '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}';
-		expect(() => getPrBranchName(getContext({}))).toThrow();
+		expect(() => getPrBranchName(generateActionContext({event: 'pull_request'}, {}, {
+			prBranchName: '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}-${PR_TITLE}-${PR_URL}',
+		}))).toThrow();
 	});
 });
 
 describe('getPrHeadRef', () => {
 	it('should get pr head ref', () => {
-		expect(getPrHeadRef(getContext({
+		expect(getPrHeadRef(generateActionContext({}, {
 			payload: {
 				'pull_request': {
 					head: {
@@ -279,7 +292,7 @@ describe('getPrHeadRef', () => {
 	});
 
 	it('should return empty', () => {
-		expect(getPrHeadRef(getContext({}))).toBe('');
+		expect(getPrHeadRef(generateActionContext({}))).toBe('');
 	});
 });
 
@@ -287,8 +300,7 @@ describe('isActionPr', () => {
 	testEnv();
 
 	it('should return true', () => {
-		process.env.INPUT_PR_BRANCH_PREFIX = 'prefix/';
-		expect(isActionPr(getContext({
+		expect(isActionPr(generateActionContext({}, {
 			payload: {
 				'pull_request': {
 					head: {
@@ -296,11 +308,11 @@ describe('isActionPr', () => {
 					},
 				},
 			},
-		}))).toBe(true);
+		}, {prBranchPrefix: 'prefix/'}))).toBe(true);
 	});
 
 	it('should return false 1', () => {
-		expect(isActionPr(getContext({
+		expect(isActionPr(generateActionContext({}, {
 			payload: {
 				'pull_request': {
 					head: {
@@ -312,7 +324,7 @@ describe('isActionPr', () => {
 	});
 
 	it('should return false 2', () => {
-		expect(isActionPr(getContext({
+		expect(isActionPr(generateActionContext({}, {
 			payload: {},
 		}))).toBe(false);
 	});
@@ -320,39 +332,27 @@ describe('isActionPr', () => {
 
 describe('getPrTitle', () => {
 	testEnv();
-	const context = getContext({
-		payload: {
-			'pull_request': {
-				number: 11,
-				id: 21031067,
-				head: {
-					ref: 'change',
-				},
-				base: {
-					ref: 'master',
-				},
-			},
-		},
-	});
 
 	it('should get PR title', () => {
-		process.env.INPUT_PR_TITLE = '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}';
-		expect(getPrTitle(context)).toBe('11-21031067-change-master');
+		expect(getPrTitle(generateActionContext({}, {payload: prPayload}, {
+			prTitle: '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}',
+		}))).toBe('11-21031067-change-master');
 	});
 
 	it('should throw error', () => {
-		expect(() => getPrTitle(context)).toThrow();
+		expect(() => getPrTitle(generateActionContext({}))).toThrow();
 	});
 
 	it('should throw error', () => {
-		process.env.INPUT_PR_TITLE = '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}';
-		expect(() => getPrTitle(getContext({}))).toThrow();
+		expect(() => getPrTitle(generateActionContext({}, {}, {
+			prTitle: '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}',
+		}))).toThrow();
 	});
 });
 
 describe('getPrLink', () => {
 	it('should get pr link', () => {
-		expect(getPrLink(generateContext({
+		expect(getPrLink(generateActionContext({
 			ref: 'heads/test',
 			event: 'push',
 		}, {
@@ -366,50 +366,28 @@ describe('getPrLink', () => {
 	});
 
 	it('should get empty', () => {
-		expect(getPrLink(getContext({}))).toEqual('');
+		expect(getPrLink(generateActionContext({}))).toEqual('');
 	});
 });
 
 describe('getPrBody', () => {
 	testEnv();
-	const context = getContext({
-		ref: 'refs/heads/test',
-		eventName: 'push',
-		payload: {
-			'pull_request': {
-				number: 11,
-				id: 21031067,
-				head: {
-					ref: 'change',
-				},
-				base: {
-					ref: 'master',
-				},
-				title: 'test title',
-				'html_url': 'http://example.com',
-			},
-		},
-	});
 
 	it('should get PR Body 1', () => {
-		process.env.INPUT_VARIABLE1 = 'Base PullRequest';
-		process.env.INPUT_VARIABLE2 = 'Command results';
-		process.env.INPUT_VARIABLE3 = 'Details: ';
-		process.env.INPUT_VARIABLE4 = 'Changed files';
-		process.env.INPUT_PR_BODY   = `
-      ## \${VARIABLE1}
+		const prBody = `
+      ## Base PullRequest
 
       \${PR_TITLE} (#\${PR_NUMBER})
 
-      ## \${VARIABLE2}
+      ## Command results
       <details>
-        <summary>\${VARIABLE3}</summary>
+        <summary>Details: </summary>
 
         \${COMMANDS_OUTPUT}
 
       </details>
 
-      ## \${VARIABLE4}
+      ## Changed files
       <details>
         <summary>\${FILES_SUMMARY}: </summary>
 
@@ -425,7 +403,11 @@ describe('getPrBody', () => {
 		expect(getPrBody(['README.md', 'CHANGELOG.md'], [
 			{command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: []},
 			{command: 'test2', stdout: ['test2-1', 'test2-2'], stderr: ['test2-3']},
-		], context)).toBe([
+		], generateActionContext({}, {
+			payload: prPayload,
+		}, {
+			prBody,
+		}))).toBe([
 			'## Base PullRequest',
 			'',
 			'test title (#11)',
@@ -474,17 +456,12 @@ describe('getPrBody', () => {
 			'',
 			'<hr>',
 			'',
-			'[:octocat: Repo](https://github.com/technote-space/create-pr-action) | [:memo: Issues](https://github.com/technote-space/create-pr-action/issues) | [:department_store: Marketplace](https://github.com/marketplace/actions/create-pr-action)',
+			'[:octocat: Repo](https://github.com/octocat/hello-world) | [:memo: Issues](https://github.com/octocat/hello-world/issues) | [:department_store: Marketplace](https://github.com/marketplace/actions/hello-world)',
 		].join('\n'));
 	});
 
 	it('should get PR Body 2', () => {
-		process.env.INPUT_DATE_FORMAT1 = 'YYYY/MM/DD';
-		process.env.INPUT_DATE_FORMAT2 = 'DD/MM/YYYY';
-		process.env.INPUT_VARIABLE1    = 'test1';
-		process.env.INPUT_VARIABLE3    = 'test3';
-		process.env.INPUT_VARIABLE5    = '';
-		process.env.INPUT_PR_BODY      = `
+		const prBody = `
 		\${PR_LINK}
 		---------------------------
 		\${COMMANDS}
@@ -519,15 +496,19 @@ describe('getPrBody', () => {
 		---------------------------
 		\${VARIABLE1}
 		---------------------------
-		\${VARIABLE3}
-		---------------------------
-		\${VARIABLE5}
+		\${VARIABLE2}
 `;
 
 		expect(getPrBody(['README.md'], [
 			{command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: ['test1-3', 'test1-4']},
 			{command: 'test2', stdout: [], stderr: []},
-		], context)).toBe([
+		], generateActionContext({}, {
+			payload: prPayload,
+		}, {
+			prBody,
+			prVariables: ['variable1', ''],
+			prDateFormats: ['YYYY/MM/DD', 'DD/MM/YYYY'],
+		}))).toBe([
 			'[test title](http://example.com)',
 			'---------------------------',
 			'',
@@ -620,91 +601,78 @@ describe('getPrBody', () => {
 			'---------------------------',
 			'Changed file',
 			'---------------------------',
-			'Create PR Action',
+			'Test Action',
 			'---------------------------',
-			'technote-space',
+			'octocat',
 			'---------------------------',
-			'create-pr-action',
+			'hello-world',
 			'---------------------------',
-			'https://github.com/technote-space/create-pr-action',
+			'https://github.com/octocat/hello-world',
 			'---------------------------',
-			'https://github.com/marketplace/actions/create-pr-action',
+			'https://github.com/marketplace/actions/hello-world',
 			'---------------------------',
 			moment().format('YYYY/MM/DD'),
 			'---------------------------',
 			moment().format('DD/MM/YYYY'),
 			'---------------------------',
-			'test1',
-			'---------------------------',
-			'test3',
+			'variable1',
 			'---------------------------',
 			'',
 		].join('\n'));
 	});
 
 	it('should not be code', () => {
-		process.env.INPUT_PR_BODY = '${COMMANDS}';
-
-		expect(getPrBody([], [], context)).toBe('');
+		expect(getPrBody([], [], generateActionContext({}, {
+			payload: prPayload,
+		}, {
+			prBody: '${COMMANDS}',
+		}))).toBe('');
 	});
 
 	it('should throw error', () => {
-		expect(() => getPrBody([], [], context)).toThrow();
+		expect(() => getPrBody([], [], generateActionContext({}))).toThrow();
 	});
 });
 
 describe('isDisabledDeletePackage', () => {
 	testEnv();
 
-	it('should be false 1', () => {
-		process.env.INPUT_DELETE_PACKAGE = '1';
-		expect(isDisabledDeletePackage()).toBe(false);
-	});
-
-	it('should be false 2', () => {
-		process.env.INPUT_DELETE_PACKAGE = 'true';
-		expect(isDisabledDeletePackage()).toBe(false);
-	});
-
-	it('should be false 3', () => {
-		process.env.INPUT_DELETE_PACKAGE = 'abc';
-		expect(isDisabledDeletePackage()).toBe(false);
+	it('should be false', () => {
+		expect(isDisabledDeletePackage(generateActionContext({}, {}, {
+			deletePackage: true,
+		}))).toBe(false);
 	});
 
 	it('should be true 1', () => {
-		process.env.INPUT_DELETE_PACKAGE = '0';
-		expect(isDisabledDeletePackage()).toBe(true);
+		expect(isDisabledDeletePackage(generateActionContext({}, {}, {
+			deletePackage: false,
+		}))).toBe(true);
 	});
 
 	it('should be true 2', () => {
-		process.env.INPUT_DELETE_PACKAGE = 'false';
-		expect(isDisabledDeletePackage()).toBe(true);
-	});
-
-	it('should be true 3', () => {
-		process.env.INPUT_DELETE_PACKAGE = '';
-		expect(isDisabledDeletePackage()).toBe(true);
+		expect(isDisabledDeletePackage(generateActionContext({}))).toBe(true);
 	});
 });
 
 describe('isClosePR', () => {
 	testEnv();
 	it('should return true', () => {
-		expect(isClosePR(generateContext({
+		expect(isClosePR(generateActionContext({
 			event: 'pull_request',
 			action: 'closed',
 		}))).toBe(true);
 	});
 
 	it('should return false 1', () => {
-		process.env.INPUT_PR_BRANCH_NAME = 'test';
-		expect(isClosePR(generateContext({
+		expect(isClosePR(generateActionContext({
 			event: 'push',
+		}, {}, {
+			prBranchName: 'test',
 		}))).toBe(false);
 	});
 
 	it('should return false 2', () => {
-		expect(isClosePR(generateContext({
+		expect(isClosePR(generateActionContext({
 			event: 'pull_request',
 			action: 'synchronize',
 		}))).toBe(false);
@@ -715,17 +683,19 @@ describe('isTargetBranch', () => {
 	testEnv();
 
 	it('should return true 1', () => {
-		expect(isTargetBranch('test')).toBe(true);
+		expect(isTargetBranch('test', generateActionContext({}))).toBe(true);
 	});
 
 	it('should return true 2', () => {
-		process.env.INPUT_TARGET_BRANCH_PREFIX = 'feature/';
-		expect(isTargetBranch('feature/test')).toBe(true);
+		expect(isTargetBranch('feature/test', generateActionContext({}, {}, {
+			targetBranchPrefix: 'feature/',
+		}))).toBe(true);
 	});
 
 	it('should return false', () => {
-		process.env.INPUT_TARGET_BRANCH_PREFIX = 'feature/';
-		expect(isTargetBranch('test')).toBe(false);
+		expect(isTargetBranch('test', generateActionContext({}, {}, {
+			targetBranchPrefix: 'feature/',
+		}))).toBe(false);
 	});
 });
 
@@ -733,24 +703,27 @@ describe('filterGitStatusFunc', () => {
 	testEnv();
 
 	it('should filter git status', () => {
-		process.env.INPUT_FILTER_GIT_STATUS = 'Mdc';
-
-		expect(filterGitStatus('M  test.md')).toBe(true);
-		expect(filterGitStatus('D  test.md')).toBe(true);
-		expect(filterGitStatus('A  test.md')).toBe(false);
-		expect(filterGitStatus('C  test.md')).toBe(false);
+		const context = generateActionContext({}, {}, {
+			filterGitStatus: 'Mdc',
+		});
+		expect(filterGitStatus('M  test.md', context)).toBe(true);
+		expect(filterGitStatus('D  test.md', context)).toBe(true);
+		expect(filterGitStatus('A  test.md', context)).toBe(false);
+		expect(filterGitStatus('C  test.md', context)).toBe(false);
 	});
 
 	it('should not filter', () => {
-		expect(filterGitStatus('M  test.md')).toBe(true);
-		expect(filterGitStatus('D  test.md')).toBe(true);
-		expect(filterGitStatus('A  test.md')).toBe(true);
-		expect(filterGitStatus('C  test.md')).toBe(true);
+		const context = generateActionContext({});
+		expect(filterGitStatus('M  test.md', context)).toBe(true);
+		expect(filterGitStatus('D  test.md', context)).toBe(true);
+		expect(filterGitStatus('A  test.md', context)).toBe(true);
+		expect(filterGitStatus('C  test.md', context)).toBe(true);
 	});
 
 	it('should throw error', () => {
-		process.env.INPUT_FILTER_GIT_STATUS = 'c';
-		expect(() => filterGitStatus('C  test.md')).toThrow();
+		expect(() => filterGitStatus('C  test.md', generateActionContext({}, {}, {
+			filterGitStatus: 'c',
+		}))).toThrow();
 	});
 });
 
@@ -758,20 +731,22 @@ describe('filterExtension', () => {
 	testEnv();
 
 	it('should filter extension', () => {
-		process.env.INPUT_FILTER_EXTENSIONS = 'md,.txt';
-
-		expect(filterExtension('test.md')).toBe(true);
-		expect(filterExtension('test.txt')).toBe(true);
-		expect(filterExtension('test.js')).toBe(false);
-		expect(filterExtension('test.1md')).toBe(false);
-		expect(filterExtension('test.md1')).toBe(false);
+		const context = generateActionContext({}, {}, {
+			filterExtensions: ['md', '.txt'],
+		});
+		expect(filterExtension('test.md', context)).toBe(true);
+		expect(filterExtension('test.txt', context)).toBe(true);
+		expect(filterExtension('test.js', context)).toBe(false);
+		expect(filterExtension('test.1md', context)).toBe(false);
+		expect(filterExtension('test.md1', context)).toBe(false);
 	});
 
 	it('should not filter', () => {
-		expect(filterExtension('test.md')).toBe(true);
-		expect(filterExtension('test.txt')).toBe(true);
-		expect(filterExtension('test.js')).toBe(true);
-		expect(filterExtension('test.1md')).toBe(true);
-		expect(filterExtension('test.md1')).toBe(true);
+		const context = generateActionContext({});
+		expect(filterExtension('test.md', context)).toBe(true);
+		expect(filterExtension('test.txt', context)).toBe(true);
+		expect(filterExtension('test.js', context)).toBe(true);
+		expect(filterExtension('test.1md', context)).toBe(true);
+		expect(filterExtension('test.md1', context)).toBe(true);
 	});
 });

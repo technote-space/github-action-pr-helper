@@ -16,7 +16,8 @@ import {
 	disableNetConnect,
 	getApiFixture,
 } from '@technote-space/github-action-test-helper';
-import { Logger } from '@technote-space/github-action-helper';
+import { Logger, GitHelper } from '@technote-space/github-action-helper';
+import { ActionContext, ActionDetails } from '../../src/types';
 import {
 	clone,
 	checkBranch,
@@ -29,11 +30,12 @@ import {
 beforeEach(() => {
 	Logger.resetForTesting();
 });
-const logger    = new Logger();
-const setExists = testFs();
-const rootDir   = path.resolve(__dirname, '..', 'fixtures');
-const octokit   = new GitHub('');
-const context   = (pr: object): Context => getContext({
+const logger                       = new Logger();
+const helper                       = new GitHelper(logger, {depth: -1});
+const setExists                    = testFs();
+const rootDir                      = path.resolve(__dirname, '..', 'fixtures');
+const octokit                      = new GitHub('');
+const context                      = (pr: object): Context => getContext({
 	repo: {
 		owner: 'hello',
 		repo: 'world',
@@ -53,33 +55,43 @@ const context   = (pr: object): Context => getContext({
 		}, pr),
 	},
 });
+const actionDetails: ActionDetails = {
+	actionName: 'Test Action',
+	actionOwner: 'octocat',
+	actionRepo: 'hello-world',
+};
+const getActionContext             = (context: Context, _actionDetails?: object): ActionContext => ({
+	actionContext: context,
+	actionDetail: _actionDetails ? Object.assign({}, actionDetails, _actionDetails) : actionDetails,
+});
 
 describe('clone', () => {
 	testEnv();
 	testChildProcess();
 
 	it('should run clone command', async() => {
-		process.env.GITHUB_WORKSPACE     = path.resolve('test-dir');
-		process.env.INPUT_GITHUB_TOKEN   = 'test-token';
-		process.env.INPUT_PR_BRANCH_NAME = 'test-branch';
-		const mockExec                   = spyOnExec();
-		const mockStdout                 = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test-dir');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockExec                 = spyOnExec();
+		const mockStdout               = spyOnStdout();
 
-		await clone(logger, context({
+		await clone(helper, logger, getActionContext(context({
 			head: {
 				ref: 'head-test',
 			},
 			base: {
 				ref: 'base-test',
 			},
+		}), {
+			prBranchName: 'test-branch',
 		}));
 
 		execCalledWith(mockExec, [
-			'git clone --branch=create-pr-action/test-branch https://octocat:test-token@github.com/hello/world.git . > /dev/null 2>&1 || :',
+			'git clone --branch=hello-world/test-branch https://octocat:test-token@github.com/hello/world.git . > /dev/null 2>&1 || :',
 		]);
 		stdoutCalledWith(mockStdout, [
-			'::group::Cloning [create-pr-action/test-branch] branch from the remote repo...',
-			'[command]git clone --branch=create-pr-action/test-branch',
+			'::group::Cloning [hello-world/test-branch] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/test-branch',
 		]);
 	});
 });
@@ -89,14 +101,15 @@ describe('checkBranch', () => {
 	testChildProcess();
 
 	it('should do nothing', async() => {
-		process.env.GITHUB_WORKSPACE     = path.resolve('test-dir');
-		process.env.INPUT_GITHUB_TOKEN   = 'test-token';
-		process.env.INPUT_PR_BRANCH_NAME = 'test-branch';
-		setChildProcessParams({stdout: 'create-pr-action/test-branch'});
+		process.env.GITHUB_WORKSPACE   = path.resolve('test-dir');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		setChildProcessParams({stdout: 'hello-world/test-branch'});
 		const mockExec = spyOnExec();
 		setExists(true);
 
-		expect(await checkBranch(logger, context({}))).toBe(true);
+		expect(await checkBranch(helper, logger, getActionContext(context({}), {
+			prBranchName: 'test-branch',
+		}))).toBe(true);
 
 		execCalledWith(mockExec, [
 			'git branch -a | grep -E \'^\\*\' | cut -b 3-',
@@ -105,19 +118,20 @@ describe('checkBranch', () => {
 	});
 
 	it('should checkout new branch', async() => {
-		process.env.GITHUB_WORKSPACE     = path.resolve('test-dir');
-		process.env.INPUT_GITHUB_TOKEN   = 'test-token';
-		process.env.INPUT_PR_BRANCH_NAME = 'test-branch';
+		process.env.GITHUB_WORKSPACE   = path.resolve('test-dir');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({stdout: 'test-branch2'});
 		const mockExec = spyOnExec();
 		setExists(true);
 
-		expect(await checkBranch(logger, context({}))).toBe(false);
+		expect(await checkBranch(helper, logger, getActionContext(context({}), {
+			prBranchName: 'test-branch',
+		}))).toBe(false);
 
 		execCalledWith(mockExec, [
 			'git branch -a | grep -E \'^\\*\' | cut -b 3-',
 			'git clone --branch=change https://octocat:test-token@github.com/hello/world.git . > /dev/null 2>&1 || :',
-			'git checkout -b "create-pr-action/test-branch"',
+			'git checkout -b "hello-world/test-branch"',
 			'ls -la',
 		]);
 	});
@@ -134,7 +148,7 @@ describe('getDiff', () => {
 		setChildProcessParams({stdout: 'M  test1.txt\nM  test2.md\nA  test3.md'});
 		const mockExec = spyOnExec();
 
-		expect(await getDiff(logger)).toEqual(['test2.md']);
+		expect(await getDiff(helper, logger)).toEqual(['test1.txt', 'test2.md', 'test3.md']);
 
 		execCalledWith(mockExec, [
 			'git add --all',
@@ -148,18 +162,19 @@ describe('getChangedFiles', () => {
 	testChildProcess();
 	const _context = context({
 		head: {
-			ref: 'create-pr-action/test-branch',
+			ref: 'hello-world/test-branch',
 		},
 	});
 
 	it('should get changed files 1', async() => {
-		process.env.GITHUB_WORKSPACE       = path.resolve('test-dir');
-		process.env.INPUT_GITHUB_TOKEN     = 'test-token';
-		process.env.INPUT_EXECUTE_COMMANDS = 'yarn upgrade';
-		process.env.INPUT_PR_BRANCH_NAME   = 'test-branch';
+		process.env.GITHUB_WORKSPACE   = path.resolve('test-dir');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({stdout: 'M  file1\nA  file2\nD  file3\n   file4\n\nB  file5\n'});
 
-		expect(await getChangedFiles(logger, _context)).toEqual({
+		expect(await getChangedFiles(helper, logger, getActionContext(_context, {
+			executeCommands: ['yarn upgrade'],
+			prBranchName: 'test-branch',
+		}))).toEqual({
 			files: [
 				'file1',
 				'file2',
@@ -176,17 +191,18 @@ describe('getChangedFiles', () => {
 	});
 
 	it('should get changed files 2', async() => {
-		process.env.GITHUB_WORKSPACE              = path.resolve('test-dir');
-		process.env.INPUT_GITHUB_TOKEN            = 'test-token';
-		process.env.INPUT_PACKAGE_MANAGER         = 'yarn';
-		process.env.INPUT_EXECUTE_COMMANDS        = 'yarn upgrade';
-		process.env.INPUT_GLOBAL_INSTALL_PACKAGES = 'npm-check-updates';
-		process.env.INPUT_DEV_INSTALL_PACKAGES    = 'test1\ntest2';
-		process.env.INPUT_INSTALL_PACKAGES        = 'test3\ntest4';
-		process.env.INPUT_PR_BRANCH_NAME          = 'test-branch';
+		process.env.GITHUB_WORKSPACE      = path.resolve('test-dir');
+		process.env.INPUT_GITHUB_TOKEN    = 'test-token';
+		process.env.INPUT_PACKAGE_MANAGER = 'yarn';
 		setChildProcessParams({stdout: 'M  file1\nA  file2\nD  file3\n   file4\n\nB  file5\n'});
 
-		expect(await getChangedFiles(logger, _context)).toEqual({
+		expect(await getChangedFiles(helper, logger, getActionContext(_context, {
+			executeCommands: ['yarn upgrade'],
+			globalInstallPackages: ['npm-check-updates'],
+			devInstallPackages: ['test1', 'test2'],
+			installPackages: ['test3', 'test4'],
+			prBranchName: 'test-branch',
+		}))).toEqual({
 			files: [
 				'file1',
 				'file2',
@@ -218,17 +234,18 @@ describe('getChangedFiles', () => {
 	});
 
 	it('should return empty 1', async() => {
-		process.env.GITHUB_WORKSPACE              = path.resolve('test-dir');
-		process.env.INPUT_GITHUB_TOKEN            = 'test-token';
-		process.env.INPUT_EXECUTE_COMMANDS        = 'npm update';
-		process.env.INPUT_DELETE_PACKAGE          = '1';
-		process.env.INPUT_GLOBAL_INSTALL_PACKAGES = 'npm-check-updates';
-		process.env.INPUT_DEV_INSTALL_PACKAGES    = 'test1\ntest2';
-		process.env.INPUT_INSTALL_PACKAGES        = 'test3\ntest4';
-		process.env.INPUT_PR_BRANCH_NAME          = 'test-branch';
+		process.env.GITHUB_WORKSPACE   = path.resolve('test-dir');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({stdout: 'test'});
 
-		expect(await getChangedFiles(logger, _context)).toEqual({
+		expect(await getChangedFiles(helper, logger, getActionContext(_context, {
+			executeCommands: ['npm update'],
+			deletePackage: true,
+			globalInstallPackages: ['npm-check-updates'],
+			devInstallPackages: ['test1', 'test2'],
+			installPackages: ['test3', 'test4'],
+			prBranchName: 'test-branch',
+		}))).toEqual({
 			files: [],
 			output: [
 				{
@@ -271,19 +288,13 @@ describe('getChangedFiles', () => {
 	});
 
 	it('should return empty 2', async() => {
-		process.env.GITHUB_WORKSPACE              = path.resolve('test-dir');
-		process.env.INPUT_GITHUB_TOKEN            = 'test-token';
-		process.env.INPUT_EXECUTE_COMMANDS        = 'npm update';
-		process.env.INPUT_GLOBAL_INSTALL_PACKAGES = 'npm-check-updates';
-		process.env.INPUT_INSTALL_PACKAGES        = 'test1\ntest2';
-		process.env.INPUT_PR_BRANCH_NAME          = 'test-branch';
-		process.env.INPUT_COMMIT_NAME             = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL            = 'example@example.com';
-		const mockStdout                          = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test-dir');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.includes(' branch -a ')) {
-					return 'create-pr-action/test-branch';
+					return 'hello-world/test-branch';
 				}
 				if (command.startsWith('git merge --no-edit')) {
 					return 'Auto-merging merge.txt\nCONFLICT (content): Merge conflict in merge.txt\nAutomatic merge failed; fix conflicts and then commit the result.';
@@ -293,7 +304,14 @@ describe('getChangedFiles', () => {
 		});
 		setExists(true);
 
-		expect(await getChangedFiles(logger, _context)).toEqual({
+		expect(await getChangedFiles(helper, logger, getActionContext(_context, {
+			executeCommands: ['npm update'],
+			globalInstallPackages: ['npm-check-updates'],
+			installPackages: ['test1', 'test2'],
+			prBranchName: 'test-branch',
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+		}))).toEqual({
 			files: [],
 			output: [
 				{
@@ -317,18 +335,18 @@ describe('getChangedFiles', () => {
 			'::group::Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
-			'::group::Cloning [create-pr-action/test-branch] branch from the remote repo...',
-			'[command]git clone --branch=create-pr-action/test-branch',
+			'::group::Cloning [hello-world/test-branch] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/test-branch',
 			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
-			'  >> create-pr-action/test-branch',
+			'  >> hello-world/test-branch',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Configuring git committer to be GitHub Actions <example@example.com>',
 			'[command]git config user.name "GitHub Actions"',
 			'[command]git config user.email "example@example.com"',
 			'::endgroup::',
-			'::group::Merging [create-pr-action/test-branch] branch...',
-			'[command]git merge --no-edit origin/create-pr-action/test-branch || :',
+			'::group::Merging [hello-world/test-branch] branch...',
+			'[command]git merge --no-edit origin/hello-world/test-branch || :',
 			'  >> Auto-merging merge.txt',
 			'  >> CONFLICT (content): Merge conflict in merge.txt',
 			'  >> Automatic merge failed; fix conflicts and then commit the result.',
@@ -348,20 +366,14 @@ describe('getChangedFiles', () => {
 	});
 
 	it('should return empty 3', async() => {
-		process.env.GITHUB_WORKSPACE              = path.resolve('test-dir');
-		process.env.GITHUB_REPOSITORY             = 'hello/world';
-		process.env.INPUT_GITHUB_TOKEN            = 'test-token';
-		process.env.INPUT_EXECUTE_COMMANDS        = 'npm update';
-		process.env.INPUT_GLOBAL_INSTALL_PACKAGES = 'npm-check-updates';
-		process.env.INPUT_INSTALL_PACKAGES        = 'test1\ntest2';
-		process.env.INPUT_PR_BRANCH_NAME          = 'test-branch';
-		process.env.INPUT_COMMIT_NAME             = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL            = 'example@example.com';
-		const mockStdout                          = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test-dir');
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.includes(' branch -a ')) {
-					return 'create-pr-action/test-branch';
+					return 'hello-world/test-branch';
 				}
 				if (command.startsWith('git merge')) {
 					return 'Already up to date.';
@@ -371,7 +383,14 @@ describe('getChangedFiles', () => {
 		});
 		setExists(true);
 
-		expect(await getChangedFiles(logger, _context)).toEqual({
+		expect(await getChangedFiles(helper, logger, getActionContext(_context, {
+			executeCommands: ['npm update'],
+			globalInstallPackages: ['npm-check-updates'],
+			installPackages: ['test1', 'test2'],
+			prBranchName: 'test-branch',
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+		}))).toEqual({
 			files: [],
 			output: [
 				{
@@ -395,18 +414,18 @@ describe('getChangedFiles', () => {
 			'::group::Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
-			'::group::Cloning [create-pr-action/test-branch] branch from the remote repo...',
-			'[command]git clone --branch=create-pr-action/test-branch',
+			'::group::Cloning [hello-world/test-branch] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/test-branch',
 			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
-			'  >> create-pr-action/test-branch',
+			'  >> hello-world/test-branch',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Configuring git committer to be GitHub Actions <example@example.com>',
 			'[command]git config user.name "GitHub Actions"',
 			'[command]git config user.email "example@example.com"',
 			'::endgroup::',
-			'::group::Merging [create-pr-action/test-branch] branch...',
-			'[command]git merge --no-edit origin/create-pr-action/test-branch || :',
+			'::group::Merging [hello-world/test-branch] branch...',
+			'[command]git merge --no-edit origin/hello-world/test-branch || :',
 			'  >> Already up to date.',
 			'::endgroup::',
 			'::group::Running commands...',
@@ -426,9 +445,6 @@ describe('updatePr', () => {
 	testEnv();
 
 	it('should return true 1', async() => {
-		process.env.INPUT_PR_TITLE = 'test title';
-		process.env.INPUT_PR_BODY  = 'test body';
-
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world/pulls?head=hello%3Atest')
@@ -438,13 +454,13 @@ describe('updatePr', () => {
 			.get('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'));
 
-		expect(await updatePr('test', [], [], logger, octokit, context({}))).toBe(true);
+		expect(await updatePr('test', [], [], logger, octokit, getActionContext(context({}), {
+			prTitle: 'test title',
+			prBody: 'test body',
+		}))).toBe(true);
 	});
 
 	it('should return true 2', async() => {
-		process.env.INPUT_PR_TITLE = 'test title';
-		process.env.INPUT_PR_BODY  = 'test body';
-
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world/pulls?head=hello%3Atest')
@@ -452,13 +468,13 @@ describe('updatePr', () => {
 			.post('/repos/hello/world/pulls')
 			.reply(201, () => getApiFixture(rootDir, 'pulls.create'));
 
-		expect(await updatePr('test', [], [], logger, octokit, context({}))).toBe(true);
+		expect(await updatePr('test', [], [], logger, octokit, getActionContext(context({}), {
+			prTitle: 'test title',
+			prBody: 'test body',
+		}))).toBe(true);
 	});
 
 	it('should return false', async() => {
-		process.env.INPUT_PR_TITLE = 'test title';
-		process.env.INPUT_PR_BODY  = 'test body';
-
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world/pulls?head=hello%3Atest')
@@ -468,7 +484,10 @@ describe('updatePr', () => {
 			.get('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.false'));
 
-		expect(await updatePr('test', [], [], logger, octokit, context({}))).toBe(false);
+		expect(await updatePr('test', [], [], logger, octokit, getActionContext(context({}), {
+			prTitle: 'test title',
+			prBody: 'test body',
+		}))).toBe(false);
 	});
 });
 
@@ -478,12 +497,8 @@ describe('resolveConflicts', () => {
 	testChildProcess();
 
 	it('should merge', async() => {
-		process.env.GITHUB_WORKSPACE       = path.resolve('test-dir');
-		process.env.INPUT_GITHUB_TOKEN     = 'test-token';
-		process.env.INPUT_PR_BRANCH_NAME   = 'test-branch';
-		process.env.INPUT_EXECUTE_COMMANDS = 'yarn upgrade';
-		process.env.INPUT_COMMIT_NAME      = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL     = 'example@example.com';
+		process.env.GITHUB_WORKSPACE   = path.resolve('test-dir');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.startsWith('git merge')) {
@@ -494,7 +509,12 @@ describe('resolveConflicts', () => {
 		});
 		const mockExec = spyOnExec();
 
-		await resolveConflicts('test', logger, octokit, context({}));
+		await resolveConflicts('test', helper, logger, octokit, getActionContext(context({}), {
+			prBranchName: 'test-branch',
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+		}));
 
 		execCalledWith(mockExec, [
 			'git config user.name "GitHub Actions"',
@@ -505,12 +525,8 @@ describe('resolveConflicts', () => {
 	});
 
 	it('should close pull request', async() => {
-		process.env.GITHUB_WORKSPACE       = path.resolve('test-dir');
-		process.env.INPUT_GITHUB_TOKEN     = 'test-token';
-		process.env.INPUT_PR_BRANCH_NAME   = 'test-branch';
-		process.env.INPUT_EXECUTE_COMMANDS = 'yarn upgrade';
-		process.env.INPUT_COMMIT_NAME      = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL     = 'example@example.com';
+		process.env.GITHUB_WORKSPACE   = path.resolve('test-dir');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.startsWith('git merge')) {
@@ -525,7 +541,12 @@ describe('resolveConflicts', () => {
 			.get('/repos/hello/world/pulls?head=hello%3Atest')
 			.reply(200, () => []);
 
-		await resolveConflicts('test', logger, octokit, context({}));
+		await resolveConflicts('test', helper, logger, octokit, getActionContext(context({}), {
+			prBranchName: 'test-branch',
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+		}));
 
 		execCalledWith(mockExec, [
 			'git config user.name "GitHub Actions"',
@@ -533,7 +554,7 @@ describe('resolveConflicts', () => {
 			'git merge --no-edit origin/change || :',
 			'rm -rdf ./* ./.[!.]*',
 			'git clone --branch=change https://octocat:test-token@github.com/hello/world.git . > /dev/null 2>&1 || :',
-			'git checkout -b "create-pr-action/test-branch"',
+			'git checkout -b "hello-world/test-branch"',
 			'yarn upgrade',
 			'git add --all',
 			'git status --short -uno',
@@ -541,15 +562,8 @@ describe('resolveConflicts', () => {
 	});
 
 	it('should rebase', async() => {
-		process.env.GITHUB_WORKSPACE       = path.resolve('test-dir');
-		process.env.INPUT_GITHUB_TOKEN     = 'test-token';
-		process.env.INPUT_PR_BRANCH_NAME   = 'test-branch';
-		process.env.INPUT_EXECUTE_COMMANDS = 'yarn upgrade';
-		process.env.INPUT_COMMIT_MESSAGE   = 'commit message';
-		process.env.INPUT_PR_TITLE         = 'pr title';
-		process.env.INPUT_PR_BODY          = 'pr body';
-		process.env.INPUT_COMMIT_NAME      = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL     = 'example@example.com';
+		process.env.GITHUB_WORKSPACE   = path.resolve('test-dir');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.startsWith('git merge')) {
@@ -569,7 +583,15 @@ describe('resolveConflicts', () => {
 			.patch('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'));
 
-		await resolveConflicts('test', logger, octokit, context({}));
+		await resolveConflicts('test', helper, logger, octokit, getActionContext(context({}), {
+			prBranchName: 'test-branch',
+			executeCommands: ['yarn upgrade'],
+			commitMessage: 'commit message',
+			prTitle: 'pr title',
+			prBody: 'pr body',
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+		}));
 
 		execCalledWith(mockExec, [
 			'git config user.name "GitHub Actions"',
@@ -577,7 +599,7 @@ describe('resolveConflicts', () => {
 			'git merge --no-edit origin/change || :',
 			'rm -rdf ./* ./.[!.]*',
 			'git clone --branch=change https://octocat:test-token@github.com/hello/world.git . > /dev/null 2>&1 || :',
-			'git checkout -b "create-pr-action/test-branch"',
+			'git checkout -b "hello-world/test-branch"',
 			'yarn upgrade',
 			'git add --all',
 			'git status --short -uno',

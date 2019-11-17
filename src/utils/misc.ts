@@ -1,103 +1,106 @@
-import { Context } from '@actions/github/lib/context';
-import { Utils, ContextHelper } from '@technote-space/github-action-helper';
+import { Utils, ContextHelper, GitHelper, Logger } from '@technote-space/github-action-helper';
 import { isTargetEvent, isTargetLabels } from '@technote-space/filter-github-action';
-import { getInput } from '@actions/core' ;
 import moment from 'moment';
-import {
-	TARGET_EVENTS,
-	DEFAULT_PR_BRANCH_PREFIX,
-	ACTION_URL,
-	ACTION_NAME,
-	ACTION_OWNER,
-	ACTION_REPO,
-	ACTION_MARKETPLACE_URL,
-	DATE_COUNT,
-	VARIABLE_COUNT,
-} from '../constant';
+import { TARGET_EVENTS } from '../constant';
+import { ActionContext } from '../types';
 
-const {getWorkspace, getArrayInput, getPrefixRegExp}      = Utils;
-const {escapeRegExp, replaceAll, getBoolValue, getBranch} = Utils;
-const {isPr, isCron, isPush}                              = ContextHelper;
+const {getWorkspace, getPrefixRegExp}       = Utils;
+const {escapeRegExp, replaceAll, getBranch} = Utils;
+const {isPr, isCron, isPush}                = ContextHelper;
 
-export const getCommitMessage = (): string => getInput('COMMIT_MESSAGE', {required: true});
+export const getActionDetail = <T>(key: string, context: ActionContext, defaultValue?: T): T => {
+	if (undefined === defaultValue && !(key in context.actionDetail)) {
+		throw new Error(`parameter [${key}] is required.`);
+	}
+	if (undefined === defaultValue && typeof context.actionDetail[key] === 'string' && context.actionDetail[key].trim() === '') {
+		throw new Error(`parameter [${key}] is required.`);
+	}
+	return context.actionDetail[key] ?? defaultValue;
+};
 
-export const getCommitName = (): string => getInput('COMMIT_NAME', {required: true});
+export const getCommitMessage = (context: ActionContext): string => getActionDetail<string>('commitMessage', context);
 
-export const getCommitEmail = (): string => getInput('COMMIT_EMAIL', {required: true});
+export const getCommitName = (context: ActionContext): string => getActionDetail<string>('commitName', context);
+
+export const getCommitEmail = (context: ActionContext): string => getActionDetail<string>('commitEmail', context);
 
 export const replaceDirectory = (message: string): string => {
 	const workDir = getWorkspace();
 	return message
 		.split(` -C ${workDir}`).join('')
-		.split(workDir).join('<Working Directory>');
+		.split(workDir).join('[Working Directory]');
 };
 
-const getDate = (suffix: number): string => moment().format(getInput(`DATE_FORMAT${suffix}`));
+const getVariable = (index: number, context: ActionContext): string => getActionDetail<string[]>('prVariables', context)[index];
 
-const getVariable = (suffix: number): string => process.env[`INPUT_VARIABLE${suffix}`] || '';
+const getDate = (index: number, context: ActionContext): string => moment().format(getActionDetail<string[]>('prDateFormats', context)[index]);
 
 /**
+ * @param {ActionContext} context context
  * @return {{string, Function}[]} replacer
  */
-const contextVariables = (): { key: string; replace: (Context) => string }[] => {
+const contextVariables = (context: ActionContext): { key: string; replace: () => string }[] => {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const getPrParam = (context: Context, extractor: (pr: { [key: string]: any }) => string): string => {
-		if (!context.payload.pull_request) {
+	const getPrParam = (extractor: (pr: { [key: string]: any }) => string): string => {
+		if (!context.actionContext.payload.pull_request) {
 			throw new Error('Invalid context.');
 		}
-		return extractor(context.payload.pull_request);
+		return extractor(context.actionContext.payload.pull_request);
 	};
 	return [
-		{key: 'PR_NUMBER', replace: (context: Context): string => getPrParam(context, pr => pr.number)},
-		{key: 'PR_ID', replace: (context: Context): string => getPrParam(context, pr => pr.id)},
-		{key: 'PR_HEAD_REF', replace: (context: Context): string => getPrParam(context, pr => pr.head.ref)},
-		{key: 'PR_BASE_REF', replace: (context: Context): string => getPrParam(context, pr => pr.base.ref)},
-		{key: 'PR_TITLE', replace: (context: Context): string => getPrParam(context, pr => pr.title)},
-		{key: 'PR_URL', replace: (context: Context): string => getPrParam(context, pr => pr.html_url)},
-	].concat([...Array(DATE_COUNT).keys()].map(index => ++index).map(index => ({
-		key: `DATE${index}`, replace: (): string => getDate(index),
-	}))).concat([...Array(VARIABLE_COUNT).keys()].map(index => ++index).map(index => ({
-		key: `VARIABLE${index}`, replace: (): string => getVariable(index),
+		{key: 'PR_NUMBER', replace: (): string => getPrParam(pr => pr.number)},
+		{key: 'PR_ID', replace: (): string => getPrParam(pr => pr.id)},
+		{key: 'PR_HEAD_REF', replace: (): string => getPrParam(pr => pr.head.ref)},
+		{key: 'PR_BASE_REF', replace: (): string => getPrParam(pr => pr.base.ref)},
+		{key: 'PR_TITLE', replace: (): string => getPrParam(pr => pr.title)},
+		{key: 'PR_URL', replace: (): string => getPrParam(pr => pr.html_url)},
+		// eslint-disable-next-line no-magic-numbers
+	].concat([...Array(context.actionDetail.prVariables?.length ?? 0).keys()].map(index => ({
+		// eslint-disable-next-line no-magic-numbers
+		key: `VARIABLE${index + 1}`, replace: (): string => getVariable(index, context),
+		// eslint-disable-next-line no-magic-numbers
+	}))).concat([...Array(context.actionDetail.prDateFormats?.length ?? 0).keys()].map(index => ({
+		// eslint-disable-next-line no-magic-numbers
+		key: `DATE${index + 1}`, replace: (): string => getDate(index, context),
 	})));
 };
 
 /**
  * @param {string} string string
  * @param {object[]} variables variables
- * @param {Context} context context
  * @return {string} replaced
  */
-const replaceVariables = (string: string, variables: { key: string; replace: (Context) => string }[], context: Context): string => variables.reduce((acc, value) => replaceAll(acc, `\${${value.key}}`, value.replace(context)), string);
+const replaceVariables = (string: string, variables: { key: string; replace: () => string }[]): string => variables.reduce((acc, value) => replaceAll(acc, `\${${value.key}}`, value.replace()), string);
 
 /**
  * @param {string} string string
- * @param {Context} context context
+ * @param {ActionDetails} context action details
  * @return {string} replaced
  */
-const replaceContextVariables = (string: string, context: Context): string => replaceVariables(string, contextVariables(), context);
+const replaceContextVariables = (string: string, context: ActionContext): string => replaceVariables(string, contextVariables(context));
 
-export const getPrBranchPrefix = (): string => getInput('PR_BRANCH_PREFIX') || DEFAULT_PR_BRANCH_PREFIX;
+export const getPrHeadRef = (context: ActionContext): string => context.actionContext.payload.pull_request?.head.ref ?? '';
 
-export const getPrHeadRef = (context: Context): string => context.payload.pull_request ? context.payload.pull_request.head.ref : '';
+const getPrBranchPrefix = (context: ActionContext): string => context.actionDetail.prBranchPrefix ?? `${context.actionDetail.actionRepo}/`;
 
-export const isActionPr = (context: Context): boolean => (new RegExp('^' + escapeRegExp(getPrBranchPrefix()))).test(getPrHeadRef(context));
+export const isActionPr = (context: ActionContext): boolean => getPrefixRegExp(getPrBranchPrefix(context)).test(getPrHeadRef(context));
 
-export const getPrBranchName = (context: Context): string => isPush(context) ? getBranch(context) : (getPrBranchPrefix() + replaceContextVariables(getInput('PR_BRANCH_NAME', {required: true}), context));
+export const getPrBranchName = (context: ActionContext): string => isPush(context.actionContext) ? getBranch(context.actionContext) : (getPrBranchPrefix(context) + replaceContextVariables(getActionDetail<string>('prBranchName', context), context));
 
-export const getPrTitle = (context: Context): string => replaceContextVariables(getInput('PR_TITLE', {required: true}), context);
+export const getPrTitle = (context: ActionContext): string => replaceContextVariables(getActionDetail<string>('prTitle', context), context);
 
-export const getPrLink = (context: Context): string => context.payload.pull_request ? `[${context.payload.pull_request.title}](${context.payload.pull_request.html_url})` : '';
+export const getPrLink = (context: ActionContext): string => context.actionContext.payload.pull_request ? `[${context.actionContext.payload.pull_request.title}](${context.actionContext.payload.pull_request.html_url})` : '';
 
 const prBodyVariables = (files: string[], output: {
 	command: string;
 	stdout: string[];
 	stderr: string[];
-}[]): { key: string; replace: (Context) => string }[] => {
+}[], context: ActionContext): { key: string; replace: () => string }[] => {
 	const toCode = (string: string): string => string.length ? ['', '```Shell', string, '```', ''].join('\n') : '';
 	return [
 		{
 			key: 'PR_LINK',
-			replace: (context: Context): string => getPrLink(context),
+			replace: (): string => getPrLink(context),
 		},
 		{
 			key: 'COMMANDS',
@@ -151,76 +154,76 @@ const prBodyVariables = (files: string[], output: {
 		},
 		{
 			key: 'ACTION_NAME',
-			replace: (): string => ACTION_NAME,
+			replace: (): string => context.actionDetail.actionName,
 		},
 		{
 			key: 'ACTION_OWNER',
-			replace: (): string => ACTION_OWNER,
+			replace: (): string => context.actionDetail.actionOwner,
 		},
 		{
 			key: 'ACTION_REPO',
-			replace: (): string => ACTION_REPO,
+			replace: (): string => context.actionDetail.actionRepo,
 		},
 		{
 			key: 'ACTION_URL',
-			replace: (): string => ACTION_URL,
+			replace: (): string => `https://github.com/${context.actionDetail.actionOwner}/${context.actionDetail.actionRepo}`,
 		},
 		{
 			key: 'ACTION_MARKETPLACE_URL',
-			replace: (): string => ACTION_MARKETPLACE_URL,
+			replace: (): string => `https://github.com/marketplace/actions/${context.actionDetail.actionRepo}`,
 		},
-	].concat(contextVariables());
+	].concat(contextVariables(context));
 };
 
 const replacePrBodyVariables = (prBody: string, files: string[], output: {
 	command: string;
 	stdout: string[];
 	stderr: string[];
-}[], context: Context): string => replaceVariables(prBody, prBodyVariables(files, output), context);
+}[], context: ActionContext): string => replaceVariables(prBody, prBodyVariables(files, output, context));
 
 export const getPrBody = (files: string[], output: {
 	command: string;
 	stdout: string[];
 	stderr: string[];
-}[], context: Context): string => replacePrBodyVariables(
-	getInput('PR_BODY', {required: true}).split(/\r?\n/).map(line => line.replace(/^[\s\t]+/, '')).join('\n'),
+}[], context: ActionContext): string => replacePrBodyVariables(
+	getActionDetail<string>('prBody', context).trim().split(/\r?\n/).map(line => line.replace(/^[\s\t]+/, '')).join('\n'),
 	files,
 	output,
 	context,
 );
 
-export const isDisabledDeletePackage = (): boolean => !getBoolValue(getInput('DELETE_PACKAGE'));
+export const isDisabledDeletePackage = (context: ActionContext): boolean => !(context.actionDetail.deletePackage ?? false);
 
-export const isClosePR = (context: Context): boolean => isPr(context) && context.payload.action === 'closed';
+export const isClosePR = (context: ActionContext): boolean => isPr(context.actionContext) && context.actionContext.payload.action === 'closed';
 
-export const isTargetBranch = (branchName: string, defaultFlag = true): boolean => {
-	const prefix = getInput('TARGET_BRANCH_PREFIX');
+export const isTargetBranch = (branchName: string, context: ActionContext, defaultFlag = true): boolean => {
+	const prefix = getActionDetail<string>('targetBranchPrefix', context, '');
 	if (prefix) {
 		return getPrefixRegExp(prefix).test(branchName);
 	}
 	return defaultFlag;
 };
 
-export const isTargetContext = (context: Context): boolean => {
-	if (!isTargetEvent(TARGET_EVENTS, context)) {
+export const isTargetContext = (context: ActionContext): boolean => {
+	if (!isTargetEvent(TARGET_EVENTS, context.actionContext)) {
 		return false;
 	}
 
-	if (isCron(context)) {
+	if (isCron(context.actionContext)) {
 		return true;
 	}
 
-	if (isPush(context)) {
-		return isTargetBranch(getBranch(context), false);
+	if (isPush(context.actionContext)) {
+		return isTargetBranch(getBranch(context.actionContext), context, false);
 	}
 
-	return isTargetLabels(getArrayInput('INCLUDE_LABELS'), [], context);
+	return isTargetLabels(getActionDetail<string[]>('includeLabels', context, []), [], context.actionContext);
 };
 
-export const getGitFilterStatus = (): string => getInput('FILTER_GIT_STATUS');
+export const getGitFilterStatus = (context: ActionContext): string | undefined => context.actionDetail.filterGitStatus;
 
-export const filterGitStatus = (line: string): boolean => {
-	const filter = getGitFilterStatus();
+export const filterGitStatus = (line: string, context: ActionContext): boolean => {
+	const filter = getGitFilterStatus(context);
 	if (filter) {
 		const targets = filter.toUpperCase().replace(/[^MDA]/g, '');
 		if (!targets) {
@@ -232,11 +235,16 @@ export const filterGitStatus = (line: string): boolean => {
 	return true;
 };
 
-export const filterExtension = (line: string): boolean => {
-	const extensions = getArrayInput('FILTER_EXTENSIONS');
+export const filterExtension = (line: string, context: ActionContext): boolean => {
+	const extensions = getActionDetail<string[]>('filterExtensions', context, []);
 	if (extensions.length) {
 		const pattern = '(' + extensions.map(item => escapeRegExp('.' + item.replace(/^\./, ''))).join('|') + ')';
 		return (new RegExp(`${pattern}$`)).test(line);
 	}
 	return true;
 };
+
+export const getHelper = (context: ActionContext): GitHelper => new GitHelper(new Logger(replaceDirectory), {
+	depth: -1,
+	filter: (line: string): boolean => filterGitStatus(line, context) && filterExtension(line, context),
+});

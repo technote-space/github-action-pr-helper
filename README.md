@@ -25,7 +25,11 @@ PullRequest Helper for GitHub Actions.
 ```typescript
 import { run } from '@technote-space/github-action-pr-helper';
 
-run();
+run({
+	actionName: 'Test Action',
+	actionOwner: 'octocat',
+	actionRepo: 'hello-world',
+});
 ```
 
 ## Author

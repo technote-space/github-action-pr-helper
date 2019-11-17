@@ -1,13 +1,10 @@
-import { context } from '@actions/github/lib/github';
 import fs from 'fs';
 import { Logger, GitHelper, Utils, ContextHelper, ApiHelper } from '@technote-space/github-action-helper';
 import { GitHub } from '@actions/github';
-import { Context } from '@actions/github/lib/context';
 import { getInput } from '@actions/core' ;
 import {
-	replaceDirectory,
+	getActionDetail,
 	isDisabledDeletePackage,
-	filterGitStatus,
 	filterExtension,
 	getPrHeadRef,
 	getPrBranchName,
@@ -18,45 +15,41 @@ import {
 	getPrTitle,
 	getPrBody,
 } from './misc';
+import { ActionContext } from '../types';
 
-const {getWorkspace, getArrayInput, useNpm} = Utils;
-const {getRepository, isPush}               = ContextHelper;
-
-const helper = new GitHelper(new Logger(replaceDirectory), {
-	depth: -1,
-	filter: (line: string): boolean => filterGitStatus(line) && filterExtension(line),
-});
+const {getWorkspace, useNpm}  = Utils;
+const {getRepository, isPush} = ContextHelper;
 
 export const getApiHelper = (logger: Logger): ApiHelper => new ApiHelper(logger);
 
-export const clone = async(logger: Logger, context: Context): Promise<void> => {
+export const clone = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
 	logger.startProcess('Cloning [%s] branch from the remote repo...', getPrBranchName(context));
 
-	await helper.cloneBranch(getWorkspace(), getPrBranchName(context), context);
+	await helper.cloneBranch(getWorkspace(), getPrBranchName(context), context.actionContext);
 };
 
-export const checkBranch = async(logger: Logger, context: Context): Promise<boolean> => {
+export const checkBranch = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<boolean> => {
 	const clonedBranch = await helper.getCurrentBranchName(getWorkspace());
 	if (getPrBranchName(context) === clonedBranch) {
 		await helper.runCommand(getWorkspace(), 'ls -la');
-		return !isPush(context);
+		return !isPush(context.actionContext);
 	}
 
-	if (isPush(context)) {
+	if (isPush(context.actionContext)) {
 		throw new Error(`remote branch [${getPrBranchName(context)}] not found.`);
 	}
 
 	logger.info('remote branch [%s] not found.', getPrBranchName(context));
 	logger.info('now branch: %s', clonedBranch);
 	logger.startProcess('Cloning [%s] from the remote repo...', getPrHeadRef(context));
-	await helper.cloneBranch(getWorkspace(), getPrHeadRef(context), context);
+	await helper.cloneBranch(getWorkspace(), getPrHeadRef(context), context.actionContext);
 	await helper.createBranch(getWorkspace(), getPrBranchName(context));
 	await helper.runCommand(getWorkspace(), 'ls -la');
 	return false;
 };
 
-const getClearPackageCommands = (): string[] => {
-	if (isDisabledDeletePackage()) {
+const getClearPackageCommands = (context: ActionContext): string[] => {
+	if (isDisabledDeletePackage(context)) {
 		return [];
 	}
 	return [
@@ -66,10 +59,10 @@ const getClearPackageCommands = (): string[] => {
 	];
 };
 
-const getGlobalInstallPackagesCommands = (workDir: string): string[] => {
-	const packages = getArrayInput('GLOBAL_INSTALL_PACKAGES');
+const getGlobalInstallPackagesCommands = (context: ActionContext): string[] => {
+	const packages = getActionDetail<string[]>('globalInstallPackages', context, []);
 	if (packages.length) {
-		if (useNpm(workDir, getInput('PACKAGE_MANAGER'))) {
+		if (useNpm(getWorkspace(), getInput('PACKAGE_MANAGER'))) {
 			return [
 				'sudo npm install -g ' + packages.join(' '),
 			];
@@ -82,10 +75,10 @@ const getGlobalInstallPackagesCommands = (workDir: string): string[] => {
 	return [];
 };
 
-const getDevInstallPackagesCommands = (workDir: string): string[] => {
-	const packages = getArrayInput('DEV_INSTALL_PACKAGES');
+const getDevInstallPackagesCommands = (context: ActionContext): string[] => {
+	const packages = getActionDetail<string[]>('devInstallPackages', context, []);
 	if (packages.length) {
-		if (useNpm(workDir, getInput('PACKAGE_MANAGER'))) {
+		if (useNpm(getWorkspace(), getInput('PACKAGE_MANAGER'))) {
 			return [
 				'npm install --save-dev ' + packages.join(' '),
 			];
@@ -98,10 +91,10 @@ const getDevInstallPackagesCommands = (workDir: string): string[] => {
 	return [];
 };
 
-const getInstallPackagesCommands = (workDir: string): string[] => {
-	const packages = getArrayInput('INSTALL_PACKAGES');
+const getInstallPackagesCommands = (context: ActionContext): string[] => {
+	const packages = getActionDetail<string[]>('installPackages', context, []);
 	if (packages.length) {
-		if (useNpm(workDir, getInput('PACKAGE_MANAGER'))) {
+		if (useNpm(getWorkspace(), getInput('PACKAGE_MANAGER'))) {
 			return [
 				'npm install --save ' + packages.join(' '),
 			];
@@ -116,40 +109,40 @@ const getInstallPackagesCommands = (workDir: string): string[] => {
 
 const normalizeCommand = (command: string): string => command.trim().replace(/\s{2,}/g, ' ');
 
-const getExecuteCommands = (): string[] => getArrayInput('EXECUTE_COMMANDS', true, '&&').map(normalizeCommand);
+const getExecuteCommands = (context: ActionContext): string[] => getActionDetail<string[]>('executeCommands', context, []).map(normalizeCommand);
 
-export const getDiff = async(logger: Logger): Promise<string[]> => {
+export const getDiff = async(helper: GitHelper, logger: Logger): Promise<string[]> => {
 	logger.startProcess('Checking diff...');
 
 	await helper.runCommand(getWorkspace(), 'git add --all');
 	return await helper.getDiff(getWorkspace());
 };
 
-export const getRefDiff = async(compare: string, logger: Logger): Promise<string[]> => {
+export const getRefDiff = async(compare: string, helper: GitHelper, logger: Logger, context: ActionContext): Promise<string[]> => {
 	logger.startProcess('Checking references diff...');
 
-	await helper.fetchBranch(getWorkspace(), compare, context);
-	return (await helper.getRefDiff(getWorkspace(), 'HEAD', compare, getGitFilterStatus(), '..')).filter(filterExtension);
+	await helper.fetchBranch(getWorkspace(), compare, context.actionContext);
+	return (await helper.getRefDiff(getWorkspace(), 'HEAD', compare, getGitFilterStatus(context), '..')).filter(line => filterExtension(line, context));
 };
 
-const initDirectory = async(logger: Logger): Promise<void> => {
+const initDirectory = async(helper: GitHelper, logger: Logger): Promise<void> => {
 	logger.startProcess('Initializing working directory...');
 
 	await helper.runCommand(getWorkspace(), 'rm -rdf ./* ./.[!.]*');
 	fs.mkdirSync(getWorkspace(), {recursive: true});
 };
 
-export const config = async(logger: Logger): Promise<void> => {
-	const name  = getCommitName();
-	const email = getCommitEmail();
+export const config = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
+	const name  = getCommitName(context);
+	const email = getCommitEmail(context);
 
 	logger.startProcess('Configuring git committer to be %s <%s>', name, email);
 
 	await helper.config(getWorkspace(), name, email);
 };
 
-export const merge = async(branch: string, logger: Logger): Promise<boolean> => {
-	await config(logger);
+export const merge = async(branch: string, helper: GitHelper, logger: Logger, context: ActionContext): Promise<boolean> => {
+	await config(helper, logger, context);
 
 	logger.startProcess('Merging [%s] branch...', branch.replace(/^(refs\/)?heads/, ''));
 	const results = await helper.runCommand(getWorkspace(),
@@ -159,33 +152,33 @@ export const merge = async(branch: string, logger: Logger): Promise<boolean> => 
 	return !results[0].stdout.some(RegExp.prototype.test, /^CONFLICT /);
 };
 
-export const abortMerge = async(logger: Logger): Promise<void> => {
+export const abortMerge = async(helper: GitHelper, logger: Logger): Promise<void> => {
 	logger.startProcess('Aborting merge...');
 	await helper.runCommand(getWorkspace(), 'git merge --abort');
 };
 
-export const commit = async(logger: Logger): Promise<void> => {
-	await config(logger);
+export const commit = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
+	await config(helper, logger, context);
 
 	logger.startProcess('Committing...');
-	await helper.makeCommit(getWorkspace(), getCommitMessage());
+	await helper.makeCommit(getWorkspace(), getCommitMessage(context));
 };
 
-export const push = async(branchName: string, logger: Logger, context: Context): Promise<void> => {
-	logger.startProcess('Pushing to %s@%s...', getRepository(context), branchName);
+export const push = async(branchName: string, helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
+	logger.startProcess('Pushing to %s@%s...', getRepository(context.actionContext), branchName);
 
-	await helper.push(getWorkspace(), branchName, false, context);
+	await helper.push(getWorkspace(), branchName, false, context.actionContext);
 };
 
-const forcePush = async(branchName: string, logger: Logger, context: Context): Promise<void> => {
-	logger.startProcess('Pushing to %s@%s...', getRepository(context), branchName);
+const forcePush = async(branchName: string, helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
+	logger.startProcess('Pushing to %s@%s...', getRepository(context.actionContext), branchName);
 
-	await helper.forcePush(getWorkspace(), branchName, context);
+	await helper.forcePush(getWorkspace(), branchName, context.actionContext);
 };
 
-export const isMergeable = async(number: number, octokit: GitHub, context: Context): Promise<boolean> => (await octokit.pulls.get({
-	owner: context.repo.owner,
-	repo: context.repo.repo,
+export const isMergeable = async(number: number, octokit: GitHub, context: ActionContext): Promise<boolean> => (await octokit.pulls.get({
+	owner: context.actionContext.repo.owner,
+	repo: context.actionContext.repo.repo,
 	'pull_number': number,
 })).data.mergeable;
 
@@ -193,11 +186,11 @@ export const updatePr = async(branchName: string, files: string[], output: {
 	command: string;
 	stdout: string[];
 	stderr: string[];
-}[], logger: Logger, octokit: GitHub, context: Context): Promise<boolean> => {
+}[], logger: Logger, octokit: GitHub, context: ActionContext): Promise<boolean> => {
 	const info = await getApiHelper(logger).pullsCreateOrComment(branchName, {
 		title: getPrTitle(context),
 		body: getPrBody(files, output, context),
-	}, octokit, context);
+	}, octokit, context.actionContext);
 
 	if (!info.isPrCreated) {
 		// updated PR
@@ -206,7 +199,7 @@ export const updatePr = async(branchName: string, files: string[], output: {
 	return true;
 };
 
-const runCommands = async(logger: Logger): Promise<{
+const runCommands = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<{
 	files: string[];
 	output: {
 		command: string;
@@ -215,23 +208,23 @@ const runCommands = async(logger: Logger): Promise<{
 	}[];
 }> => {
 	const commands: string[] = ([] as string[]).concat.apply([], [
-		getClearPackageCommands(),
-		getGlobalInstallPackagesCommands(getWorkspace()),
-		getDevInstallPackagesCommands(getWorkspace()),
-		getInstallPackagesCommands(getWorkspace()),
-		getExecuteCommands(),
+		getClearPackageCommands(context),
+		getGlobalInstallPackagesCommands(context),
+		getDevInstallPackagesCommands(context),
+		getInstallPackagesCommands(context),
+		getExecuteCommands(context),
 	]);
 
 	logger.startProcess('Running commands...');
 	const output = await helper.runCommand(getWorkspace(), commands);
 
 	return {
-		files: await getDiff(logger),
+		files: await getDiff(helper, logger),
 		output,
 	};
 };
 
-export const getChangedFiles = async(logger: Logger, context: Context): Promise<{
+export const getChangedFiles = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<{
 	files: string[];
 	output: {
 		command: string;
@@ -239,18 +232,18 @@ export const getChangedFiles = async(logger: Logger, context: Context): Promise<
 		stderr: string[];
 	}[];
 }> => {
-	await initDirectory(logger);
-	await clone(logger, context);
-	if (await checkBranch(logger, context)) {
-		if (!await merge(getPrHeadRef(context), logger)) {
-			await abortMerge(logger);
+	await initDirectory(helper, logger);
+	await clone(helper, logger, context);
+	if (await checkBranch(helper, logger, context)) {
+		if (!await merge(getPrHeadRef(context), helper, logger, context)) {
+			await abortMerge(helper, logger);
 		}
 	}
 
-	return runCommands(logger);
+	return runCommands(helper, logger, context);
 };
 
-export const getChangedFilesForRebase = async(logger: Logger, context: Context): Promise<{
+export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<{
 	files: string[];
 	output: {
 		command: string;
@@ -258,29 +251,29 @@ export const getChangedFilesForRebase = async(logger: Logger, context: Context):
 		stderr: string[];
 	}[];
 }> => {
-	await initDirectory(logger);
-	await helper.cloneBranch(getWorkspace(), getPrHeadRef(context), context);
+	await initDirectory(helper, logger);
+	await helper.cloneBranch(getWorkspace(), getPrHeadRef(context), context.actionContext);
 	await helper.createBranch(getWorkspace(), getPrBranchName(context));
 
-	return runCommands(logger);
+	return runCommands(helper, logger, context);
 };
 
-export const resolveConflicts = async(branchName: string, logger: Logger, octokit: GitHub, context: Context): Promise<void> => {
-	if (await merge(getPrHeadRef(context), logger)) {
+export const resolveConflicts = async(branchName: string, helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => {
+	if (await merge(getPrHeadRef(context), helper, logger, context)) {
 		// succeeded to merge
-		await push(branchName, logger, context);
+		await push(branchName, helper, logger, context);
 	} else {
 		// failed to merge
-		const {files, output} = await getChangedFilesForRebase(logger, context);
+		const {files, output} = await getChangedFilesForRebase(helper, logger, context);
 		if (!files.length) {
-			await getApiHelper(logger).closePR(branchName, octokit, context);
+			await getApiHelper(logger).closePR(branchName, octokit, context.actionContext);
 			return;
 		}
-		await commit(logger);
-		await forcePush(branchName, logger, context);
+		await commit(helper, logger, context);
+		await forcePush(branchName, helper, logger, context);
 		await getApiHelper(logger).pullsCreateOrUpdate(branchName, {
 			title: getPrTitle(context),
 			body: getPrBody(files, output, context),
-		}, octokit, context);
+		}, octokit, context.actionContext);
 	}
 };

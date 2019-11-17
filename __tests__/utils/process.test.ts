@@ -14,6 +14,7 @@ import {
 	testChildProcess,
 } from '@technote-space/github-action-test-helper';
 import { Logger } from '@technote-space/github-action-helper';
+import { ActionContext, ActionDetails } from '../../src/types';
 import { execute } from '../../src/utils/process';
 import * as constants from '../../src/constant';
 
@@ -21,6 +22,16 @@ const rootDir   = path.resolve(__dirname, '..', 'fixtures');
 const setExists = testFs();
 beforeEach(() => {
 	Logger.resetForTesting();
+});
+
+const actionDetails: ActionDetails = {
+	actionName: 'Test Action',
+	actionOwner: 'octocat',
+	actionRepo: 'hello-world',
+};
+const getActionContext             = (context: Context, _actionDetails?: object): ActionContext => ({
+	actionContext: context,
+	actionDetail: _actionDetails ? Object.assign({}, actionDetails, _actionDetails) : actionDetails,
 });
 
 const context = (action: string, event = 'pull_request'): Context => generateContext({
@@ -51,43 +62,36 @@ describe('execute', () => {
 	testChildProcess();
 
 	it('should close pull request (closed action)', async() => {
-		process.env.GITHUB_WORKSPACE     = path.resolve('test');
-		process.env.INPUT_GITHUB_TOKEN   = 'test-token';
-		process.env.INPUT_PR_BRANCH_NAME = 'close/test';
-		const mockStdout                 = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?head=hello%3Acreate-pr-action%2Fclose%2Ftest')
+			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Fclose%2Ftest')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.patch('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-			.delete('/repos/hello/world/git/refs/heads/create-pr-action/close/test')
+			.delete('/repos/hello/world/git/refs/heads/hello-world/close/test')
 			.reply(204);
 
-		await execute(context('closed'));
+		await execute(getActionContext(context('closed'), {
+			prBranchName: 'close/test',
+		}));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Closing PullRequest... [create-pr-action/close/test]',
+			'::group::Closing PullRequest... [hello-world/close/test]',
 			'::endgroup::',
-			'::group::Deleting reference... [refs/heads/create-pr-action/close/test]',
+			'::group::Deleting reference... [refs/heads/hello-world/close/test]',
 			'::endgroup::',
 		]);
 	});
 
 	it('should close pull request (no ref diff)', async() => {
-		process.env.GITHUB_WORKSPACE       = path.resolve('test');
-		process.env.GITHUB_REPOSITORY      = 'hello/world';
-		process.env.INPUT_GITHUB_TOKEN     = 'test-token';
-		process.env.INPUT_EXECUTE_COMMANDS = 'yarn upgrade';
-		process.env.INPUT_PR_BRANCH_NAME   = 'test-branch';
-		process.env.INPUT_COMMIT_NAME      = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL     = 'example@example.com';
-		process.env.INPUT_PR_BRANCH_NAME   = 'create/test';
-		process.env.INPUT_COMMIT_MESSAGE   = 'test: create pull request';
-		process.env.INPUT_PR_TITLE         = 'test: create pull request (${PR_NUMBER})';
-		process.env.INPUT_PR_BODY          = 'pull request body';
-		const mockStdout                   = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.endsWith('status --short -uno')) {
@@ -110,29 +114,37 @@ describe('execute', () => {
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
 			.reply(200, () => ([]))
-			.get('/repos/hello/world/pulls?head=hello%3Acreate-pr-action%2Fcreate%2Ftest')
+			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Fcreate%2Ftest')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.patch('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-			.delete('/repos/hello/world/git/refs/heads/create-pr-action/create/test')
+			.delete('/repos/hello/world/git/refs/heads/hello-world/create/test')
 			.reply(204);
 
-		await execute(context('synchronize'));
+		await execute(getActionContext(context('synchronize'), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create pull request',
+			prBranchName: 'create/test',
+			prTitle: 'test: create pull request (${PR_NUMBER})',
+			prBody: 'pull request body',
+		}));
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
-			'::group::Cloning [create-pr-action/create/test] branch from the remote repo...',
-			'[command]git clone --branch=create-pr-action/create/test',
+			'::group::Cloning [hello-world/create/test] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/create/test',
 			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
 			'  >> test',
-			'> remote branch [create-pr-action/create/test] not found.',
+			'> remote branch [hello-world/create/test] not found.',
 			'> now branch: test',
 			'::endgroup::',
 			'::group::Cloning [change] from the remote repo...',
 			'[command]git clone --branch=change',
-			'[command]git checkout -b "create-pr-action/create/test"',
+			'[command]git checkout -b "hello-world/create/test"',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Running commands...',
@@ -154,22 +166,18 @@ describe('execute', () => {
 			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/change:refs/remotes/origin/change',
 			'[command]git diff HEAD..origin/change --name-only',
 			'::endgroup::',
-			'::group::Closing PullRequest... [create-pr-action/create/test]',
+			'::group::Closing PullRequest... [hello-world/create/test]',
 			'::endgroup::',
-			'::group::Deleting reference... [refs/heads/create-pr-action/create/test]',
+			'::group::Deleting reference... [refs/heads/hello-world/create/test]',
 			'::endgroup::',
 		]);
 	});
 
 	it('should close pull request (no diff, no ref diff)', async() => {
-		process.env.GITHUB_WORKSPACE       = path.resolve('test');
-		process.env.GITHUB_REPOSITORY      = 'hello/world';
-		process.env.INPUT_GITHUB_TOKEN     = 'test-token';
-		process.env.INPUT_EXECUTE_COMMANDS = 'yarn upgrade';
-		process.env.INPUT_COMMIT_NAME      = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL     = 'example@example.com';
-		process.env.INPUT_PR_BRANCH_NAME   = 'test-branch';
-		const mockStdout                   = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.includes(' diff ')) {
@@ -182,30 +190,35 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?head=hello%3Acreate-pr-action%2Ftest-branch')
+			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Ftest-branch')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.patch('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-			.delete('/repos/hello/world/git/refs/heads/create-pr-action/test-branch')
+			.delete('/repos/hello/world/git/refs/heads/hello-world/test-branch')
 			.reply(204);
 
-		await execute(context('synchronize'));
+		await execute(getActionContext(context('synchronize'), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			prBranchName: 'test-branch',
+		}));
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'  >> stdout',
 			'::endgroup::',
-			'::group::Cloning [create-pr-action/test-branch] branch from the remote repo...',
-			'[command]git clone --branch=create-pr-action/test-branch',
+			'::group::Cloning [hello-world/test-branch] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/test-branch',
 			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
 			'  >> stdout',
-			'> remote branch [create-pr-action/test-branch] not found.',
+			'> remote branch [hello-world/test-branch] not found.',
 			'> now branch: stdout',
 			'::endgroup::',
 			'::group::Cloning [change] from the remote repo...',
 			'[command]git clone --branch=change',
-			'[command]git checkout -b "create-pr-action/test-branch"',
+			'[command]git checkout -b "hello-world/test-branch"',
 			'  >> stdout',
 			'[command]ls -la',
 			'  >> stdout',
@@ -224,9 +237,9 @@ describe('execute', () => {
 			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/change:refs/remotes/origin/change',
 			'[command]git diff HEAD..origin/change --name-only',
 			'::endgroup::',
-			'::group::Closing PullRequest... [create-pr-action/test-branch]',
+			'::group::Closing PullRequest... [hello-world/test-branch]',
 			'::endgroup::',
-			'::group::Deleting reference... [refs/heads/create-pr-action/test-branch]',
+			'::group::Deleting reference... [refs/heads/hello-world/test-branch]',
 			'::endgroup::',
 		]);
 	});
@@ -242,15 +255,16 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
 			.reply(200, () => ([]));
 
-		await execute(context('', 'schedule'));
+		await execute(getActionContext(context('', 'schedule'), {
+			prBranchPrefix: 'hello-world/',
+		}));
 
 		stdoutCalledWith(mockStdout, []);
 	});
 
 	it('should do nothing (not target branch)', async() => {
-		process.env.INPUT_GITHUB_TOKEN         = 'test-token';
-		process.env.INPUT_TARGET_BRANCH_PREFIX = 'test/';
-		const mockStdout                       = spyOnStdout();
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 
 		nock('https://api.github.com')
 			.persist()
@@ -259,43 +273,46 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
 			.reply(200, () => ([]));
 
-		await execute(context('synchronize'));
+		await execute(getActionContext(context('synchronize'), {
+			targetBranchPrefix: 'test/',
+		}));
 
 		stdoutCalledWith(mockStdout, []);
 	});
 
 	it('should do nothing (no diff)', async() => {
-		process.env.GITHUB_WORKSPACE       = path.resolve('test');
-		process.env.INPUT_GITHUB_TOKEN     = 'test-token';
-		process.env.INPUT_EXECUTE_COMMANDS = 'yarn upgrade';
-		process.env.INPUT_COMMIT_NAME      = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL     = 'example@example.com';
-		process.env.INPUT_PR_BRANCH_NAME   = 'test-branch';
-		const mockStdout                   = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 		setExists(true);
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?head=hello%3Acreate-pr-action%2Ftest-branch')
+			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Ftest-branch')
 			.reply(200, () => []);
 
-		await execute(context('synchronize'));
+		await execute(getActionContext(context('synchronize'), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			prBranchName: 'test-branch',
+		}));
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'  >> stdout',
 			'::endgroup::',
-			'::group::Cloning [create-pr-action/test-branch] branch from the remote repo...',
-			'[command]git clone --branch=create-pr-action/test-branch',
+			'::group::Cloning [hello-world/test-branch] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/test-branch',
 			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
 			'  >> stdout',
-			'> remote branch [create-pr-action/test-branch] not found.',
+			'> remote branch [hello-world/test-branch] not found.',
 			'> now branch: stdout',
 			'::endgroup::',
 			'::group::Cloning [change] from the remote repo...',
 			'[command]git clone --branch=change',
-			'[command]git checkout -b "create-pr-action/test-branch"',
+			'[command]git checkout -b "hello-world/test-branch"',
 			'  >> stdout',
 			'[command]ls -la',
 			'  >> stdout',
@@ -317,17 +334,15 @@ describe('execute', () => {
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 
-		await execute(context('', 'push'));
+		await execute(getActionContext(context('', 'push')));
 
 		stdoutCalledWith(mockStdout, []);
 	});
 
 	it('should do nothing (no diff (push)))', async() => {
-		process.env.GITHUB_WORKSPACE           = path.resolve('test');
-		process.env.INPUT_GITHUB_TOKEN         = 'test-token';
-		process.env.INPUT_TARGET_BRANCH_PREFIX = 'test/';
-		process.env.INPUT_EXECUTE_COMMANDS     = 'yarn upgrade';
-		const mockStdout                       = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.includes(' branch -a ')) {
@@ -338,8 +353,11 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(Object.assign(context('', 'push'), {
+		await execute(getActionContext(Object.assign(context('', 'push'), {
 			ref: 'refs/heads/test/change',
+		}), {
+			targetBranchPrefix: 'test/',
+			executeCommands: ['yarn upgrade'],
 		}));
 
 		stdoutCalledWith(mockStdout, [
@@ -364,14 +382,9 @@ describe('execute', () => {
 	});
 
 	it('should do nothing (push to protected branch)', async() => {
-		process.env.GITHUB_WORKSPACE           = path.resolve('test');
-		process.env.INPUT_GITHUB_TOKEN         = 'test-token';
-		process.env.INPUT_TARGET_BRANCH_PREFIX = 'test/';
-		process.env.INPUT_EXECUTE_COMMANDS     = 'yarn upgrade';
-		process.env.INPUT_COMMIT_NAME          = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL         = 'example@example.com';
-		process.env.INPUT_COMMIT_MESSAGE       = 'test: create pull request';
-		const mockStdout                       = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.endsWith('status --short -uno')) {
@@ -394,8 +407,14 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(Object.assign(context('', 'push'), {
+		await execute(getActionContext(Object.assign(context('', 'push'), {
 			ref: 'refs/heads/test/change',
+		}), {
+			targetBranchPrefix: 'test/',
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create pull request',
 		}));
 
 		stdoutCalledWith(mockStdout, [
@@ -433,17 +452,10 @@ describe('execute', () => {
 	});
 
 	it('should create pull request', async() => {
-		process.env.GITHUB_WORKSPACE       = path.resolve('test');
-		process.env.GITHUB_REPOSITORY      = 'hello/world';
-		process.env.INPUT_GITHUB_TOKEN     = 'test-token';
-		process.env.INPUT_EXECUTE_COMMANDS = 'yarn upgrade';
-		process.env.INPUT_COMMIT_NAME      = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL     = 'example@example.com';
-		process.env.INPUT_PR_BRANCH_NAME   = 'create/test';
-		process.env.INPUT_COMMIT_MESSAGE   = 'test: create pull request';
-		process.env.INPUT_PR_TITLE         = 'test: create pull request (${PR_NUMBER})';
-		process.env.INPUT_PR_BODY          = 'pull request body';
-		const mockStdout                   = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.endsWith('status --short -uno')) {
@@ -462,29 +474,37 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?head=hello%3Acreate-pr-action%2Fcreate%2Ftest')
+			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Fcreate%2Ftest')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.post('/repos/hello/world/issues/1347/comments')
 			.reply(201)
 			.get('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'));
 
-		await execute(context('synchronize'));
+		await execute(getActionContext(context('synchronize'), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create pull request',
+			prBranchName: 'create/test',
+			prTitle: 'test: create pull request (${PR_NUMBER})',
+			prBody: 'pull request body',
+		}));
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
-			'::group::Cloning [create-pr-action/create/test] branch from the remote repo...',
-			'[command]git clone --branch=create-pr-action/create/test',
+			'::group::Cloning [hello-world/create/test] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/create/test',
 			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
 			'  >> test',
-			'> remote branch [create-pr-action/create/test] not found.',
+			'> remote branch [hello-world/create/test] not found.',
 			'> now branch: test',
 			'::endgroup::',
 			'::group::Cloning [change] from the remote repo...',
 			'[command]git clone --branch=change',
-			'[command]git checkout -b "create-pr-action/create/test"',
+			'[command]git checkout -b "hello-world/create/test"',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Running commands...',
@@ -506,28 +526,19 @@ describe('execute', () => {
 			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/change:refs/remotes/origin/change',
 			'[command]git diff HEAD..origin/change --name-only',
 			'::endgroup::',
-			'::group::Pushing to hello/world@create-pr-action/create/test...',
-			'[command]git push origin "create-pr-action/create/test":"refs/heads/create-pr-action/create/test"',
+			'::group::Pushing to hello/world@hello-world/create/test...',
+			'[command]git push origin "hello-world/create/test":"refs/heads/hello-world/create/test"',
 			'::endgroup::',
-			'::group::Creating comment to PullRequest... [create-pr-action/create/test] -> [heads/test]',
+			'::group::Creating comment to PullRequest... [hello-world/create/test] -> [heads/test]',
 			'::endgroup::',
 		]);
 	});
 
 	it('should do schedule', async() => {
-		process.env.GITHUB_WORKSPACE           = path.resolve('test');
-		process.env.GITHUB_REPOSITORY          = 'hello/world';
-		process.env.INPUT_GITHUB_TOKEN         = 'test-token';
-		process.env.INPUT_EXECUTE_COMMANDS     = 'yarn upgrade';
-		process.env.INPUT_PR_BRANCH_NAME       = 'test-branch';
-		process.env.INPUT_COMMIT_NAME          = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL         = 'example@example.com';
-		process.env.INPUT_PR_BRANCH_NAME       = 'create/test';
-		process.env.INPUT_COMMIT_MESSAGE       = 'test: create pull request';
-		process.env.INPUT_PR_TITLE             = 'test: create pull request (${PR_NUMBER})';
-		process.env.INPUT_PR_BODY              = 'pull request body';
-		process.env.INPUT_TARGET_BRANCH_PREFIX = 'feature/';
-		const mockStdout                       = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.endsWith('status --short -uno')) {
@@ -553,7 +564,7 @@ describe('execute', () => {
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list2'))
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
 			.reply(200, () => ([]))
-			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Acreate-pr-action%2Fcreate%2Ftest')
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fcreate%2Ftest')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.patch('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
@@ -562,21 +573,30 @@ describe('execute', () => {
 			.get('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'));
 
-		await execute(context('', 'schedule'));
+		await execute(getActionContext(context('', 'schedule'), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create pull request',
+			prBranchName: 'create/test',
+			prTitle: 'test: create pull request (${PR_NUMBER})',
+			prBody: 'pull request body',
+			targetBranchPrefix: 'feature/',
+		}));
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [feature/new-topic]',
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
-			'> Cloning [create-pr-action/create/test] branch from the remote repo...',
-			'[command]git clone --branch=create-pr-action/create/test',
+			'> Cloning [hello-world/create/test] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/create/test',
 			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
 			'  >> test',
-			'> remote branch [create-pr-action/create/test] not found.',
+			'> remote branch [hello-world/create/test] not found.',
 			'> now branch: test',
 			'> Cloning [feature/new-topic] from the remote repo...',
 			'[command]git clone --branch=feature/new-topic',
-			'[command]git checkout -b "create-pr-action/create/test"',
+			'[command]git checkout -b "hello-world/create/test"',
 			'[command]ls -la',
 			'> Running commands...',
 			'[command]yarn upgrade',
@@ -592,22 +612,22 @@ describe('execute', () => {
 			'> Checking references diff...',
 			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/feature/new-topic:refs/remotes/origin/feature/new-topic',
 			'[command]git diff HEAD..origin/feature/new-topic --name-only',
-			'> Pushing to octocat/Hello-World@create-pr-action/create/test...',
-			'[command]git push origin "create-pr-action/create/test":"refs/heads/create-pr-action/create/test"',
-			'> Creating comment to PullRequest... [create-pr-action/create/test] -> [feature/new-topic]',
+			'> Pushing to octocat/Hello-World@hello-world/create/test...',
+			'[command]git push origin "hello-world/create/test":"refs/heads/hello-world/create/test"',
+			'> Creating comment to PullRequest... [hello-world/create/test] -> [feature/new-topic]',
 			'::endgroup::',
 			'::group::Target PullRequest Ref [feature/new-topic]',
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
-			'> Cloning [create-pr-action/create/test] branch from the remote repo...',
-			'[command]git clone --branch=create-pr-action/create/test',
+			'> Cloning [hello-world/create/test] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/create/test',
 			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
 			'  >> test',
-			'> remote branch [create-pr-action/create/test] not found.',
+			'> remote branch [hello-world/create/test] not found.',
 			'> now branch: test',
 			'> Cloning [feature/new-topic] from the remote repo...',
 			'[command]git clone --branch=feature/new-topic',
-			'[command]git checkout -b "create-pr-action/create/test"',
+			'[command]git checkout -b "hello-world/create/test"',
 			'[command]ls -la',
 			'> Running commands...',
 			'[command]yarn upgrade',
@@ -623,25 +643,18 @@ describe('execute', () => {
 			'> Checking references diff...',
 			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/feature/new-topic:refs/remotes/origin/feature/new-topic',
 			'[command]git diff HEAD..origin/feature/new-topic --name-only',
-			'> Pushing to octocat/Hello-World@create-pr-action/create/test...',
-			'[command]git push origin "create-pr-action/create/test":"refs/heads/create-pr-action/create/test"',
-			'> Creating comment to PullRequest... [create-pr-action/create/test] -> [feature/new-topic]',
+			'> Pushing to octocat/Hello-World@hello-world/create/test...',
+			'[command]git push origin "hello-world/create/test":"refs/heads/hello-world/create/test"',
+			'> Creating comment to PullRequest... [hello-world/create/test] -> [feature/new-topic]',
 			'::endgroup::',
 		]);
 	});
 
 	it('should resolve conflicts', async() => {
-		process.env.GITHUB_WORKSPACE       = path.resolve('test');
-		process.env.GITHUB_REPOSITORY      = 'hello/world';
-		process.env.INPUT_GITHUB_TOKEN     = 'test-token';
-		process.env.INPUT_EXECUTE_COMMANDS = 'yarn upgrade';
-		process.env.INPUT_COMMIT_NAME      = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL     = 'example@example.com';
-		process.env.INPUT_PR_BRANCH_NAME   = 'create/test';
-		process.env.INPUT_COMMIT_MESSAGE   = 'test: create pull request';
-		process.env.INPUT_PR_TITLE         = 'test: create pull request (${PR_NUMBER})';
-		process.env.INPUT_PR_BODY          = 'pull request body';
-		const mockStdout                   = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.startsWith('git merge')) {
@@ -660,27 +673,35 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?head=hello%3Acreate-pr-action%2Fcreate%2Ftest')
+			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Fcreate%2Ftest')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.get('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.false'));
 
-		await execute(context('synchronize'));
+		await execute(getActionContext(context('synchronize'), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create pull request',
+			prBranchName: 'create/test',
+			prTitle: 'test: create pull request (${PR_NUMBER})',
+			prBody: 'pull request body',
+		}));
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
-			'::group::Cloning [create-pr-action/create/test] branch from the remote repo...',
-			'[command]git clone --branch=create-pr-action/create/test',
+			'::group::Cloning [hello-world/create/test] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/create/test',
 			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
 			'  >> test',
-			'> remote branch [create-pr-action/create/test] not found.',
+			'> remote branch [hello-world/create/test] not found.',
 			'> now branch: test',
 			'::endgroup::',
 			'::group::Cloning [change] from the remote repo...',
 			'[command]git clone --branch=change',
-			'[command]git checkout -b "create-pr-action/create/test"',
+			'[command]git checkout -b "hello-world/create/test"',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Running commands...',
@@ -703,22 +724,23 @@ describe('execute', () => {
 			'[command]git merge --no-edit origin/change || :',
 			'  >> Already up to date.',
 			'::endgroup::',
-			'::group::Pushing to hello/world@create-pr-action/create/test...',
-			'[command]git push origin "create-pr-action/create/test":"refs/heads/create-pr-action/create/test"',
+			'::group::Pushing to hello/world@hello-world/create/test...',
+			'[command]git push origin "hello-world/create/test":"refs/heads/hello-world/create/test"',
 			'::endgroup::',
 		]);
 	});
 
 	it('should throw error if push branch not found', async() => {
-		process.env.GITHUB_WORKSPACE           = path.resolve('test');
-		process.env.INPUT_GITHUB_TOKEN         = 'test-token';
-		process.env.INPUT_TARGET_BRANCH_PREFIX = 'test/';
-		process.env.INPUT_EXECUTE_COMMANDS     = 'yarn upgrade';
-		const mockStdout                       = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 		setChildProcessParams({stdout: ''});
 
-		await expect(execute(Object.assign(context('', 'push'), {
+		await expect(execute(getActionContext(Object.assign(context('', 'push'), {
 			ref: 'refs/heads/test/change',
+		}), {
+			executeCommands: ['yarn upgrade'],
+			targetBranchPrefix: 'test/',
 		}))).rejects.toThrow('remote branch [test/change] not found.');
 
 		stdoutCalledWith(mockStdout, [
@@ -731,14 +753,9 @@ describe('execute', () => {
 	});
 
 	it('should throw error if push failed', async() => {
-		process.env.GITHUB_WORKSPACE           = path.resolve('test');
-		process.env.INPUT_GITHUB_TOKEN         = 'test-token';
-		process.env.INPUT_TARGET_BRANCH_PREFIX = 'test/';
-		process.env.INPUT_EXECUTE_COMMANDS     = 'yarn upgrade';
-		process.env.INPUT_COMMIT_NAME          = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL         = 'example@example.com';
-		process.env.INPUT_COMMIT_MESSAGE       = 'test: create pull request';
-		const mockStdout                       = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.endsWith('status --short -uno')) {
@@ -755,8 +772,14 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await expect(execute(Object.assign(context('', 'push'), {
+		await expect(execute(getActionContext(Object.assign(context('', 'push'), {
 			ref: 'refs/heads/test/change',
+		}), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create pull request',
+			targetBranchPrefix: 'test/',
 		}))).rejects.toThrow('unexpected error');
 
 		stdoutCalledWith(mockStdout, [
@@ -792,14 +815,9 @@ describe('execute', () => {
 	});
 
 	it('should create commit', async() => {
-		process.env.GITHUB_WORKSPACE           = path.resolve('test');
-		process.env.INPUT_GITHUB_TOKEN         = 'test-token';
-		process.env.INPUT_TARGET_BRANCH_PREFIX = 'test/';
-		process.env.INPUT_EXECUTE_COMMANDS     = 'yarn upgrade';
-		process.env.INPUT_COMMIT_NAME          = 'GitHub Actions';
-		process.env.INPUT_COMMIT_EMAIL         = 'example@example.com';
-		process.env.INPUT_COMMIT_MESSAGE       = 'test: create pull request';
-		const mockStdout                       = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.endsWith('status --short -uno')) {
@@ -813,8 +831,14 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(Object.assign(context('', 'push'), {
+		await execute(getActionContext(Object.assign(context('', 'push'), {
 			ref: 'refs/heads/test/change',
+		}), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create pull request',
+			targetBranchPrefix: 'test/',
 		}));
 
 		stdoutCalledWith(mockStdout, [
