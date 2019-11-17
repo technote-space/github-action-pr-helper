@@ -1,4 +1,4 @@
-export const TARGET_EVENTS = {
+export const DEFAULT_TARGET_EVENTS = {
 	'pull_request': [
 		'opened',
 		'reopened',
@@ -8,6 +8,5 @@ export const TARGET_EVENTS = {
 		'closed',
 	],
 	'schedule': '*',
-	'push': '*',
 };
-export const INTERVAL_MS   = 1000;
+export const INTERVAL_MS           = 1000;

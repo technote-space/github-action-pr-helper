@@ -1,7 +1,7 @@
 import { Utils, ContextHelper, GitHelper, Logger } from '@technote-space/github-action-helper';
 import { isTargetEvent, isTargetLabels } from '@technote-space/filter-github-action';
 import moment from 'moment';
-import { TARGET_EVENTS } from '../constant';
+import { DEFAULT_TARGET_EVENTS } from '../constant';
 import { ActionContext } from '../types';
 
 const {getWorkspace, getPrefixRegExp}       = Utils;
@@ -205,7 +205,7 @@ export const isTargetBranch = (branchName: string, context: ActionContext, defau
 };
 
 export const isTargetContext = (context: ActionContext): boolean => {
-	if (!isTargetEvent(TARGET_EVENTS, context.actionContext)) {
+	if (!isTargetEvent(context.actionDetail.targetEvents ?? DEFAULT_TARGET_EVENTS, context.actionContext)) {
 		return false;
 	}
 
