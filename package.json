@@ -16,7 +16,11 @@
   "bugs": {
     "url": "https://github.com/technote-space/github-action-pr-helper/issues"
   },
-  "main": "lib/main.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@actions/core": "^1.2.0",
     "@actions/github": "^1.1.0",
