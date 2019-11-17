@@ -5,6 +5,7 @@ export type ActionDetails = {
 	actionName: string;
 	actionOwner: string;
 	actionRepo: string;
+	targetEvents?: { [key: string]: string | Function | (string | Function)[] };
 	installPackages?: string[];
 	devInstallPackages?: string[];
 	globalInstallPackages?: string[];

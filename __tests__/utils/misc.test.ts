@@ -140,7 +140,7 @@ describe('isTargetContext', () => {
 		expect(isTargetContext(generateActionContext({
 			ref: 'heads/test/change',
 			event: 'push',
-		}, {}, {targetBranchPrefix: 'test/'}))).toBe(true);
+		}, {}, {targetBranchPrefix: 'test/', targetEvents: {push: '*'}}))).toBe(true);
 	});
 
 	it('should return false 1', () => {
