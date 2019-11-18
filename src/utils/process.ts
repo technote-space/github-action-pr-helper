@@ -28,12 +28,9 @@ const {sleep, getBranch}     = Utils;
 const {isPr, isCron, isPush} = ContextHelper;
 const commonLogger           = new Logger(replaceDirectory);
 
-const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => {
-	if (isActionPr(context)) {
-		return;
-	}
-	if (!isTargetBranch(getPrHeadRef(context), context)) {
-		return;
+const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<boolean> => {
+	if (isActionPr(context) || !isTargetBranch(getPrHeadRef(context), context)) {
+		return false;
 	}
 	if (isCron(context.actionContext)) {
 		commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
@@ -48,12 +45,12 @@ const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, conte
 		const pr = await getApiHelper(logger).findPullRequest(branchName, octokit, context.actionContext);
 		if (!pr) {
 			// There is no PR
-			return;
+			return true;
 		}
 		if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
 			// Close if there is no diff
 			await closePR(branchName, logger, octokit, context);
-			return;
+			return true;
 		}
 		mergeable = await isMergeable(pr.number, octokit, context);
 	} else {
@@ -62,7 +59,7 @@ const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, conte
 		if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
 			// Close if there is no diff
 			await closePR(branchName, logger, octokit, context);
-			return;
+			return true;
 		}
 		await push(branchName, helper, logger, context);
 		mergeable = await updatePr(branchName, files, output, logger, octokit, context);
@@ -77,6 +74,7 @@ const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, conte
 		// Sleep
 		await sleep(INTERVAL_MS);
 	}
+	return true;
 };
 
 const createCommit = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => {
@@ -116,9 +114,12 @@ export const execute = async(context: ActionContext): Promise<void> => {
 	} else if (isPr(context.actionContext)) {
 		await createPr(helper, commonLogger, octokit, context);
 	} else {
-		const logger = new Logger(replaceDirectory, true);
+		const logger  = new Logger(replaceDirectory, true);
+		let total     = 0;
+		let processed = 0;
 		for await (const pull of getApiHelper(logger).pullsList({}, octokit, context.actionContext)) {
-			await createPr(helper, logger, octokit, {
+			total++;
+			if (await createPr(helper, logger, octokit, {
 				actionContext: Object.assign({}, context.actionContext, {
 					payload: {
 						'pull_request': {
@@ -137,8 +138,11 @@ export const execute = async(context: ActionContext): Promise<void> => {
 					ref: pull.head.ref,
 				}),
 				actionDetail: context.actionDetail,
-			});
+			})) {
+				processed++;
+			}
 		}
+		commonLogger.startProcess('Total:%d  Processed:%d  Skipped:%d', total, processed, total - processed);
 	}
 	commonLogger.endProcess();
 };

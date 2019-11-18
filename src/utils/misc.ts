@@ -217,6 +217,10 @@ export const isTargetContext = (context: ActionContext): boolean => {
 		return isTargetBranch(getBranch(context.actionContext), context, false);
 	}
 
+	if (isActionPr(context) || !isTargetBranch(getPrHeadRef(context), context)) {
+		return false;
+	}
+
 	return isTargetLabels(getActionDetail<string[]>('includeLabels', context, []), [], context.actionContext);
 };
 
