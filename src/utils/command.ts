@@ -1,4 +1,4 @@
-import fs from 'fs';
+import { mkdirSync } from 'fs';
 import { Logger, GitHelper, Utils, ContextHelper, ApiHelper } from '@technote-space/github-action-helper';
 import { GitHub } from '@actions/github';
 import { getInput } from '@actions/core' ;
@@ -129,7 +129,7 @@ const initDirectory = async(helper: GitHelper, logger: Logger): Promise<void> =>
 	logger.startProcess('Initializing working directory...');
 
 	await helper.runCommand(getWorkspace(), 'rm -rdf ./* ./.[!.]*');
-	fs.mkdirSync(getWorkspace(), {recursive: true});
+	mkdirSync(getWorkspace(), {recursive: true});
 };
 
 export const config = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {

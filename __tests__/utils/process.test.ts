@@ -1,7 +1,7 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
 import nock from 'nock';
-import path from 'path';
+import { resolve } from 'path';
 import {
 	generateContext,
 	testEnv,
@@ -18,7 +18,7 @@ import { ActionContext, ActionDetails } from '../../src/types';
 import { execute } from '../../src/utils/process';
 import * as constants from '../../src/constant';
 
-const rootDir   = path.resolve(__dirname, '..', 'fixtures');
+const rootDir   = resolve(__dirname, '..', 'fixtures');
 const setExists = testFs();
 beforeEach(() => {
 	Logger.resetForTesting();
@@ -62,7 +62,7 @@ describe('execute', () => {
 	testChildProcess();
 
 	it('should close pull request (closed action)', async() => {
-		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 
@@ -88,7 +88,7 @@ describe('execute', () => {
 	});
 
 	it('should close pull request (no ref diff)', async() => {
-		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -174,7 +174,7 @@ describe('execute', () => {
 	});
 
 	it('should close pull request (no diff, no ref diff)', async() => {
-		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -281,7 +281,7 @@ describe('execute', () => {
 	});
 
 	it('should do nothing (no diff)', async() => {
-		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 		setExists(true);
@@ -340,7 +340,7 @@ describe('execute', () => {
 	});
 
 	it('should do nothing (no diff (push)))', async() => {
-		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
@@ -382,7 +382,7 @@ describe('execute', () => {
 	});
 
 	it('should do nothing (push to protected branch)', async() => {
-		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
@@ -452,7 +452,7 @@ describe('execute', () => {
 	});
 
 	it('should create pull request', async() => {
-		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -535,7 +535,7 @@ describe('execute', () => {
 	});
 
 	it('should do schedule', async() => {
-		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -651,7 +651,7 @@ describe('execute', () => {
 	});
 
 	it('should resolve conflicts', async() => {
-		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -731,7 +731,7 @@ describe('execute', () => {
 	});
 
 	it('should throw error if push branch not found', async() => {
-		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({stdout: ''});
@@ -753,7 +753,7 @@ describe('execute', () => {
 	});
 
 	it('should throw error if push failed', async() => {
-		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
@@ -815,7 +815,7 @@ describe('execute', () => {
 	});
 
 	it('should create commit', async() => {
-		process.env.GITHUB_WORKSPACE   = path.resolve('test');
+		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
