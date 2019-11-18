@@ -73,6 +73,9 @@ describe('isTargetContext', () => {
 			payload: {
 				'pull_request': {
 					labels: [],
+					head: {
+						ref: 'change',
+					},
 				},
 			},
 		}))).toBe(true);
@@ -86,6 +89,9 @@ describe('isTargetContext', () => {
 			payload: {
 				'pull_request': {
 					labels: [{name: 'label1'}, {name: 'label2'}],
+					head: {
+						ref: 'change',
+					},
 				},
 			},
 		}, {includeLabels: ['label2']}))).toBe(true);
@@ -99,6 +105,9 @@ describe('isTargetContext', () => {
 			payload: {
 				'pull_request': {
 					labels: [{name: 'label2'}],
+					head: {
+						ref: 'change',
+					},
 				},
 			},
 		}, {includeLabels: ['label1', 'label2', 'label3']}))).toBe(true);
@@ -112,6 +121,9 @@ describe('isTargetContext', () => {
 			payload: {
 				'pull_request': {
 					labels: [],
+					head: {
+						ref: 'change',
+					},
 				},
 			},
 		}))).toBe(true);
@@ -125,6 +137,9 @@ describe('isTargetContext', () => {
 			payload: {
 				'pull_request': {
 					labels: [],
+					head: {
+						ref: 'change',
+					},
 				},
 			},
 		}))).toBe(true);
@@ -136,11 +151,29 @@ describe('isTargetContext', () => {
 		}))).toBe(true);
 	});
 
-	it('should return true 6', () => {
+	it('should return true 7', () => {
 		expect(isTargetContext(generateActionContext({
 			ref: 'heads/test/change',
 			event: 'push',
 		}, {}, {targetBranchPrefix: 'test/', targetEvents: {push: '*'}}))).toBe(true);
+	});
+
+	it('should return true 8', () => {
+		expect(isTargetContext(generateActionContext({
+			event: 'pull_request',
+			action: 'synchronize',
+		}, {
+			payload: {
+				'pull_request': {
+					labels: [],
+					head: {
+						ref: 'target/change',
+					},
+				},
+			},
+		}, {
+			targetBranchPrefix: 'target/',
+		}))).toBe(true);
 	});
 
 	it('should return false 1', () => {
@@ -159,6 +192,9 @@ describe('isTargetContext', () => {
 			payload: {
 				'pull_request': {
 					labels: [{name: 'label1'}],
+					head: {
+						ref: 'change',
+					},
 				},
 			},
 		}, {includeLabels: 'test2'}))).toBe(false);
@@ -173,6 +209,9 @@ describe('isTargetContext', () => {
 			payload: {
 				'pull_request': {
 					labels: [{name: 'label2'}],
+					head: {
+						ref: 'change',
+					},
 				},
 			},
 		}, {includeLabels: 'test1'}))).toBe(false);
@@ -189,6 +228,38 @@ describe('isTargetContext', () => {
 		expect(isTargetContext(generateActionContext({
 			ref: 'heads/test/change',
 			event: 'push',
+		}))).toBe(false);
+	});
+
+	it('should return false 6', () => {
+		expect(isTargetContext(generateActionContext({
+			event: 'pull_request',
+			action: 'synchronize',
+		}, {
+			payload: {
+				'pull_request': {
+					head: {
+						ref: 'hello-world/change',
+					},
+				},
+			},
+		}))).toBe(false);
+	});
+
+	it('should return false 7', () => {
+		expect(isTargetContext(generateActionContext({
+			event: 'pull_request',
+			action: 'synchronize',
+		}, {
+			payload: {
+				'pull_request': {
+					head: {
+						ref: 'hello-world/change',
+					},
+				},
+			},
+		}, {
+			targetBranchPrefix: 'target/',
 		}))).toBe(false);
 	});
 });
