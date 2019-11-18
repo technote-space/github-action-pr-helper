@@ -248,6 +248,7 @@ describe('execute', () => {
 	});
 
 	it('should do nothing (action pull request)', async() => {
+		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 
@@ -262,7 +263,10 @@ describe('execute', () => {
 			prBranchPrefix: 'hello-world/',
 		}));
 
-		stdoutCalledWith(mockStdout, []);
+		stdoutCalledWith(mockStdout, [
+			'::group::Total:2  Processed:0  Skipped:2',
+			'::endgroup::',
+		]);
 	});
 
 	it('should do nothing (not target branch)', async() => {
@@ -649,6 +653,8 @@ describe('execute', () => {
 			'> Pushing to octocat/Hello-World@hello-world/create/test...',
 			'[command]git push origin "hello-world/create/test":"refs/heads/hello-world/create/test"',
 			'> Creating comment to PullRequest... [hello-world/create/test] -> [feature/new-topic]',
+			'::endgroup::',
+			'::group::Total:2  Processed:2  Skipped:0',
 			'::endgroup::',
 		]);
 	});
