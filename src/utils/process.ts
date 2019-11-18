@@ -9,6 +9,7 @@ import {
 	push,
 	isMergeable,
 	updatePr,
+	closePR,
 	resolveConflicts,
 } from './command';
 import {
@@ -51,7 +52,7 @@ const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, conte
 		}
 		if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
 			// Close if there is no diff
-			await getApiHelper(logger).closePR(branchName, octokit, context.actionContext);
+			await closePR(branchName, logger, octokit, context);
 			return;
 		}
 		mergeable = await isMergeable(pr.number, octokit, context);
@@ -60,7 +61,7 @@ const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, conte
 		await commit(helper, logger, context);
 		if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
 			// Close if there is no diff
-			await getApiHelper(logger).closePR(branchName, octokit, context.actionContext);
+			await closePR(branchName, logger, octokit, context);
 			return;
 		}
 		await push(branchName, helper, logger, context);
@@ -105,7 +106,7 @@ const createCommit = async(helper: GitHelper, logger: Logger, octokit: GitHub, c
 export const execute = async(context: ActionContext): Promise<void> => {
 	const octokit = new GitHub(getInput('GITHUB_TOKEN', {required: true}));
 	if (isClosePR(context)) {
-		await getApiHelper(commonLogger).closePR(getPrBranchName(context), octokit, context.actionContext);
+		await closePR(getPrBranchName(context), commonLogger, octokit, context);
 		return;
 	}
 
