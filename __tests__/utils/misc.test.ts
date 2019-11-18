@@ -2,7 +2,7 @@
 import { Context } from '@actions/github/lib/context';
 import { testEnv, generateContext } from '@technote-space/github-action-test-helper';
 import moment from 'moment';
-import path from 'path';
+import { resolve } from 'path';
 import {
 	getCommitMessage,
 	getCommitName,
@@ -235,15 +235,15 @@ describe('replaceDirectory', () => {
 	testEnv();
 
 	it('should replace working directory 1', () => {
-		process.env.GITHUB_WORKSPACE = path.resolve('test-dir');
-		const workDir                = path.resolve('test-dir');
+		process.env.GITHUB_WORKSPACE = resolve('test-dir');
+		const workDir                = resolve('test-dir');
 
 		expect(replaceDirectory(`git -C ${workDir} fetch`)).toBe('git fetch');
 	});
 
 	it('should replace working directory 2', () => {
-		process.env.GITHUB_WORKSPACE = path.resolve('test-dir');
-		const workDir                = path.resolve('test-dir');
+		process.env.GITHUB_WORKSPACE = resolve('test-dir');
+		const workDir                = resolve('test-dir');
 
 		expect(replaceDirectory(`cp -a ${workDir}/test1 ${workDir}/test2`)).toBe('cp -a [Working Directory]/test1 [Working Directory]/test2');
 	});

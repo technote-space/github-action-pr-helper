@@ -1,4 +1,4 @@
-import fs from 'fs';
+import { mkdirSync } from 'fs';
 import { Logger, GitHelper, Utils, ContextHelper, ApiHelper } from '@technote-space/github-action-helper';
 import { GitHub } from '@actions/github';
 import { getInput } from '@actions/core' ;
@@ -129,7 +129,7 @@ const initDirectory = async(helper: GitHelper, logger: Logger): Promise<void> =>
 	logger.startProcess('Initializing working directory...');
 
 	await helper.runCommand(getWorkspace(), 'rm -rdf ./* ./.[!.]*');
-	fs.mkdirSync(getWorkspace(), {recursive: true});
+	mkdirSync(getWorkspace(), {recursive: true});
 };
 
 export const config = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
@@ -258,6 +258,8 @@ export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger,
 	return runCommands(helper, logger, context);
 };
 
+export const closePR = async(branchName: string, logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => getApiHelper(logger).closePR(branchName, octokit, context.actionContext, context.actionDetail.prCloseMessage);
+
 export const resolveConflicts = async(branchName: string, helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => {
 	if (await merge(getPrHeadRef(context), helper, logger, context)) {
 		// succeeded to merge
@@ -266,7 +268,7 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
 		// failed to merge
 		const {files, output} = await getChangedFilesForRebase(helper, logger, context);
 		if (!files.length) {
-			await getApiHelper(logger).closePR(branchName, octokit, context.actionContext);
+			await closePR(branchName, logger, octokit, context);
 			return;
 		}
 		await commit(helper, logger, context);
