@@ -64,10 +64,6 @@ const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, conte
 			return;
 		}
 		await push(branchName, helper, logger, context);
-	}
-
-	if (files.length) {
-		// Update PR if there is at least one change
 		mergeable = await updatePr(branchName, files, output, logger, octokit, context);
 	}
 
