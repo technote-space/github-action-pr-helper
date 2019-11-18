@@ -19,6 +19,7 @@ export type ActionDetails = {
 	prBody?: string;
 	prVariables?: string[];
 	prDateFormats?: string[];
+	prCloseMessage?: string;
 	filterGitStatus?: string;
 	filterExtensions?: string[];
 	targetBranchPrefix?: string;

@@ -70,6 +70,8 @@ describe('execute', () => {
 			.persist()
 			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Fclose%2Ftest')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.post('/repos/hello/world/issues/1347/comments')
+			.reply(201)
 			.patch('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
 			.delete('/repos/hello/world/git/refs/heads/hello-world/close/test')
@@ -77,6 +79,7 @@ describe('execute', () => {
 
 		await execute(getActionContext(context('closed'), {
 			prBranchName: 'close/test',
+			prCloseMessage: 'close message',
 		}));
 
 		stdoutCalledWith(mockStdout, [
