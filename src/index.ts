@@ -29,7 +29,7 @@ export async function main(option: MainArguments): Promise<void> {
 		showActionInfo(option.rootDir, getLogger(option.logger), context);
 	}
 
-	if (isTargetContext(getActionContext(option))) {
+	if (!isTargetContext(getActionContext(option))) {
 		getLogger(option.logger).info(option.notTargetEventMessage ?? 'This is not target event.');
 		return;
 	}
