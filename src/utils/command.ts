@@ -258,7 +258,7 @@ export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger,
 	return runCommands(helper, logger, context);
 };
 
-export const closePR = async(branchName: string, logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => getApiHelper(logger).closePR(branchName, octokit, context.actionContext, context.actionDetail.prCloseMessage);
+export const closePR = async(branchName: string, logger: Logger, octokit: GitHub, context: ActionContext, message?: string): Promise<void> => getApiHelper(logger).closePR(branchName, octokit, context.actionContext, message ?? context.actionDetail.prCloseMessage);
 
 export const resolveConflicts = async(branchName: string, helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => {
 	if (await merge(getPrHeadRef(context), helper, logger, context)) {

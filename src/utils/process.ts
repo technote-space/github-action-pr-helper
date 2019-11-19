@@ -28,9 +28,25 @@ const {sleep, getBranch}     = Utils;
 const {isPr, isCron, isPush} = ContextHelper;
 const commonLogger           = new Logger(replaceDirectory);
 
-const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<boolean> => {
-	if (isActionPr(context) || !isTargetBranch(getPrHeadRef(context), context)) {
+const checkActionPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<boolean> => {
+	const pr = await getApiHelper(logger).findPullRequest(getPrHeadRef(context), octokit, context.actionContext);
+	if (!pr) {
 		return false;
+	}
+	const basePr = await getApiHelper(logger).findPullRequest(pr.base.ref, octokit, context.actionContext);
+	if (!basePr || basePr.state === 'open') {
+		return false;
+	}
+	await closePR(getPrHeadRef(context), logger, octokit, context, '');
+	return true;
+};
+
+const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<boolean> => {
+	if (!isTargetBranch(getPrHeadRef(context), context)) {
+		return false;
+	}
+	if (isActionPr(context)) {
+		return checkActionPr(helper, logger, octokit, context);
 	}
 	if (isCron(context.actionContext)) {
 		commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
