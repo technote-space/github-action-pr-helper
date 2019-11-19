@@ -247,7 +247,7 @@ describe('execute', () => {
 		]);
 	});
 
-	it('should do nothing (action pull request)', async() => {
+	it('should close pull request (base pull request has been closed)', async() => {
 		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -257,7 +257,95 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
-			.reply(200, () => ([]));
+			.reply(200, () => ([]))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Amaster')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.close'))
+			.patch('/repos/octocat/Hello-World/pulls/1347')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
+			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic')
+			.reply(204);
+
+		await execute(getActionContext(context('', 'schedule'), {
+			prBranchPrefix: 'hello-world/',
+		}));
+
+		stdoutCalledWith(mockStdout, [
+			'> Closing PullRequest... [hello-world/new-topic]',
+			'> Deleting reference... [refs/heads/hello-world/new-topic]',
+			'> Closing PullRequest... [hello-world/new-topic]',
+			'> Deleting reference... [refs/heads/hello-world/new-topic]',
+			'::group::Total:2  Processed:2  Skipped:0',
+			'::endgroup::',
+		]);
+	});
+
+	it('should do nothing (action pull request not found)', async() => {
+		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
+			.reply(200, () => ([]))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
+			.reply(200, () => []);
+
+		await execute(getActionContext(context('', 'schedule'), {
+			prBranchPrefix: 'hello-world/',
+		}));
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Total:2  Processed:0  Skipped:2',
+			'::endgroup::',
+		]);
+	});
+
+	it('should do nothing (action base pull request not found)', async() => {
+		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
+			.reply(200, () => ([]))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Amaster')
+			.reply(200, () => []);
+
+		await execute(getActionContext(context('', 'schedule'), {
+			prBranchPrefix: 'hello-world/',
+		}));
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Total:2  Processed:0  Skipped:2',
+			'::endgroup::',
+		]);
+	});
+
+	it('should do nothing (action base pull request has not been closed)', async() => {
+		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
+			.reply(200, () => ([]))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Amaster')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'));
 
 		await execute(getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
