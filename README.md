@@ -15,6 +15,8 @@ PullRequest Helper for GitHub Actions.
 **Table of Contents**
 
 - [Usage](#usage)
+- [Arguments](#arguments)
+- [Behavior](#behavior)
 - [Author](#author)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->

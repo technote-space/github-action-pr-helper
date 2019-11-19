@@ -15,6 +15,8 @@ GitHub Actions 用のプルリクヘルパー
 **Table of Contents**
 
 - [使用方法](#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95)
+- [引数](#%E5%BC%95%E6%95%B0)
+- [動作](#%E5%8B%95%E4%BD%9C)
 - [Author](#author)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
