@@ -38,14 +38,17 @@ const getResult = (result: boolean, detail: string, context: ActionContext): Pro
 const checkActionPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
 	const pr = await getApiHelper(logger).findPullRequest(getPrHeadRef(context), octokit, context.actionContext);
 	if (!pr) {
-		return getResult(false, 'PullRequest not found', context);
+		return getResult(false, 'not found', context);
 	}
 	const basePr = await getApiHelper(logger).findPullRequest(pr.base.ref, octokit, context.actionContext);
-	if (!basePr || basePr.state === 'open') {
-		return getResult(false, 'Base PullRequest is not active', context);
+	if (!basePr) {
+		return getResult(false, 'Base PullRequest not found', context);
+	}
+	if (basePr.state === 'open') {
+		return getResult(false, 'Base PullRequest has been closed', context);
 	}
 	await closePR(getPrHeadRef(context), logger, octokit, context, '');
-	return getResult(true, 'PullRequest has been closed because base PullRequest has been closed', context);
+	return getResult(true, 'has been closed because base PullRequest has been closed', context);
 };
 
 const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
@@ -68,12 +71,12 @@ const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, conte
 		const pr = await getApiHelper(logger).findPullRequest(branchName, octokit, context.actionContext);
 		if (!pr) {
 			// There is no PR
-			return getResult(true, 'no diff', context);
+			return getResult(true, 'There is no diff', context);
 		}
 		if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
 			// Close if there is no diff
 			await closePR(branchName, logger, octokit, context);
-			return getResult(true, 'no reference diff', context);
+			return getResult(true, 'There is no reference diff', context);
 		}
 		mergeable = await isMergeable(pr.number, octokit, context);
 	} else {
@@ -82,7 +85,7 @@ const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, conte
 		if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
 			// Close if there is no diff
 			await closePR(branchName, logger, octokit, context);
-			return getResult(true, 'no reference diff', context);
+			return getResult(true, 'There is no reference diff', context);
 		}
 		await push(branchName, helper, logger, context);
 		mergeable = await updatePr(branchName, files, output, logger, octokit, context);
@@ -126,7 +129,7 @@ const outputResults = async(results: ProcessResult[]): Promise<void> => {
 	commonLogger.startProcess('Total:%d  Processed:%d  Skipped:%d', total, processed, total - processed);
 	results.forEach(result => {
 		if (result.result) {
-			commonLogger.info(commonLogger.c('✔', 'green') + '\t[%s]', result.branch);
+			commonLogger.info(commonLogger.c('✔', 'green') + '\t[%s] %s', result.branch, result.detail);
 		} else {
 			commonLogger.info(commonLogger.c('→', 'yellow') + '\t[%s] %s', result.branch, result.detail);
 		}
