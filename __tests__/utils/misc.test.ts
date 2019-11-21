@@ -20,6 +20,7 @@ import {
 	isTargetBranch,
 	filterGitStatus,
 	filterExtension,
+	checkDefaultBranch,
 } from '../../src/utils/misc';
 import { ActionContext, ActionDetails } from '../../src/types';
 
@@ -819,5 +820,25 @@ describe('filterExtension', () => {
 		expect(filterExtension('test.js', context)).toBe(true);
 		expect(filterExtension('test.1md', context)).toBe(true);
 		expect(filterExtension('test.md1', context)).toBe(true);
+	});
+});
+
+describe('checkDefaultBranch', () => {
+	testEnv();
+
+	it('should return true if not set', () => {
+		expect(checkDefaultBranch(generateActionContext({}))).toBe(true);
+	});
+
+	it('should return true', () => {
+		expect(checkDefaultBranch(generateActionContext({}, {}, {
+			checkDefaultBranch: true,
+		}))).toBe(true);
+	});
+
+	it('should return false', () => {
+		expect(checkDefaultBranch(generateActionContext({}, {}, {
+			checkDefaultBranch: false,
+		}))).toBe(false);
 	});
 });

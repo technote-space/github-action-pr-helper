@@ -269,6 +269,7 @@ describe('execute', () => {
 
 		await execute(getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
+			checkDefaultBranch: false,
 		}));
 
 		stdoutCalledWith(mockStdout, [
@@ -276,7 +277,9 @@ describe('execute', () => {
 			'> Deleting reference... [refs/heads/hello-world/new-topic]',
 			'> Closing PullRequest... [hello-world/new-topic]',
 			'> Deleting reference... [refs/heads/hello-world/new-topic]',
-			'::group::Total:2  Processed:2  Skipped:0',
+			'::group::Total:2  Succeeded:2  Failed:0  Skipped:0',
+			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest has been closed',
+			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest has been closed',
 			'::endgroup::',
 		]);
 	});
@@ -297,10 +300,13 @@ describe('execute', () => {
 
 		await execute(getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
+			checkDefaultBranch: false,
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Total:2  Processed:0  Skipped:2',
+			'::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
+			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] not found',
+			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] not found',
 			'::endgroup::',
 		]);
 	});
@@ -323,10 +329,13 @@ describe('execute', () => {
 
 		await execute(getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
+			checkDefaultBranch: false,
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Total:2  Processed:0  Skipped:2',
+			'::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
+			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] Base PullRequest not found',
+			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] Base PullRequest not found',
 			'::endgroup::',
 		]);
 	});
@@ -338,6 +347,8 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
+			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Ftest-branch')
+			.reply(200)
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
@@ -349,10 +360,13 @@ describe('execute', () => {
 
 		await execute(getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
+			checkDefaultBranch: false,
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Total:2  Processed:0  Skipped:2',
+			'::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
+			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] Base PullRequest has been closed',
+			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] Base PullRequest has been closed',
 			'::endgroup::',
 		]);
 	});
@@ -655,6 +669,8 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
+			.get('/repos/hello/world')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list2'))
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
@@ -742,7 +758,207 @@ describe('execute', () => {
 			'[command]git push origin "hello-world/create/test":"refs/heads/hello-world/create/test"',
 			'> Creating comment to PullRequest... [hello-world/create/test] -> [feature/new-topic]',
 			'::endgroup::',
-			'::group::Total:2  Processed:2  Skipped:0',
+			'::group::Total:3  Succeeded:2  Failed:0  Skipped:1',
+			'> \x1b[33;40;0m→\x1b[0m\t[master] This is not target branch',
+			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-topic] updated',
+			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-topic] updated',
+			'::endgroup::',
+		]);
+	});
+
+	it('should process default branch', async() => {
+		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.endsWith('status --short -uno')) {
+					return 'M  __tests__/fixtures/test.md';
+				}
+				if (command.includes(' diff ')) {
+					return '__tests__/fixtures/test.md';
+				}
+				if (command.includes(' branch -a ')) {
+					return 'test';
+				}
+				return '';
+			},
+		});
+		setExists(true);
+		// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+		// @ts-ignore
+		constants.INTERVAL_MS = 1;
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.reply(200, () => ([]))
+			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Ftest-0')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.post('/repos/hello/world/issues/1347/comments')
+			.reply(201)
+			.get('/repos/hello/world/pulls/1347')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'));
+
+		await execute(getActionContext(context('', 'schedule'), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create pull request',
+			prBranchName: 'test-${PR_ID}',
+			prTitle: 'test: create pull request (${PR_NUMBER})',
+			prBody: 'pull request body',
+		}));
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Target PullRequest Ref [master]',
+			'> Initializing working directory...',
+			'[command]rm -rdf ./* ./.[!.]*',
+			'> Cloning [hello-world/test-0] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/test-0',
+			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'  >> test',
+			'> remote branch [hello-world/test-0] not found.',
+			'> now branch: test',
+			'> Cloning [master] from the remote repo...',
+			'[command]git clone --branch=master',
+			'[command]git checkout -b "hello-world/test-0"',
+			'[command]ls -la',
+			'> Running commands...',
+			'[command]yarn upgrade',
+			'> Checking diff...',
+			'[command]git add --all',
+			'[command]git status --short -uno',
+			'> Configuring git committer to be GitHub Actions <example@example.com>',
+			'[command]git config user.name "GitHub Actions"',
+			'[command]git config user.email "example@example.com"',
+			'> Committing...',
+			'[command]git commit -qm "test: create pull request"',
+			'[command]git show --stat-count=10 HEAD',
+			'> Checking references diff...',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
+			'[command]git diff HEAD..origin/master --name-only',
+			'> Pushing to hello/world@hello-world/test-0...',
+			'[command]git push origin "hello-world/test-0":"refs/heads/hello-world/test-0"',
+			'> Creating comment to PullRequest... [hello-world/test-0] -> [master]',
+			'::endgroup::',
+			'::group::Total:1  Succeeded:1  Failed:0  Skipped:0',
+			'> \x1b[32;40;0m✔\x1b[0m\t[master] updated',
+			'::endgroup::',
+		]);
+	});
+
+	it('should do fail', async() => {
+		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.endsWith('status --short -uno')) {
+					throw new Error('test error');
+				}
+				if (command.includes(' branch -a ')) {
+					return 'test';
+				}
+				return '';
+			},
+		});
+		setExists(true);
+		// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+		// @ts-ignore
+		constants.INTERVAL_MS = 1;
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list2'))
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
+			.reply(200, () => ([]));
+
+		await execute(getActionContext(context('', 'schedule'), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create pull request',
+			prBranchName: 'create/test',
+			prTitle: 'test: create pull request (${PR_NUMBER})',
+			prBody: 'pull request body',
+		}));
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Target PullRequest Ref [master]',
+			'> Initializing working directory...',
+			'[command]rm -rdf ./* ./.[!.]*',
+			'> Cloning [hello-world/create/test] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/create/test',
+			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'  >> test',
+			'> remote branch [hello-world/create/test] not found.',
+			'> now branch: test',
+			'> Cloning [master] from the remote repo...',
+			'[command]git clone --branch=master',
+			'[command]git checkout -b "hello-world/create/test"',
+			'[command]ls -la',
+			'> Running commands...',
+			'[command]yarn upgrade',
+			'> Checking diff...',
+			'[command]git add --all',
+			'[command]git status --short -uno',
+			'undefined',
+			'{}',
+			'::endgroup::',
+			'::group::Target PullRequest Ref [feature/new-topic]',
+			'> Initializing working directory...',
+			'[command]rm -rdf ./* ./.[!.]*',
+			'> Cloning [hello-world/create/test] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/create/test',
+			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'  >> test',
+			'> remote branch [hello-world/create/test] not found.',
+			'> now branch: test',
+			'> Cloning [feature/new-topic] from the remote repo...',
+			'[command]git clone --branch=feature/new-topic',
+			'[command]git checkout -b "hello-world/create/test"',
+			'[command]ls -la',
+			'> Running commands...',
+			'[command]yarn upgrade',
+			'> Checking diff...',
+			'[command]git add --all',
+			'[command]git status --short -uno',
+			'undefined',
+			'{}',
+			'::endgroup::',
+			'::group::Target PullRequest Ref [feature/new-topic]',
+			'> Initializing working directory...',
+			'[command]rm -rdf ./* ./.[!.]*',
+			'> Cloning [hello-world/create/test] branch from the remote repo...',
+			'[command]git clone --branch=hello-world/create/test',
+			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'  >> test',
+			'> remote branch [hello-world/create/test] not found.',
+			'> now branch: test',
+			'> Cloning [feature/new-topic] from the remote repo...',
+			'[command]git clone --branch=feature/new-topic',
+			'[command]git checkout -b "hello-world/create/test"',
+			'[command]ls -la',
+			'> Running commands...',
+			'[command]yarn upgrade',
+			'> Checking diff...',
+			'[command]git add --all',
+			'[command]git status --short -uno',
+			'undefined',
+			'{}',
+			'::endgroup::',
+			'::group::Total:3  Succeeded:0  Failed:3  Skipped:0',
+			'> \x1b[31;40;0m×\x1b[0m\t[master] test error',
+			'> \x1b[31;40;0m×\x1b[0m\t[feature/new-topic] test error',
+			'> \x1b[31;40;0m×\x1b[0m\t[feature/new-topic] test error',
 			'::endgroup::',
 		]);
 	});
