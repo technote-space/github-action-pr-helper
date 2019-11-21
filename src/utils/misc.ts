@@ -2,7 +2,7 @@ import { Utils, ContextHelper, GitHelper, Logger } from '@technote-space/github-
 import { isTargetEvent, isTargetLabels } from '@technote-space/filter-github-action';
 import moment from 'moment';
 import { DEFAULT_TARGET_EVENTS } from '../constant';
-import { ActionContext } from '../types';
+import { ActionContext, PullsParams } from '../types';
 
 const {getWorkspace, getPrefixRegExp}       = Utils;
 const {escapeRegExp, replaceAll, getBranch} = Utils;
@@ -251,4 +251,25 @@ export const filterExtension = (line: string, context: ActionContext): boolean =
 export const getHelper = (context: ActionContext): GitHelper => new GitHelper(new Logger(replaceDirectory), {
 	depth: -1,
 	filter: (line: string): boolean => filterGitStatus(line, context) && filterExtension(line, context),
+});
+
+export const checkDefaultBranch = (context: ActionContext): boolean => context.actionDetail.checkDefaultBranch ?? true;
+
+export const getPullsArgsForDefaultBranch = (context: ActionContext, defaultBranch: string): PullsParams => ({
+	number: 0,
+	id: 0,
+	head: {
+		ref: defaultBranch,
+	},
+	base: {
+		repo: {
+			name: context.actionContext.repo.repo,
+			owner: {
+				login: context.actionContext.repo.owner,
+			},
+		},
+		ref: defaultBranch,
+	},
+	title: '',
+	'html_url': '',
 });

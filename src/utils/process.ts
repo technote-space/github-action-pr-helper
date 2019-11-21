@@ -1,7 +1,6 @@
 import { getInput } from '@actions/core';
 import { GitHub } from '@actions/github';
 import { Logger, GitHelper, Utils, ContextHelper } from '@technote-space/github-action-helper';
-import { PullsListResponseItem } from '@octokit/rest';
 import {
 	getApiHelper,
 	getChangedFiles,
@@ -12,6 +11,7 @@ import {
 	updatePr,
 	closePR,
 	resolveConflicts,
+	getDefaultBranch,
 } from './command';
 import {
 	replaceDirectory,
@@ -21,9 +21,11 @@ import {
 	isTargetBranch,
 	getPrHeadRef,
 	getHelper,
+	checkDefaultBranch,
+	getPullsArgsForDefaultBranch,
 } from './misc';
 import { INTERVAL_MS } from '../constant';
-import { ActionContext, ProcessResult } from '../types';
+import { ActionContext, ProcessResult, PullsParams } from '../types';
 
 const {sleep, getBranch}     = Utils;
 const {isPr, isCron, isPush} = ContextHelper;
@@ -136,7 +138,7 @@ const outputResults = async(results: ProcessResult[]): Promise<void> => {
 	});
 };
 
-const getActionContext = (context: ActionContext, pull: PullsListResponseItem): ActionContext => ({
+const getActionContext = (context: ActionContext, pull: PullsParams): ActionContext => ({
 	actionContext: Object.assign({}, context.actionContext, {
 		payload: {
 			'pull_request': {
@@ -172,10 +174,11 @@ export const execute = async(context: ActionContext): Promise<void> => {
 	} else {
 		const logger                   = new Logger(replaceDirectory, true);
 		const results: ProcessResult[] = [];
+		if (checkDefaultBranch(context)) {
+			results.push(await createPr(helper, logger, octokit, getActionContext(context, getPullsArgsForDefaultBranch(context, await getDefaultBranch(octokit, context)))));
+		}
 		for await (const pull of getApiHelper(logger).pullsList({}, octokit, context.actionContext)) {
-			if (results.length) {
-				await sleep(INTERVAL_MS);
-			}
+			await sleep(INTERVAL_MS);
 			results.push(await createPr(helper, logger, octokit, getActionContext(context, pull)));
 		}
 		await outputResults(results);
