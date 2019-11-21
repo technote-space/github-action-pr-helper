@@ -37,3 +37,9 @@ export type ActionContext = {
 	actionContext: Context;
 	actionDetail: ActionDetails;
 }
+
+export type ProcessResult = {
+	result: boolean;
+	detail: string;
+	branch: string;
+}
