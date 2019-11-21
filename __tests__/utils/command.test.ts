@@ -25,6 +25,7 @@ import {
 	getChangedFiles,
 	updatePr,
 	resolveConflicts,
+	getDefaultBranch,
 } from '../../src/utils/command';
 
 beforeEach(() => {
@@ -609,5 +610,16 @@ describe('resolveConflicts', () => {
 			'git show --stat-count=10 HEAD',
 			'git push --force https://octocat:test-token@github.com/hello/world.git "test":"refs/heads/test" > /dev/null 2>&1',
 		]);
+	});
+});
+
+describe('getDefaultBranch', () => {
+	it('should get default branch', async() => {
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
+
+		expect(await getDefaultBranch(octokit, getActionContext(context({})))).toBe('master');
 	});
 });

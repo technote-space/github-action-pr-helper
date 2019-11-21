@@ -279,3 +279,8 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
 		}, octokit, context.actionContext);
 	}
 };
+
+export const getDefaultBranch = async(octokit: GitHub, context: ActionContext): Promise<string> => (await octokit.repos.get({
+	owner: context.actionContext.repo.owner,
+	repo: context.actionContext.repo.repo,
+})).data.default_branch;

@@ -25,6 +25,7 @@ export type ActionDetails = {
 	targetBranchPrefix?: string;
 	deletePackage?: boolean;
 	includeLabels?: string[];
+	checkDefaultBranch?: boolean;
 }
 
 export type MainArguments = ActionDetails & {
@@ -42,4 +43,23 @@ export type ProcessResult = {
 	result: boolean;
 	detail: string;
 	branch: string;
+}
+
+export type PullsParams = {
+	number: number;
+	id: number;
+	head: {
+		ref: string;
+	};
+	base: {
+		repo: {
+			name: string;
+			owner: {
+				login: string;
+			};
+		};
+		ref: string;
+	};
+	title: string;
+	'html_url': string;
 }
