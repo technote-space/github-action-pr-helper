@@ -277,6 +277,8 @@ describe('execute', () => {
 			'> Closing PullRequest... [hello-world/new-topic]',
 			'> Deleting reference... [refs/heads/hello-world/new-topic]',
 			'::group::Total:2  Processed:2  Skipped:0',
+			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest has been closed',
+			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest has been closed',
 			'::endgroup::',
 		]);
 	});
@@ -301,6 +303,8 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Total:2  Processed:0  Skipped:2',
+			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] not found',
+			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] not found',
 			'::endgroup::',
 		]);
 	});
@@ -327,6 +331,8 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Total:2  Processed:0  Skipped:2',
+			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] Base PullRequest not found',
+			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] Base PullRequest not found',
 			'::endgroup::',
 		]);
 	});
@@ -353,6 +359,8 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Total:2  Processed:0  Skipped:2',
+			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] Base PullRequest has been closed',
+			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] Base PullRequest has been closed',
 			'::endgroup::',
 		]);
 	});
@@ -743,6 +751,8 @@ describe('execute', () => {
 			'> Creating comment to PullRequest... [hello-world/create/test] -> [feature/new-topic]',
 			'::endgroup::',
 			'::group::Total:2  Processed:2  Skipped:0',
+			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-topic] updated',
+			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-topic] updated',
 			'::endgroup::',
 		]);
 	});
