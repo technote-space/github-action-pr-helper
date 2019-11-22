@@ -8,8 +8,6 @@ import {
 	disableNetConnect,
 	spyOnStdout,
 	stdoutCalledWith,
-	getApiFixture,
-	setChildProcessParams,
 	testChildProcess, stdoutContains,
 } from '@technote-space/github-action-test-helper';
 import { Logger } from '@technote-space/github-action-helper';
@@ -17,7 +15,7 @@ import { clearCache } from '../src/utils/command';
 import { main, run } from '../src';
 import { MainArguments } from '../src/types';
 
-const setExists = testFs();
+testFs();
 beforeEach(() => {
 	Logger.resetForTesting();
 	clearCache();
