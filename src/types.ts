@@ -32,6 +32,7 @@ export type MainArguments = ActionDetails & {
 	logger?: Logger;
 	notTargetEventMessage?: string;
 	rootDir?: string;
+	context?: Context;
 };
 
 export type ActionContext = {
