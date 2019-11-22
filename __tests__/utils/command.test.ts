@@ -19,6 +19,7 @@ import {
 import { Logger, GitHelper } from '@technote-space/github-action-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
 import {
+	clearCache,
 	clone,
 	checkBranch,
 	getDiff,
@@ -30,6 +31,7 @@ import {
 
 beforeEach(() => {
 	Logger.resetForTesting();
+	clearCache();
 });
 const logger                       = new Logger();
 const helper                       = new GitHelper(logger, {depth: -1});

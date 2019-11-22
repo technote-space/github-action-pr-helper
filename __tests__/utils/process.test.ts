@@ -16,12 +16,14 @@ import {
 import { Logger } from '@technote-space/github-action-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
 import { execute } from '../../src/utils/process';
+import { clearCache } from '../../src/utils/command';
 import * as constants from '../../src/constant';
 
 const rootDir   = resolve(__dirname, '..', 'fixtures');
 const setExists = testFs();
 beforeEach(() => {
 	Logger.resetForTesting();
+	clearCache();
 });
 
 const actionDetails: ActionDetails = {

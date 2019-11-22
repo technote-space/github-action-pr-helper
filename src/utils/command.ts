@@ -19,6 +19,9 @@ import { ActionContext } from '../types';
 
 const {getWorkspace, useNpm}  = Utils;
 const {getRepository, isPush} = ContextHelper;
+const cache                   = {};
+
+export const clearCache = (): void => Object.getOwnPropertyNames(cache).forEach(prop => delete cache[prop]);
 
 export const getApiHelper = (logger: Logger): ApiHelper => new ApiHelper(logger);
 
@@ -176,11 +179,24 @@ const forcePush = async(branchName: string, helper: GitHelper, logger: Logger, c
 	await helper.forcePush(getWorkspace(), branchName, context.actionContext);
 };
 
-export const isMergeable = async(number: number, octokit: GitHub, context: ActionContext): Promise<boolean> => (await octokit.pulls.get({
-	owner: context.actionContext.repo.owner,
-	repo: context.actionContext.repo.repo,
-	'pull_number': number,
-})).data.mergeable;
+const getCacheKey = (method: string, args: object): string => method + JSON.stringify(args);
+
+export const isMergeable = async(number: number, octokit: GitHub, context: ActionContext): Promise<boolean> => {
+	const key = getCacheKey('pulls.get', {
+		owner: context.actionContext.repo.owner,
+		repo: context.actionContext.repo.repo,
+		'pull_number': number,
+	});
+	if (!(key in cache)) {
+		// eslint-disable-next-line require-atomic-updates
+		cache[key] = (await octokit.pulls.get({
+			owner: context.actionContext.repo.owner,
+			repo: context.actionContext.repo.repo,
+			'pull_number': number,
+		})).data.mergeable;
+	}
+	return cache[key];
+};
 
 export const updatePr = async(branchName: string, files: string[], output: {
 	command: string;
@@ -280,7 +296,17 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
 	}
 };
 
-export const getDefaultBranch = async(octokit: GitHub, context: ActionContext): Promise<string> => (await octokit.repos.get({
-	owner: context.actionContext.repo.owner,
-	repo: context.actionContext.repo.repo,
-})).data.default_branch;
+export const getDefaultBranch = async(octokit: GitHub, context: ActionContext): Promise<string> => {
+	const key = getCacheKey('repos', {
+		owner: context.actionContext.repo.owner,
+		repo: context.actionContext.repo.repo,
+	});
+	if (!(key in cache)) {
+		// eslint-disable-next-line require-atomic-updates
+		cache[key] = (await octokit.repos.get({
+			owner: context.actionContext.repo.owner,
+			repo: context.actionContext.repo.repo,
+		})).data.default_branch;
+	}
+	return cache[key];
+};
