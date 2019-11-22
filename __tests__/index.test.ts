@@ -8,7 +8,8 @@ import {
 	disableNetConnect,
 	spyOnStdout,
 	stdoutCalledWith,
-	testChildProcess, stdoutContains,
+	stdoutContains,
+	testChildProcess,
 } from '@technote-space/github-action-test-helper';
 import { Logger } from '@technote-space/github-action-helper';
 import { clearCache } from '../src/utils/command';
@@ -48,7 +49,7 @@ describe('main', () => {
 			targetBranchPrefix: 'prefix/',
 		}));
 
-		stdoutCalledWith(mockStdout, [
+		stdoutContains(mockStdout, [
 			'',
 			'==================================================',
 			'Event:    undefined',
@@ -59,10 +60,8 @@ describe('main', () => {
 			'repo:     world',
 			'',
 			'::group::Dump context',
-			'{\n\t"payload": {},\n\t"actor": "octocat"\n}',
 			'::endgroup::',
 			'::group::Dump Payload',
-			'{}',
 			'::endgroup::',
 			'==================================================',
 			'',
@@ -98,10 +97,8 @@ describe('main', () => {
 			'repo:     world',
 			'',
 			'::group::Dump context',
-			'{\n\t"payload": {\n\t\t"action": ""\n\t},\n\t"eventName": "schedule",\n\t"sha": "",\n\t"ref": "",\n\t"workflow": "",\n\t"action": "hello-generator",\n\t"actor": "",\n\t"issue": {\n\t\t"owner": "hello",\n\t\t"repo": "world"\n\t},\n\t"repo": {\n\t\t"owner": "hello",\n\t\t"repo": "world"\n\t}\n}',
 			'::endgroup::',
 			'::group::Dump Payload',
-			'{\n	"action": ""\n}',
 			'::endgroup::',
 			'==================================================',
 			'',
