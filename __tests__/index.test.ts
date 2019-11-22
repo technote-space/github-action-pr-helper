@@ -8,8 +8,7 @@ import {
 	disableNetConnect,
 	spyOnStdout,
 	stdoutCalledWith,
-	stdoutContains,
-	testChildProcess,
+	testChildProcess, stdoutContains,
 } from '@technote-space/github-action-test-helper';
 import { Logger } from '@technote-space/github-action-helper';
 import { clearCache } from '../src/utils/command';
@@ -28,40 +27,42 @@ const mainArgs = (override?: object): MainArguments => Object.assign({}, {
 	actionRepo: 'world',
 }, override ?? {});
 
-const context = generateContext({
-	owner: 'hello',
-	repo: 'world',
-	event: 'schedule',
-	action: '',
-});
-
 describe('main', () => {
 	disableNetConnect(nock);
 	testEnv();
 	testChildProcess();
 
 	it('should do nothing', async() => {
-		process.env.GITHUB_REPOSITORY = 'hello/world';
-		const mockStdout              = spyOnStdout();
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 
 		await main(mainArgs({
 			rootDir: resolve(__dirname, 'fixtures'),
+			context: generateContext({
+				owner: 'hello',
+				repo: 'world',
+				event: 'issues',
+				action: 'create',
+			}),
 			targetBranchPrefix: 'prefix/',
 		}));
 
-		stdoutContains(mockStdout, [
+		stdoutCalledWith(mockStdout, [
 			'',
 			'==================================================',
-			'Event:    undefined',
-			'Action:   undefined',
-			'sha:      undefined',
-			'ref:      undefined',
+			'Event:    issues',
+			'Action:   create',
+			'sha:      ',
+			'ref:      ',
 			'owner:    hello',
 			'repo:     world',
 			'',
 			'::group::Dump context',
+			'{\n\t"payload": {\n\t\t"action": "create"\n\t},\n\t"eventName": "issues",\n\t"sha": "",\n\t"ref": "",\n\t"workflow": "",\n\t"action": "hello-generator",\n\t"actor": "",\n\t"issue": {\n\t\t"owner": "hello",\n\t\t"repo": "world"\n\t},\n\t"repo": {\n\t\t"owner": "hello",\n\t\t"repo": "world"\n\t}\n}',
 			'::endgroup::',
 			'::group::Dump Payload',
+			'{\n	"action": "create"\n}',
 			'::endgroup::',
 			'==================================================',
 			'',
@@ -82,7 +83,12 @@ describe('main', () => {
 
 		await main(mainArgs({
 			rootDir: resolve(__dirname, 'fixtures'),
-			context: context,
+			context: generateContext({
+				owner: 'hello',
+				repo: 'world',
+				event: 'schedule',
+				action: '',
+			}),
 			checkDefaultBranch: false,
 			logger: new Logger(),
 		}));
@@ -97,8 +103,10 @@ describe('main', () => {
 			'repo:     world',
 			'',
 			'::group::Dump context',
+			'{\n\t"payload": {\n\t\t"action": ""\n\t},\n\t"eventName": "schedule",\n\t"sha": "",\n\t"ref": "",\n\t"workflow": "",\n\t"action": "hello-generator",\n\t"actor": "",\n\t"issue": {\n\t\t"owner": "hello",\n\t\t"repo": "world"\n\t},\n\t"repo": {\n\t\t"owner": "hello",\n\t\t"repo": "world"\n\t}\n}',
 			'::endgroup::',
 			'::group::Dump Payload',
+			'{\n	"action": ""\n}',
 			'::endgroup::',
 			'==================================================',
 			'',

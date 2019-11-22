@@ -26,6 +26,7 @@ const getActionContext = (option: MainArguments): ActionContext => ({
  */
 export async function main(option: MainArguments): Promise<void> {
 	if (option.rootDir) {
+		/* istanbul ignore next */
 		showActionInfo(option.rootDir, getLogger(option.logger), option.context ?? context);
 	}
 
