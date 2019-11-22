@@ -37,43 +37,52 @@ const getResult = (result: 'succeeded' | 'failed' | 'skipped', detail: string, c
 	branch: getPrHeadRef(context),
 });
 
-const checkActionPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
+const checkActionPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult | true> => {
 	const pr = await getApiHelper(logger).findPullRequest(getPrHeadRef(context), octokit, context.actionContext);
 	if (!pr) {
-		return getResult('skipped', 'not found', context);
+		return getResult('failed', 'not found', context);
+	}
+	if (pr.base.ref === await getDefaultBranch(octokit, context)) {
+		return true;
 	}
 	const basePr = await getApiHelper(logger).findPullRequest(pr.base.ref, octokit, context.actionContext);
 	if (!basePr) {
-		return getResult('skipped', 'Base PullRequest not found', context);
+		await closePR(getPrHeadRef(context), logger, octokit, context, '');
+		return getResult('succeeded', 'has been closed because base PullRequest does not exist', context);
 	}
-	if (basePr.state === 'open') {
-		return getResult('skipped', 'Base PullRequest has been closed', context);
+	if (basePr.state === 'closed') {
+		await closePR(getPrHeadRef(context), logger, octokit, context, '');
+		return getResult('succeeded', 'has been closed because base PullRequest has been closed', context);
 	}
-	await closePR(getPrHeadRef(context), logger, octokit, context, '');
-	return getResult('succeeded', 'has been closed because base PullRequest has been closed', context);
+	return true;
 };
 
 const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
 	if (!isTargetBranch(getPrHeadRef(context), context)) {
 		return getResult('skipped', 'This is not target branch', context);
 	}
-	if (isActionPr(context)) {
-		return checkActionPr(helper, logger, octokit, context);
-	}
 	if (isCron(context.actionContext)) {
 		commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
+	}
+	if (isActionPr(context)) {
+		const result = await checkActionPr(helper, logger, octokit, context);
+		if (result !== true) {
+			return result;
+		}
 	}
 
 	let mergeable    = false;
 	const branchName = getPrBranchName(context);
 
-	const {files, output} = await getChangedFiles(helper, logger, context);
+	const {files, output}               = await getChangedFiles(helper, logger, context);
+	let result: 'succeeded' | 'skipped' = 'succeeded';
+	let detail                          = 'updated';
 	if (!files.length) {
 		logger.info('There is no diff.');
 		const pr = await getApiHelper(logger).findPullRequest(branchName, octokit, context.actionContext);
 		if (!pr) {
 			// There is no PR
-			return getResult('succeeded', 'There is no diff', context);
+			return getResult('skipped', 'There is no diff', context);
 		}
 		if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
 			// Close if there is no diff
@@ -81,13 +90,17 @@ const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, conte
 			return getResult('succeeded', 'There is no reference diff', context);
 		}
 		mergeable = await isMergeable(pr.number, octokit, context);
+		if (mergeable) {
+			result = 'skipped';
+			detail = 'There is no diff';
+		}
 	} else {
 		// Commit local diffs
 		await commit(helper, logger, context);
 		if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
 			// Close if there is no diff
 			await closePR(branchName, logger, octokit, context);
-			return getResult('succeeded', 'There is no reference diff', context);
+			return getResult('succeeded', 'has been closed because there is no reference diff', context);
 		}
 		await push(branchName, helper, logger, context);
 		mergeable = await updatePr(branchName, files, output, logger, octokit, context);
@@ -98,7 +111,7 @@ const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, conte
 		await resolveConflicts(branchName, helper, logger, octokit, context);
 	}
 
-	return getResult('succeeded', 'updated', context);
+	return getResult(result, detail, context);
 };
 
 const createCommit = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => {
