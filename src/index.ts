@@ -11,7 +11,7 @@ export { isTargetContext, execute };
 export { Logger, ContextHelper, Command, ApiHelper, GitHelper, Utils };
 
 const getActionContext = (option: MainArguments): ActionContext => ({
-	actionContext: context,
+	actionContext: option.context ?? context,
 	actionDetail: option,
 });
 
@@ -26,7 +26,7 @@ const getActionContext = (option: MainArguments): ActionContext => ({
  */
 export async function main(option: MainArguments): Promise<void> {
 	if (option.rootDir) {
-		showActionInfo(option.rootDir, getLogger(option.logger), context);
+		showActionInfo(option.rootDir, getLogger(option.logger), option.context ?? context);
 	}
 
 	if (!isTargetContext(getActionContext(option))) {
