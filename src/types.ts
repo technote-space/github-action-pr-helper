@@ -38,6 +38,7 @@ export type MainArguments = ActionDetails & {
 export type ActionContext = {
 	actionContext: Context;
 	actionDetail: ActionDetails;
+	defaultBranch: string;
 }
 
 export type ProcessResult = {

@@ -8,11 +8,12 @@ import {
 	disableNetConnect,
 	spyOnStdout,
 	stdoutCalledWith,
-	testChildProcess, stdoutContains,
+	testChildProcess,
+	getApiFixture,
 } from '@technote-space/github-action-test-helper';
 import { Logger } from '@technote-space/github-action-helper';
 import { clearCache } from '../src/utils/command';
-import { main, run } from '../src';
+import { main } from '../src';
 import { MainArguments } from '../src/types';
 
 testFs();
@@ -26,16 +27,22 @@ const mainArgs = (override?: object): MainArguments => Object.assign({}, {
 	actionOwner: 'hello',
 	actionRepo: 'world',
 }, override ?? {});
+const rootDir  = resolve(__dirname, 'fixtures');
 
 describe('main', () => {
 	disableNetConnect(nock);
 	testEnv();
 	testChildProcess();
 
-	it('should do nothing', async() => {
+	it('should do nothing 1', async() => {
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
 		await main(mainArgs({
 			rootDir: resolve(__dirname, 'fixtures'),
@@ -70,6 +77,32 @@ describe('main', () => {
 		]);
 	});
 
+	it('should do nothing 2', async() => {
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
+
+		await main(mainArgs({
+			context: generateContext({
+				owner: 'hello',
+				repo: 'world',
+				event: 'issues',
+				action: 'create',
+			}),
+			targetBranchPrefix: 'prefix/',
+			notTargetEventMessage: 'test message',
+		}));
+
+		stdoutCalledWith(mockStdout, [
+			'> test message',
+		]);
+	});
+
 	it('should call execute', async() => {
 		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
@@ -78,6 +111,8 @@ describe('main', () => {
 
 		nock('https://api.github.com')
 			.persist()
+			.get('/repos/hello/world')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
 			.reply(200, () => []);
 
@@ -93,12 +128,13 @@ describe('main', () => {
 			logger: new Logger(),
 		}));
 
-		stdoutContains(mockStdout, [
+		stdoutCalledWith(mockStdout, [
 			'',
 			'==================================================',
-			'Action:',
-			'sha:',
-			'ref:',
+			'Event:    schedule',
+			'Action:   ',
+			'sha:      ',
+			'ref:      ',
 			'owner:    hello',
 			'repo:     world',
 			'',
@@ -113,49 +149,5 @@ describe('main', () => {
 			'::group::Total:0  Succeeded:0  Failed:0  Skipped:0',
 			'::endgroup::',
 		]);
-	});
-});
-
-describe('run', () => {
-	disableNetConnect(nock);
-	testEnv();
-	testChildProcess();
-
-	it('should call main', () => {
-		process.env.GITHUB_REPOSITORY = 'hello/world';
-		const mockStdout              = spyOnStdout();
-
-		run(mainArgs({
-			targetBranchPrefix: 'prefix/',
-			notTargetEventMessage: 'test message',
-		}));
-
-		stdoutCalledWith(mockStdout, [
-			'> test message',
-		]);
-	});
-
-	it('should catch error', () => {
-		process.env.GITHUB_REPOSITORY = 'hello/world';
-		const mockStdout              = spyOnStdout();
-		const fn                      = jest.fn();
-
-		/**
-		 * logger for test
-		 */
-		class TestLogger extends Logger {
-			public info = (): void => {
-				fn();
-				throw new Error('test error');
-			};
-		}
-
-		run(mainArgs({
-			targetBranchPrefix: 'prefix/',
-			logger: new TestLogger(),
-		}));
-
-		expect(fn).toBeCalledTimes(1);
-		stdoutCalledWith(mockStdout, []);
 	});
 });

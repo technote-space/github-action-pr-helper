@@ -35,6 +35,8 @@ const getVariable = (index: number, context: ActionContext): string => getAction
 
 const getDate = (index: number, context: ActionContext): string => moment().format(getActionDetail<string[]>('prDateFormats', context)[index]);
 
+const getDefaultBranchUrl = (context: ActionContext): string => `https://github.com/${context.actionContext.repo.owner}/${context.actionContext.repo.repo}/tree/${context.defaultBranch}`;
+
 /**
  * @param {ActionContext} context context
  * @return {{string, Function}[]} replacer
@@ -49,6 +51,7 @@ const contextVariables = (context: ActionContext): { key: string; replace: () =>
 	};
 	return [
 		{key: 'PR_NUMBER', replace: (): string => getPrParam(pr => pr.number)},
+		{key: 'PR_NUMBER_REF', replace: (): string => getPrParam(pr => pr.number ? `#${pr.number}` : getDefaultBranchUrl(context))},
 		{key: 'PR_ID', replace: (): string => getPrParam(pr => pr.id)},
 		{key: 'PR_HEAD_REF', replace: (): string => getPrParam(pr => pr.head.ref)},
 		{key: 'PR_BASE_REF', replace: (): string => getPrParam(pr => pr.base.ref)},
@@ -255,11 +258,11 @@ export const getHelper = (context: ActionContext): GitHelper => new GitHelper(ne
 
 export const checkDefaultBranch = (context: ActionContext): boolean => context.actionDetail.checkDefaultBranch ?? true;
 
-export const getPullsArgsForDefaultBranch = (context: ActionContext, defaultBranch: string): PullsParams => ({
+export const getPullsArgsForDefaultBranch = (context: ActionContext): PullsParams => ({
 	number: 0,
 	id: 0,
 	head: {
-		ref: defaultBranch,
+		ref: context.defaultBranch,
 	},
 	base: {
 		repo: {
@@ -268,8 +271,8 @@ export const getPullsArgsForDefaultBranch = (context: ActionContext, defaultBran
 				login: context.actionContext.repo.owner,
 			},
 		},
-		ref: defaultBranch,
+		ref: context.defaultBranch,
 	},
-	title: '',
-	'html_url': '',
+	title: 'default branch',
+	'html_url': getDefaultBranchUrl(context),
 });

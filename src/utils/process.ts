@@ -1,4 +1,3 @@
-import { getInput } from '@actions/core';
 import { GitHub } from '@actions/github';
 import { Logger, GitHelper, Utils, ContextHelper } from '@technote-space/github-action-helper';
 import {
@@ -11,7 +10,6 @@ import {
 	updatePr,
 	closePR,
 	resolveConflicts,
-	getDefaultBranch,
 } from './command';
 import {
 	replaceDirectory,
@@ -42,7 +40,7 @@ const checkActionPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, 
 	if (!pr) {
 		return getResult('failed', 'not found', context);
 	}
-	if (pr.base.ref === await getDefaultBranch(octokit, context)) {
+	if (pr.base.ref === context.defaultBranch) {
 		return true;
 	}
 	const basePr = await getApiHelper(logger).findPullRequest(pr.base.ref, octokit, context.actionContext);
@@ -172,10 +170,10 @@ const getActionContext = (context: ActionContext, pull: PullsParams): ActionCont
 		ref: pull.head.ref,
 	}),
 	actionDetail: context.actionDetail,
+	defaultBranch: context.defaultBranch,
 });
 
-export const execute = async(context: ActionContext): Promise<void> => {
-	const octokit = new GitHub(getInput('GITHUB_TOKEN', {required: true}));
+export const execute = async(octokit: GitHub, context: ActionContext): Promise<void> => {
 	if (isClosePR(context)) {
 		await closePR(getPrBranchName(context), commonLogger, octokit, context);
 		return;
@@ -191,9 +189,9 @@ export const execute = async(context: ActionContext): Promise<void> => {
 		const results: ProcessResult[] = [];
 		if (checkDefaultBranch(context)) {
 			try {
-				results.push(await createPr(helper, logger, octokit, getActionContext(context, getPullsArgsForDefaultBranch(context, await getDefaultBranch(octokit, context)))));
+				results.push(await createPr(helper, logger, octokit, getActionContext(context, getPullsArgsForDefaultBranch(context))));
 			} catch (error) {
-				results.push(getResult('failed', error.message, getActionContext(context, getPullsArgsForDefaultBranch(context, await getDefaultBranch(octokit, context)))));
+				results.push(getResult('failed', error.message, getActionContext(context, getPullsArgsForDefaultBranch(context))));
 			}
 		}
 		for await (const pull of getApiHelper(logger).pullsList({}, octokit, context.actionContext)) {

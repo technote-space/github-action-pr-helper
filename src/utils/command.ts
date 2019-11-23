@@ -1,3 +1,4 @@
+import { Context } from '@actions/github/lib/context';
 import { mkdirSync } from 'fs';
 import { Logger, GitHelper, Utils, ContextHelper, ApiHelper } from '@technote-space/github-action-helper';
 import { GitHub } from '@actions/github';
@@ -296,16 +297,16 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
 	}
 };
 
-export const getDefaultBranch = async(octokit: GitHub, context: ActionContext): Promise<string> => {
+export const getDefaultBranch = async(octokit: GitHub, context: Context): Promise<string> => {
 	const key = getCacheKey('repos', {
-		owner: context.actionContext.repo.owner,
-		repo: context.actionContext.repo.repo,
+		owner: context.repo.owner,
+		repo: context.repo.repo,
 	});
 	if (!(key in cache)) {
 		// eslint-disable-next-line require-atomic-updates
 		cache[key] = (await octokit.repos.get({
-			owner: context.actionContext.repo.owner,
-			repo: context.actionContext.repo.repo,
+			owner: context.repo.owner,
+			repo: context.repo.repo,
 		})).data.default_branch;
 	}
 	return cache[key];

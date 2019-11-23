@@ -32,6 +32,7 @@ const actionDetails: ActionDetails = {
 const getActionContext             = (context: Context, _actionDetails?: ActionDetails): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ?? actionDetails,
+	defaultBranch: 'master',
 });
 const generateActionContext        = (
 	settings: {
