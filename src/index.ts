@@ -50,9 +50,9 @@ export async function main(option: MainArguments): Promise<void> {
  * @param {object} option option
  * @param {Logger|undefined} option.logger logger
  * @param {string|undefined} option.message message
- * @return {Promise} void
+ * @return {void} void
  */
-export function run(option: MainArguments): Promise<void> {
+export function run(option: MainArguments): void {
 	/* istanbul ignore next */
-	return main(option).catch(error => setFailed(error.message));
+	main(option).catch(error => setFailed(error.message));
 }
