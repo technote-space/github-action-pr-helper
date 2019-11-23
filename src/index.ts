@@ -45,6 +45,7 @@ export async function main(option: MainArguments): Promise<void> {
 	await execute(octokit, await getActionContext(option, octokit));
 }
 
+/* istanbul ignore next */
 /**
  * @param {object} option option
  * @param {Logger|undefined} option.logger logger
