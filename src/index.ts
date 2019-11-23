@@ -1,6 +1,9 @@
-import { setFailed } from '@actions/core';
+import { getInput, setFailed } from '@actions/core';
 import { context } from '@actions/github';
+import { GitHub } from '@actions/github';
+import { Context } from '@actions/github/lib/context';
 import { Logger, ContextHelper, Command, ApiHelper, GitHelper, Utils } from '@technote-space/github-action-helper';
+import { getDefaultBranch } from './utils/command';
 import { isTargetContext } from './utils/misc';
 import { execute } from './utils/process';
 import { ActionContext, MainArguments } from './types';
@@ -10,9 +13,13 @@ export const getLogger        = (logger?: Logger): Logger => logger ?? new Logge
 export { isTargetContext, execute };
 export { Logger, ContextHelper, Command, ApiHelper, GitHelper, Utils };
 
-const getActionContext = (option: MainArguments): ActionContext => ({
-	actionContext: option.context ?? context,
+/* istanbul ignore next */
+const getContext = (option: MainArguments): Context => option.context ?? context;
+
+const getActionContext = async(option: MainArguments, octokit: GitHub): Promise<ActionContext> => ({
+	actionContext: getContext(option),
 	actionDetail: option,
+	defaultBranch: await getDefaultBranch(octokit, getContext(option)),
 });
 
 /**
@@ -26,23 +33,25 @@ const getActionContext = (option: MainArguments): ActionContext => ({
  */
 export async function main(option: MainArguments): Promise<void> {
 	if (option.rootDir) {
-		/* istanbul ignore next */
-		showActionInfo(option.rootDir, getLogger(option.logger), option.context ?? context);
+		showActionInfo(option.rootDir, getLogger(option.logger), getContext(option));
 	}
 
-	if (!isTargetContext(getActionContext(option))) {
+	const octokit = new GitHub(getInput('GITHUB_TOKEN', {required: true}));
+	if (!isTargetContext(await getActionContext(option, octokit))) {
 		getLogger(option.logger).info(option.notTargetEventMessage ?? 'This is not target event.');
 		return;
 	}
 
-	await execute(getActionContext(option));
+	await execute(octokit, await getActionContext(option, octokit));
 }
 
 /**
  * @param {object} option option
  * @param {Logger|undefined} option.logger logger
  * @param {string|undefined} option.message message
+ * @return {Promise} void
  */
-export function run(option: MainArguments): void {
-	main(option).catch(error => setFailed(error.message));
+export function run(option: MainArguments): Promise<void> {
+	/* istanbul ignore next */
+	return main(option).catch(error => setFailed(error.message));
 }

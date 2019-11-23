@@ -1,5 +1,6 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
+import { GitHub } from '@actions/github';
 import nock from 'nock';
 import { resolve } from 'path';
 import {
@@ -31,9 +32,10 @@ const actionDetails: ActionDetails = {
 	actionOwner: 'octocat',
 	actionRepo: 'hello-world',
 };
-const getActionContext             = (context: Context, _actionDetails?: object): ActionContext => ({
+const getActionContext             = (context: Context, _actionDetails?: object, branch?: string): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ? Object.assign({}, actionDetails, _actionDetails) : actionDetails,
+	defaultBranch: branch ?? 'master',
 });
 
 const context = (action: string, event = 'pull_request'): Context => generateContext({
@@ -57,6 +59,7 @@ const context = (action: string, event = 'pull_request'): Context => generateCon
 		},
 	},
 });
+const octokit = new GitHub('');
 
 describe('execute', () => {
 	disableNetConnect(nock);
@@ -64,9 +67,8 @@ describe('execute', () => {
 	testChildProcess();
 
 	it('should close pull request (closed action)', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
-		process.env.INPUT_GITHUB_TOKEN = 'test-token';
-		const mockStdout               = spyOnStdout();
+		process.env.GITHUB_WORKSPACE = resolve('test');
+		const mockStdout             = spyOnStdout();
 
 		nock('https://api.github.com')
 			.persist()
@@ -79,7 +81,7 @@ describe('execute', () => {
 			.delete('/repos/hello/world/git/refs/heads/hello-world/close/test')
 			.reply(204);
 
-		await execute(getActionContext(context('closed'), {
+		await execute(octokit, getActionContext(context('closed'), {
 			prBranchName: 'close/test',
 			prCloseMessage: 'close message',
 		}));
@@ -126,7 +128,7 @@ describe('execute', () => {
 			.delete('/repos/hello/world/git/refs/heads/hello-world/create/test')
 			.reply(204);
 
-		await execute(getActionContext(context('synchronize'), {
+		await execute(octokit, getActionContext(context('synchronize'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
@@ -202,7 +204,7 @@ describe('execute', () => {
 			.delete('/repos/hello/world/git/refs/heads/hello-world/test-branch')
 			.reply(204);
 
-		await execute(getActionContext(context('synchronize'), {
+		await execute(octokit, getActionContext(context('synchronize'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
@@ -271,11 +273,11 @@ describe('execute', () => {
 			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic')
 			.reply(204);
 
-		await execute(getActionContext(context('', 'schedule'), {
+		await execute(octokit, getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
 			prBranchName: 'test-branch',
 			checkDefaultBranch: false,
-		}));
+		}, 'develop'));
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
@@ -315,10 +317,10 @@ describe('execute', () => {
 			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic')
 			.reply(204);
 
-		await execute(getActionContext(context('', 'schedule'), {
+		await execute(octokit, getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
 			checkDefaultBranch: false,
-		}));
+		}, 'develop'));
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
@@ -337,9 +339,8 @@ describe('execute', () => {
 	});
 
 	it('should do nothing (action pull request not found)', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
-		process.env.INPUT_GITHUB_TOKEN = 'test-token';
-		const mockStdout               = spyOnStdout();
+		process.env.GITHUB_WORKSPACE = resolve('test');
+		const mockStdout             = spyOnStdout();
 
 		nock('https://api.github.com')
 			.persist()
@@ -350,7 +351,7 @@ describe('execute', () => {
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
 			.reply(200, () => []);
 
-		await execute(getActionContext(context('', 'schedule'), {
+		await execute(octokit, getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
 			checkDefaultBranch: false,
 		}));
@@ -368,8 +369,7 @@ describe('execute', () => {
 	});
 
 	it('should do nothing (not target branch)', async() => {
-		process.env.INPUT_GITHUB_TOKEN = 'test-token';
-		const mockStdout               = spyOnStdout();
+		const mockStdout = spyOnStdout();
 
 		nock('https://api.github.com')
 			.persist()
@@ -378,7 +378,7 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
 			.reply(200, () => ([]));
 
-		await execute(getActionContext(context('synchronize'), {
+		await execute(octokit, getActionContext(context('synchronize'), {
 			targetBranchPrefix: 'test/',
 		}));
 
@@ -396,7 +396,7 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Ftest-branch')
 			.reply(200, () => []);
 
-		await execute(getActionContext(context('synchronize'), {
+		await execute(octokit, getActionContext(context('synchronize'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
@@ -436,10 +436,9 @@ describe('execute', () => {
 	});
 
 	it('should do nothing (not target branch (push))', async() => {
-		process.env.INPUT_GITHUB_TOKEN = 'test-token';
-		const mockStdout               = spyOnStdout();
+		const mockStdout = spyOnStdout();
 
-		await execute(getActionContext(context('', 'push')));
+		await execute(octokit, getActionContext(context('', 'push')));
 
 		stdoutCalledWith(mockStdout, []);
 	});
@@ -458,7 +457,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(getActionContext(Object.assign(context('', 'push'), {
+		await execute(octokit, getActionContext(Object.assign(context('', 'push'), {
 			ref: 'refs/heads/test/change',
 		}), {
 			targetBranchPrefix: 'test/',
@@ -512,7 +511,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(getActionContext(Object.assign(context('', 'push'), {
+		await execute(octokit, getActionContext(Object.assign(context('', 'push'), {
 			ref: 'refs/heads/test/change',
 		}), {
 			targetBranchPrefix: 'test/',
@@ -586,7 +585,7 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'));
 
-		await execute(getActionContext(context('synchronize'), {
+		await execute(octokit, getActionContext(context('synchronize'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
@@ -680,7 +679,7 @@ describe('execute', () => {
 			.get('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'));
 
-		await execute(getActionContext(context('', 'schedule'), {
+		await execute(octokit, getActionContext(context('', 'schedule'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
@@ -784,11 +783,11 @@ describe('execute', () => {
 			.get('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'));
 
-		await execute(getActionContext(context('', 'schedule'), {
+		await execute(octokit, getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
 			prBranchName: 'test-branch',
 			checkDefaultBranch: false,
-		}));
+		}, 'develop'));
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
@@ -866,7 +865,7 @@ describe('execute', () => {
 			.get('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'));
 
-		await execute(getActionContext(context('', 'schedule'), {
+		await execute(octokit, getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
 			prBranchName: 'test-branch',
 			checkDefaultBranch: false,
@@ -965,7 +964,7 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'));
 
-		await execute(getActionContext(context('', 'schedule'), {
+		await execute(octokit, getActionContext(context('', 'schedule'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
@@ -1043,7 +1042,7 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
 			.reply(200, () => ([]));
 
-		await execute(getActionContext(context('', 'schedule'), {
+		await execute(octokit, getActionContext(context('', 'schedule'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
@@ -1153,7 +1152,7 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.false'));
 
-		await execute(getActionContext(context('synchronize'), {
+		await execute(octokit, getActionContext(context('synchronize'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
@@ -1211,7 +1210,7 @@ describe('execute', () => {
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({stdout: ''});
 
-		await expect(execute(getActionContext(Object.assign(context('', 'push'), {
+		await expect(execute(octokit, getActionContext(Object.assign(context('', 'push'), {
 			ref: 'refs/heads/test/change',
 		}), {
 			executeCommands: ['yarn upgrade'],
@@ -1247,7 +1246,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await expect(execute(getActionContext(Object.assign(context('', 'push'), {
+		await expect(execute(octokit, getActionContext(Object.assign(context('', 'push'), {
 			ref: 'refs/heads/test/change',
 		}), {
 			executeCommands: ['yarn upgrade'],
@@ -1306,7 +1305,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(getActionContext(Object.assign(context('', 'push'), {
+		await execute(octokit, getActionContext(Object.assign(context('', 'push'), {
 			ref: 'refs/heads/test/change',
 		}), {
 			executeCommands: ['yarn upgrade'],

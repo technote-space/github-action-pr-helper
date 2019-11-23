@@ -66,6 +66,7 @@ const actionDetails: ActionDetails = {
 const getActionContext             = (context: Context, _actionDetails?: object): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ? Object.assign({}, actionDetails, _actionDetails) : actionDetails,
+	defaultBranch: 'master',
 });
 
 describe('clone', () => {
@@ -622,6 +623,6 @@ describe('getDefaultBranch', () => {
 			.get('/repos/hello/world')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
-		expect(await getDefaultBranch(octokit, getActionContext(context({})))).toBe('master');
+		expect(await getDefaultBranch(octokit, context({}))).toBe('master');
 	});
 });
