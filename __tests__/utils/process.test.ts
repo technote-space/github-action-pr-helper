@@ -636,6 +636,62 @@ describe('execute', () => {
 		]);
 	});
 
+	it('should create commit', async() => {
+		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.endsWith('status --short -uno')) {
+					return 'M  __tests__/fixtures/test.md';
+				}
+				if (command.includes(' branch -a ')) {
+					return 'test';
+				}
+				return '';
+			},
+		});
+		setExists(true);
+
+		await execute(octokit, getActionContext(context('', 'push'), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create test commit',
+		}));
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Initializing working directory...',
+			'[command]rm -rdf ./* ./.[!.]*',
+			'::endgroup::',
+			'::group::Cloning [test] branch from the remote repo...',
+			'[command]git clone --branch=test',
+			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'  >> test',
+			'[command]ls -la',
+			'::endgroup::',
+			'::group::Running commands...',
+			'[command]yarn upgrade',
+			'::endgroup::',
+			'::group::Checking diff...',
+			'[command]git add --all',
+			'[command]git status --short -uno',
+			'::endgroup::',
+			'::group::Configuring git committer to be GitHub Actions <example@example.com>',
+			'[command]git config user.name "GitHub Actions"',
+			'[command]git config user.email "example@example.com"',
+			'::endgroup::',
+			'::group::Committing...',
+			'[command]git commit -qm "test: create test commit"',
+			'[command]git show --stat-count=10 HEAD',
+			'::endgroup::',
+			'::group::Pushing to hello/world@test...',
+			'[command]git push origin "test":"refs/heads/test"',
+			'::endgroup::',
+		]);
+	});
+
 	it('should do schedule', async() => {
 		process.env.GITHUB_WORKSPACE   = resolve('test');
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
