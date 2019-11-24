@@ -38,12 +38,12 @@ const getActionContext             = (context: Context, _actionDetails?: object,
 	defaultBranch: branch ?? 'master',
 });
 
-const context = (action: string, event = 'pull_request'): Context => generateContext({
+const context = (action: string, event = 'pull_request', ref = 'heads/test'): Context => generateContext({
 	owner: 'hello',
 	repo: 'world',
 	event,
 	action,
-	ref: 'heads/test',
+	ref,
 	sha: '7638417db6d59f3c431d3e1f261cc637155684cd',
 }, {
 	payload: {
@@ -459,9 +459,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(octokit, getActionContext(Object.assign(context('', 'push'), {
-			ref: 'refs/heads/test/change',
-		}), {
+		await execute(octokit, getActionContext(context('', 'push', 'heads/test/change'), {
 			targetBranchPrefix: 'test/',
 			executeCommands: ['yarn upgrade'],
 		}));
@@ -513,9 +511,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(octokit, getActionContext(Object.assign(context('', 'push'), {
-			ref: 'refs/heads/test/change',
-		}), {
+		await execute(octokit, getActionContext(context('', 'push', 'heads/test/change'), {
 			targetBranchPrefix: 'test/',
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
@@ -1212,9 +1208,7 @@ describe('execute', () => {
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({stdout: ''});
 
-		await expect(execute(octokit, getActionContext(Object.assign(context('', 'push'), {
-			ref: 'refs/heads/test/change',
-		}), {
+		await expect(execute(octokit, getActionContext(context('', 'push', 'heads/test/change'), {
 			executeCommands: ['yarn upgrade'],
 			targetBranchPrefix: 'test/',
 		}))).rejects.toThrow('remote branch [test/change] not found.');
@@ -1248,9 +1242,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await expect(execute(octokit, getActionContext(Object.assign(context('', 'push'), {
-			ref: 'refs/heads/test/change',
-		}), {
+		await expect(execute(octokit, getActionContext(context('', 'push', 'heads/test/change'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
@@ -1307,9 +1299,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(octokit, getActionContext(Object.assign(context('', 'push'), {
-			ref: 'refs/heads/test/change',
-		}), {
+		await execute(octokit, getActionContext(context('', 'push', 'heads/test/change'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
