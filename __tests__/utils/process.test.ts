@@ -438,7 +438,9 @@ describe('execute', () => {
 	it('should do nothing (not target branch (push))', async() => {
 		const mockStdout = spyOnStdout();
 
-		await execute(octokit, getActionContext(context('', 'push')));
+		await execute(octokit, getActionContext(context('', 'push'), {
+			targetBranchPrefix: 'test/',
+		}));
 
 		stdoutCalledWith(mockStdout, []);
 	});
