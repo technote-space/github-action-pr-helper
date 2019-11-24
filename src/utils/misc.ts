@@ -26,9 +26,7 @@ export const getCommitEmail = (context: ActionContext): string => getActionDetai
 
 export const replaceDirectory = (message: string): string => {
 	const workDir = getWorkspace();
-	return message
-		.split(` -C ${workDir}`).join('')
-		.split(workDir).join('[Working Directory]');
+	return replaceAll(replaceAll(message, ` -C ${workDir}`, ''), workDir, '[Working Directory]');
 };
 
 const getVariable = (index: number, context: ActionContext): string => getActionDetail<string[]>('prVariables', context)[index];
@@ -84,7 +82,7 @@ const replaceContextVariables = (string: string, context: ActionContext): string
 
 export const getPrHeadRef = (context: ActionContext): string => context.actionContext.payload.pull_request?.head.ref ?? '';
 
-const getPrBranchPrefix = (context: ActionContext): string => context.actionDetail.prBranchPrefix ?? `${context.actionDetail.actionRepo}/`;
+const getPrBranchPrefix = (context: ActionContext): string => context.actionDetail.prBranchPrefix || `${context.actionDetail.actionRepo}/`;
 
 export const isActionPr = (context: ActionContext): boolean => getPrefixRegExp(getPrBranchPrefix(context)).test(getPrHeadRef(context));
 
@@ -199,12 +197,12 @@ export const isDisabledDeletePackage = (context: ActionContext): boolean => !(co
 
 export const isClosePR = (context: ActionContext): boolean => isPr(context.actionContext) && context.actionContext.payload.action === 'closed';
 
-export const isTargetBranch = (branchName: string, context: ActionContext, defaultFlag = true): boolean => {
+export const isTargetBranch = (branchName: string, context: ActionContext): boolean => {
 	const prefix = getActionDetail<string>('targetBranchPrefix', context, '');
 	if (prefix) {
 		return getPrefixRegExp(prefix).test(branchName);
 	}
-	return defaultFlag;
+	return true;
 };
 
 export const isTargetContext = (context: ActionContext): boolean => {
@@ -217,7 +215,7 @@ export const isTargetContext = (context: ActionContext): boolean => {
 	}
 
 	if (isPush(context.actionContext)) {
-		return isTargetBranch(getBranch(context.actionContext), context, false);
+		return isTargetBranch(getBranch(context.actionContext), context);
 	}
 
 	if (isActionPr(context) || !isTargetBranch(getPrHeadRef(context), context)) {

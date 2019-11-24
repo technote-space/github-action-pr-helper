@@ -114,7 +114,7 @@ const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, conte
 
 const createCommit = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => {
 	const branchName = getBranch(context.actionContext);
-	if (!isTargetBranch(branchName, context, false)) {
+	if (!isTargetBranch(branchName, context)) {
 		return;
 	}
 
