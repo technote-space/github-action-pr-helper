@@ -38,12 +38,12 @@ const getActionContext             = (context: Context, _actionDetails?: object,
 	defaultBranch: branch ?? 'master',
 });
 
-const context = (action: string, event = 'pull_request'): Context => generateContext({
+const context = (action: string, event = 'pull_request', ref = 'heads/test'): Context => generateContext({
 	owner: 'hello',
 	repo: 'world',
 	event,
 	action,
-	ref: 'heads/test',
+	ref,
 	sha: '7638417db6d59f3c431d3e1f261cc637155684cd',
 }, {
 	payload: {
@@ -438,7 +438,9 @@ describe('execute', () => {
 	it('should do nothing (not target branch (push))', async() => {
 		const mockStdout = spyOnStdout();
 
-		await execute(octokit, getActionContext(context('', 'push')));
+		await execute(octokit, getActionContext(context('', 'push'), {
+			targetBranchPrefix: 'test/',
+		}));
 
 		stdoutCalledWith(mockStdout, []);
 	});
@@ -457,9 +459,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(octokit, getActionContext(Object.assign(context('', 'push'), {
-			ref: 'refs/heads/test/change',
-		}), {
+		await execute(octokit, getActionContext(context('', 'push', 'heads/test/change'), {
 			targetBranchPrefix: 'test/',
 			executeCommands: ['yarn upgrade'],
 		}));
@@ -511,9 +511,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(octokit, getActionContext(Object.assign(context('', 'push'), {
-			ref: 'refs/heads/test/change',
-		}), {
+		await execute(octokit, getActionContext(context('', 'push', 'heads/test/change'), {
 			targetBranchPrefix: 'test/',
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
@@ -634,6 +632,62 @@ describe('execute', () => {
 			'[command]git push origin "hello-world/create/test":"refs/heads/hello-world/create/test"',
 			'::endgroup::',
 			'::group::Creating comment to PullRequest... [hello-world/create/test] -> [heads/test]',
+			'::endgroup::',
+		]);
+	});
+
+	it('should create commit', async() => {
+		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.endsWith('status --short -uno')) {
+					return 'M  __tests__/fixtures/test.md';
+				}
+				if (command.includes(' branch -a ')) {
+					return 'test';
+				}
+				return '';
+			},
+		});
+		setExists(true);
+
+		await execute(octokit, getActionContext(context('', 'push'), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create test commit',
+		}));
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Initializing working directory...',
+			'[command]rm -rdf ./* ./.[!.]*',
+			'::endgroup::',
+			'::group::Cloning [test] branch from the remote repo...',
+			'[command]git clone --branch=test',
+			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'  >> test',
+			'[command]ls -la',
+			'::endgroup::',
+			'::group::Running commands...',
+			'[command]yarn upgrade',
+			'::endgroup::',
+			'::group::Checking diff...',
+			'[command]git add --all',
+			'[command]git status --short -uno',
+			'::endgroup::',
+			'::group::Configuring git committer to be GitHub Actions <example@example.com>',
+			'[command]git config user.name "GitHub Actions"',
+			'[command]git config user.email "example@example.com"',
+			'::endgroup::',
+			'::group::Committing...',
+			'[command]git commit -qm "test: create test commit"',
+			'[command]git show --stat-count=10 HEAD',
+			'::endgroup::',
+			'::group::Pushing to hello/world@test...',
+			'[command]git push origin "test":"refs/heads/test"',
 			'::endgroup::',
 		]);
 	});
@@ -1210,9 +1264,7 @@ describe('execute', () => {
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({stdout: ''});
 
-		await expect(execute(octokit, getActionContext(Object.assign(context('', 'push'), {
-			ref: 'refs/heads/test/change',
-		}), {
+		await expect(execute(octokit, getActionContext(context('', 'push', 'heads/test/change'), {
 			executeCommands: ['yarn upgrade'],
 			targetBranchPrefix: 'test/',
 		}))).rejects.toThrow('remote branch [test/change] not found.');
@@ -1246,9 +1298,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await expect(execute(octokit, getActionContext(Object.assign(context('', 'push'), {
-			ref: 'refs/heads/test/change',
-		}), {
+		await expect(execute(octokit, getActionContext(context('', 'push', 'heads/test/change'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
@@ -1305,9 +1355,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(octokit, getActionContext(Object.assign(context('', 'push'), {
-			ref: 'refs/heads/test/change',
-		}), {
+		await execute(octokit, getActionContext(context('', 'push', 'heads/test/change'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',

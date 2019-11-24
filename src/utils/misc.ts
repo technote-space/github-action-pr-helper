@@ -197,12 +197,12 @@ export const isDisabledDeletePackage = (context: ActionContext): boolean => !(co
 
 export const isClosePR = (context: ActionContext): boolean => isPr(context.actionContext) && context.actionContext.payload.action === 'closed';
 
-export const isTargetBranch = (branchName: string, context: ActionContext, defaultFlag = true): boolean => {
+export const isTargetBranch = (branchName: string, context: ActionContext): boolean => {
 	const prefix = getActionDetail<string>('targetBranchPrefix', context, '');
 	if (prefix) {
 		return getPrefixRegExp(prefix).test(branchName);
 	}
-	return defaultFlag;
+	return true;
 };
 
 export const isTargetContext = (context: ActionContext): boolean => {
@@ -215,7 +215,7 @@ export const isTargetContext = (context: ActionContext): boolean => {
 	}
 
 	if (isPush(context.actionContext)) {
-		return isTargetBranch(getBranch(context.actionContext), context, false);
+		return isTargetBranch(getBranch(context.actionContext), context);
 	}
 
 	if (isActionPr(context) || !isTargetBranch(getPrHeadRef(context), context)) {
