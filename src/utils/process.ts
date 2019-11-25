@@ -136,19 +136,25 @@ const createCommit = async(helper: GitHelper, logger: Logger, octokit: GitHub, c
 	}
 };
 
-const outputResults = async(results: ProcessResult[]): Promise<void> => {
-	const total     = results.length;
-	const succeeded = results.filter(item => item.result === 'succeeded').length;
-	const failed    = results.filter(item => item.result === 'failed').length;
-	const mark      = {
+const outputResult = (result: ProcessResult, endProcess = false): void => {
+	const mark = {
 		'succeeded': commonLogger.c('✔', 'green'),
 		'failed': commonLogger.c('×', 'red'),
 		'skipped': commonLogger.c('→', 'yellow'),
 	};
+	if (endProcess) {
+		commonLogger.endProcess();
+	}
+	commonLogger.info(mark[result.result] + '\t[%s] %s', result.branch, result.detail);
+};
+
+const outputResults = (results: ProcessResult[]): void => {
+	const total     = results.length;
+	const succeeded = results.filter(item => item.result === 'succeeded').length;
+	const failed    = results.filter(item => item.result === 'failed').length;
+
 	commonLogger.startProcess('Total:%d  Succeeded:%d  Failed:%d  Skipped:%d', total, succeeded, failed, total - succeeded - failed);
-	results.forEach(result => {
-		commonLogger.info(mark[result.result] + '\t[%s] %s', result.branch, result.detail);
-	});
+	results.forEach(result => outputResult(result));
 };
 
 const getActionContext = (context: ActionContext, pull: PullsParams): ActionContext => ({
@@ -183,7 +189,7 @@ export const execute = async(octokit: GitHub, context: ActionContext): Promise<v
 	if (isPush(context.actionContext)) {
 		await createCommit(helper, commonLogger, octokit, context);
 	} else if (isPr(context.actionContext)) {
-		await createPr(helper, commonLogger, octokit, context);
+		outputResult(await createPr(helper, commonLogger, octokit, context), true);
 	} else {
 		const logger                   = new Logger(replaceDirectory, true);
 		const results: ProcessResult[] = [];

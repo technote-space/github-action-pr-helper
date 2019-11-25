@@ -177,6 +177,7 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Deleting reference... [refs/heads/hello-world/create/test]',
 			'::endgroup::',
+			'> \x1b[32;40;0m✔\x1b[0m\t[change] has been closed because there is no reference diff',
 		]);
 	});
 
@@ -248,6 +249,7 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Deleting reference... [refs/heads/hello-world/test-branch]',
 			'::endgroup::',
+			'> \x1b[32;40;0m✔\x1b[0m\t[change] There is no reference diff',
 		]);
 	});
 
@@ -369,7 +371,8 @@ describe('execute', () => {
 	});
 
 	it('should do nothing (not target branch)', async() => {
-		const mockStdout = spyOnStdout();
+		process.env.GITHUB_WORKSPACE = resolve('test');
+		const mockStdout             = spyOnStdout();
 
 		nock('https://api.github.com')
 			.persist()
@@ -382,7 +385,9 @@ describe('execute', () => {
 			targetBranchPrefix: 'test/',
 		}));
 
-		stdoutCalledWith(mockStdout, []);
+		stdoutCalledWith(mockStdout, [
+			'> \x1b[33;40;0m→\x1b[0m\t[change] This is not target branch',
+		]);
 	});
 
 	it('should do nothing (no diff)', async() => {
@@ -432,6 +437,7 @@ describe('execute', () => {
 			'[command]git status --short -uno',
 			'> There is no diff.',
 			'::endgroup::',
+			'> \x1b[33;40;0m→\x1b[0m\t[change] There is no diff',
 		]);
 	});
 
@@ -633,6 +639,7 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Creating comment to PullRequest... [hello-world/create/test] -> [heads/test]',
 			'::endgroup::',
+			'> \x1b[32;40;0m✔\x1b[0m\t[change] updated',
 		]);
 	});
 
@@ -1257,6 +1264,7 @@ describe('execute', () => {
 			'::group::Pushing to hello/world@hello-world/create/test...',
 			'[command]git push origin "hello-world/create/test":"refs/heads/hello-world/create/test"',
 			'::endgroup::',
+			'> \x1b[32;40;0m✔\x1b[0m\t[change] updated',
 		]);
 	});
 
