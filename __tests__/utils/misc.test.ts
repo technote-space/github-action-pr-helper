@@ -178,6 +178,38 @@ describe('isTargetContext', () => {
 		}))).toBe(true);
 	});
 
+	it('should return true 9', () => {
+		expect(isTargetContext(generateActionContext({
+			event: 'pull_request',
+			action: 'synchronize',
+		}, {
+			payload: {
+				'pull_request': {
+					head: {
+						ref: 'hello-world/change',
+					},
+				},
+			},
+		}))).toBe(true);
+	});
+
+	it('should return true 10', () => {
+		expect(isTargetContext(generateActionContext({
+			event: 'pull_request',
+			action: 'synchronize',
+		}, {
+			payload: {
+				'pull_request': {
+					head: {
+						ref: 'hello-world/change',
+					},
+				},
+			},
+		}, {
+			targetBranchPrefix: 'target/',
+		}))).toBe(true);
+	});
+
 	it('should return false 1', () => {
 		expect(isTargetContext(generateActionContext({
 			ref: 'tags/test',
@@ -235,32 +267,10 @@ describe('isTargetContext', () => {
 
 	it('should return false 6', () => {
 		expect(isTargetContext(generateActionContext({
+			ref: 'heads/change',
 			event: 'pull_request',
 			action: 'synchronize',
-		}, {
-			payload: {
-				'pull_request': {
-					head: {
-						ref: 'hello-world/change',
-					},
-				},
-			},
-		}))).toBe(false);
-	});
-
-	it('should return false 7', () => {
-		expect(isTargetContext(generateActionContext({
-			event: 'pull_request',
-			action: 'synchronize',
-		}, {
-			payload: {
-				'pull_request': {
-					head: {
-						ref: 'hello-world/change',
-					},
-				},
-			},
-		}, {
+		}, undefined, {
 			targetBranchPrefix: 'target/',
 		}))).toBe(false);
 	});
