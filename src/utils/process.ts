@@ -56,9 +56,6 @@ const checkActionPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, 
 };
 
 const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
-	if (!isTargetBranch(getPrHeadRef(context), context)) {
-		return getResult('skipped', 'This is not target branch', context);
-	}
 	if (isCron(context.actionContext)) {
 		commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
 	}
@@ -67,6 +64,9 @@ const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, conte
 		if (result !== true) {
 			return result;
 		}
+	}
+	if (!isTargetBranch(getPrHeadRef(context), context)) {
+		return getResult('skipped', 'This is not target branch', context);
 	}
 
 	let mergeable    = false;

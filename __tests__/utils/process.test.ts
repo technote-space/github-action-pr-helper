@@ -745,6 +745,8 @@ describe('execute', () => {
 		}));
 
 		stdoutCalledWith(mockStdout, [
+			'::group::Target PullRequest Ref [master]',
+			'::endgroup::',
 			'::group::Target PullRequest Ref [feature/new-topic]',
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
