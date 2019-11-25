@@ -1,7 +1,7 @@
 import { Utils, ContextHelper, GitHelper, Logger } from '@technote-space/github-action-helper';
 import { isTargetEvent, isTargetLabels } from '@technote-space/filter-github-action';
 import moment from 'moment';
-import { DEFAULT_TARGET_EVENTS } from '../constant';
+import { DEFAULT_TARGET_EVENTS, DEFAULT_COMMIT_NAME, DEFAULT_COMMIT_EMAIL } from '../constant';
 import { ActionContext, PullsParams } from '../types';
 
 const {getWorkspace, getPrefixRegExp}       = Utils;
@@ -20,9 +20,9 @@ export const getActionDetail = <T>(key: string, context: ActionContext, defaultV
 
 export const getCommitMessage = (context: ActionContext): string => getActionDetail<string>('commitMessage', context);
 
-export const getCommitName = (context: ActionContext): string => getActionDetail<string>('commitName', context);
+export const getCommitName = (context: ActionContext): string => getActionDetail<string>('commitName', context, DEFAULT_COMMIT_NAME);
 
-export const getCommitEmail = (context: ActionContext): string => getActionDetail<string>('commitEmail', context);
+export const getCommitEmail = (context: ActionContext): string => getActionDetail<string>('commitEmail', context, DEFAULT_COMMIT_EMAIL);
 
 export const replaceDirectory = (message: string): string => {
 	const workDir = getWorkspace();

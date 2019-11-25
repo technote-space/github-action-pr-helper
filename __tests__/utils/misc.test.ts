@@ -23,6 +23,7 @@ import {
 	checkDefaultBranch,
 } from '../../src/utils/misc';
 import { ActionContext, ActionDetails } from '../../src/types';
+import { DEFAULT_COMMIT_NAME, DEFAULT_COMMIT_EMAIL } from '../../src/constant';
 
 const actionDetails: ActionDetails = {
 	actionName: 'Test Action',
@@ -295,9 +296,8 @@ describe('getCommitName', () => {
 		expect(getCommitName(generateActionContext({}, {}, {commitName: 'test'}))).toBe('test');
 	});
 
-	it('should throw error', () => {
-		expect(() => getCommitName(generateActionContext({}))).toThrow();
-		expect(() => getCommitName(generateActionContext({}, {}, {commitName: ''}))).toThrow();
+	it('should get default commit name', () => {
+		expect(getCommitName(generateActionContext({}))).toBe(DEFAULT_COMMIT_NAME);
 	});
 });
 
@@ -308,9 +308,8 @@ describe('getCommitEmail', () => {
 		expect(getCommitEmail(generateActionContext({}, {}, {commitEmail: 'test'}))).toBe('test');
 	});
 
-	it('should throw error', () => {
-		expect(() => getCommitEmail(generateActionContext({}))).toThrow();
-		expect(() => getCommitEmail(generateActionContext({}, {}, {commitEmail: ''}))).toThrow();
+	it('should get default commit email', () => {
+		expect(getCommitEmail(generateActionContext({}))).toBe(DEFAULT_COMMIT_EMAIL);
 	});
 });
 
