@@ -218,7 +218,11 @@ export const isTargetContext = (context: ActionContext): boolean => {
 		return isTargetBranch(getBranch(context.actionContext), context);
 	}
 
-	if (isActionPr(context) || !isTargetBranch(getPrHeadRef(context), context)) {
+	if (isActionPr(context)) {
+		return true;
+	}
+
+	if (!isTargetBranch(getPrHeadRef(context), context)) {
 		return false;
 	}
 
