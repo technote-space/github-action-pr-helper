@@ -749,11 +749,10 @@ describe('execute', () => {
 			prTitle: 'test: create pull request (${PR_NUMBER})',
 			prBody: 'pull request body',
 			targetBranchPrefix: 'feature/',
+			checkDefaultBranch: false,
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Target PullRequest Ref [master]',
-			'::endgroup::',
 			'::group::Target PullRequest Ref [feature/new-topic]',
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
@@ -816,8 +815,7 @@ describe('execute', () => {
 			'[command]git push origin "hello-world/create/test":"refs/heads/hello-world/create/test"',
 			'> Creating comment to PullRequest... [hello-world/create/test] -> [feature/new-topic]',
 			'::endgroup::',
-			'::group::Total:3  Succeeded:2  Failed:0  Skipped:1',
-			'> \x1b[33;40;0m→\x1b[0m\t[master] This is not target branch',
+			'::group::Total:2  Succeeded:2  Failed:0  Skipped:0',
 			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-topic] updated',
 			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-topic] updated',
 			'::endgroup::',
