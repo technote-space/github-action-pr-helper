@@ -193,11 +193,16 @@ export const getPrBody = (files: string[], output: {
 	context,
 );
 
+export const checkDefaultBranch = (context: ActionContext): boolean => context.actionDetail.checkDefaultBranch ?? true;
+
 export const isDisabledDeletePackage = (context: ActionContext): boolean => !(context.actionDetail.deletePackage ?? false);
 
 export const isClosePR = (context: ActionContext): boolean => isPr(context.actionContext) && context.actionContext.payload.action === 'closed';
 
 export const isTargetBranch = (branchName: string, context: ActionContext): boolean => {
+	if (branchName === context.defaultBranch) {
+		return checkDefaultBranch(context);
+	}
 	const prefix = getActionDetail<string>('targetBranchPrefix', context, '');
 	if (prefix) {
 		return getPrefixRegExp(prefix).test(branchName);
@@ -257,8 +262,6 @@ export const getHelper = (context: ActionContext): GitHelper => new GitHelper(ne
 	depth: -1,
 	filter: (line: string): boolean => filterGitStatus(line, context) && filterExtension(line, context),
 });
-
-export const checkDefaultBranch = (context: ActionContext): boolean => context.actionDetail.checkDefaultBranch ?? true;
 
 export const getPullsArgsForDefaultBranch = (context: ActionContext): PullsParams => ({
 	number: 0,
