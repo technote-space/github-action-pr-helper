@@ -458,7 +458,7 @@ describe('updatePr', () => {
 			.get('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'));
 
-		expect(await updatePr('test', [], [], logger, octokit, getActionContext(context({}), {
+		expect(await updatePr('test', [], [], helper, logger, octokit, getActionContext(context({}), {
 			prTitle: 'test title',
 			prBody: 'test body',
 		}))).toBe(true);
@@ -472,7 +472,7 @@ describe('updatePr', () => {
 			.post('/repos/hello/world/pulls')
 			.reply(201, () => getApiFixture(rootDir, 'pulls.create'));
 
-		expect(await updatePr('test', [], [], logger, octokit, getActionContext(context({}), {
+		expect(await updatePr('test', [], [], helper, logger, octokit, getActionContext(context({}), {
 			prTitle: 'test title',
 			prBody: 'test body',
 		}))).toBe(true);
@@ -488,7 +488,7 @@ describe('updatePr', () => {
 			.get('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.false'));
 
-		expect(await updatePr('test', [], [], logger, octokit, getActionContext(context({}), {
+		expect(await updatePr('test', [], [], helper, logger, octokit, getActionContext(context({}), {
 			prTitle: 'test title',
 			prBody: 'test body',
 		}))).toBe(false);

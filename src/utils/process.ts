@@ -74,7 +74,7 @@ const createPr = async(logger: Logger, octokit: GitHub, context: ActionContext):
 
 	const helper                        = getHelper(context);
 	const {files, output}               = await getChangedFiles(helper, logger, context);
-	const branchName                    = getPrBranchName(context);
+	const branchName                    = await getPrBranchName(helper, context);
 	let result: 'succeeded' | 'skipped' = 'succeeded';
 	let detail                          = 'updated';
 	let mergeable                       = false;
@@ -104,7 +104,7 @@ const createPr = async(logger: Logger, octokit: GitHub, context: ActionContext):
 			return getResult('succeeded', 'has been closed because there is no reference diff', context);
 		}
 		await push(branchName, helper, logger, context);
-		mergeable = await updatePr(branchName, files, output, logger, octokit, context);
+		mergeable = await updatePr(branchName, files, output, helper, logger, octokit, context);
 	}
 
 	if (!mergeable) {

@@ -27,27 +27,27 @@ export const clearCache = (): void => Object.getOwnPropertyNames(cache).forEach(
 export const getApiHelper = (logger: Logger): ApiHelper => new ApiHelper(logger);
 
 export const clone = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
-	logger.startProcess('Cloning [%s] branch from the remote repo...', getPrBranchName(context));
+	logger.startProcess('Cloning [%s] branch from the remote repo...', await getPrBranchName(helper, context));
 
-	await helper.cloneBranch(getWorkspace(), getPrBranchName(context), context.actionContext);
+	await helper.cloneBranch(getWorkspace(), await getPrBranchName(helper, context), context.actionContext);
 };
 
 export const checkBranch = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<boolean> => {
 	const clonedBranch = await helper.getCurrentBranchName(getWorkspace());
-	if (getPrBranchName(context) === clonedBranch) {
+	if (await getPrBranchName(helper, context) === clonedBranch) {
 		await helper.runCommand(getWorkspace(), 'ls -la');
 		return !isPush(context.actionContext);
 	}
 
 	if (isPush(context.actionContext)) {
-		throw new Error(`remote branch [${getPrBranchName(context)}] not found.`);
+		throw new Error(`remote branch [${await getPrBranchName(helper, context)}] not found.`);
 	}
 
-	logger.info('remote branch [%s] not found.', getPrBranchName(context));
+	logger.info('remote branch [%s] not found.', await getPrBranchName(helper, context));
 	logger.info('now branch: %s', clonedBranch);
 	logger.startProcess('Cloning [%s] from the remote repo...', getPrHeadRef(context));
 	await helper.cloneBranch(getWorkspace(), getPrHeadRef(context), context.actionContext);
-	await helper.createBranch(getWorkspace(), getPrBranchName(context));
+	await helper.createBranch(getWorkspace(), await getPrBranchName(helper, context));
 	await helper.runCommand(getWorkspace(), 'ls -la');
 	return false;
 };
@@ -203,10 +203,10 @@ export const updatePr = async(branchName: string, files: string[], output: {
 	command: string;
 	stdout: string[];
 	stderr: string[];
-}[], logger: Logger, octokit: GitHub, context: ActionContext): Promise<boolean> => {
+}[], helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<boolean> => {
 	const info = await getApiHelper(logger).pullsCreateOrComment(branchName, {
-		title: getPrTitle(context),
-		body: getPrBody(files, output, context),
+		title: await getPrTitle(helper, context),
+		body: await getPrBody(files, output, helper, context),
 	}, octokit, context.actionContext);
 
 	if (!info.isPrCreated) {
@@ -270,7 +270,7 @@ export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger,
 }> => {
 	await initDirectory(helper, logger);
 	await helper.cloneBranch(getWorkspace(), getPrHeadRef(context), context.actionContext);
-	await helper.createBranch(getWorkspace(), getPrBranchName(context));
+	await helper.createBranch(getWorkspace(), await getPrBranchName(helper, context));
 
 	return runCommands(helper, logger, context);
 };
@@ -291,8 +291,8 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
 		await commit(helper, logger, context);
 		await forcePush(branchName, helper, logger, context);
 		await getApiHelper(logger).pullsCreateOrUpdate(branchName, {
-			title: getPrTitle(context),
-			body: getPrBody(files, output, context),
+			title: await getPrTitle(helper, context),
+			body: await getPrBody(files, output, helper, context),
 		}, octokit, context.actionContext);
 	}
 };
@@ -311,3 +311,5 @@ export const getDefaultBranch = async(octokit: GitHub, context: Context): Promis
 	}
 	return cache[key];
 };
+
+export const getNewPatchTag = async(helper: GitHelper): Promise<string> => helper.getNewPatchTag(getWorkspace());
