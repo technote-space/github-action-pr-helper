@@ -36,7 +36,7 @@ const getResult = (result: 'succeeded' | 'failed' | 'skipped', detail: string, c
 	branch: getPrHeadRef(context),
 });
 
-const checkActionPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult | true> => {
+const checkActionPr = async(logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult | true> => {
 	const pr = await getApiHelper(logger).findPullRequest(getPrHeadRef(context), octokit, context.actionContext);
 	if (!pr) {
 		return getResult('failed', 'not found', context);
@@ -56,26 +56,28 @@ const checkActionPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, 
 	return true;
 };
 
-const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
+const createPr = async(logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
 	if (isCron(context.actionContext)) {
 		commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
 	}
+
 	if (isActionPr(context)) {
-		const result = await checkActionPr(helper, logger, octokit, context);
+		const result = await checkActionPr(logger, octokit, context);
 		if (result !== true) {
 			return result;
 		}
 	}
+
 	if (!isTargetBranch(getPrHeadRef(context), context)) {
 		return getResult('skipped', 'This is not target branch', context);
 	}
 
-	let mergeable    = false;
-	const branchName = getPrBranchName(context);
-
+	const helper                        = getHelper(context);
 	const {files, output}               = await getChangedFiles(helper, logger, context);
+	const branchName                    = getPrBranchName(context);
 	let result: 'succeeded' | 'skipped' = 'succeeded';
 	let detail                          = 'updated';
+	let mergeable                       = false;
 	if (!files.length) {
 		logger.info('There is no diff.');
 		const pr = await getApiHelper(logger).findPullRequest(branchName, octokit, context.actionContext);
@@ -113,12 +115,13 @@ const createPr = async(helper: GitHelper, logger: Logger, octokit: GitHub, conte
 	return getResult(result, detail, context);
 };
 
-const createCommit = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => {
+const createCommit = async(logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => {
 	const branchName = getBranch(context.actionContext);
 	if (!isTargetBranch(branchName, context)) {
 		return;
 	}
 
+	const helper  = getHelper(context);
 	const {files} = await getChangedFiles(helper, logger, context);
 	if (!files.length) {
 		logger.info('There is no diff.');
@@ -180,53 +183,60 @@ const getActionContext = (context: ActionContext, pull: PullsParams): ActionCont
 	defaultBranch: context.defaultBranch,
 });
 
-const runCreatePrAll = async(helper: GitHelper, octokit: GitHub, context: ActionContext): Promise<void> => {
+const runCreatePr = async(pulls: AsyncIterable<PullsParams>, octokit: GitHub, context: ActionContext): Promise<void> => {
 	const logger                   = new Logger(replaceDirectory, true);
 	const results: ProcessResult[] = [];
-	for await (const pull of getApiHelper(logger).pullsList({}, octokit, context.actionContext)) {
+	for await (const pull of pulls) {
 		try {
-			results.push(await createPr(helper, logger, octokit, getActionContext(context, pull)));
+			results.push(await createPr(logger, octokit, getActionContext(context, pull)));
 		} catch (error) {
 			results.push(getResult('failed', error.message, getActionContext(context, pull)));
 		}
 		await sleep(INTERVAL_MS);
-	}
-	if (checkDefaultBranch(context)) {
-		try {
-			results.push(await createPr(helper, logger, octokit, getActionContext(context, getPullsArgsForDefaultBranch(context))));
-		} catch (error) {
-			results.push(getResult('failed', error.message, getActionContext(context, getPullsArgsForDefaultBranch(context))));
-		}
 	}
 	await outputResults(results);
 };
 
-const runCreatePrClosed = async(helper: GitHelper, octokit: GitHub, context: ActionContext): Promise<void> => {
-	const logger                   = new Logger(replaceDirectory, true);
-	const results: ProcessResult[] = [];
-	for await (const pull of getApiHelper(logger).pullsList({
-		base: `${context.actionContext.repo.owner}:${getBranch(getPrBaseRef(context), false)}`,
-	}, octokit, context.actionContext)) {
-		try {
-			results.push(await createPr(helper, logger, octokit, getActionContext(context, pull)));
-		} catch (error) {
-			results.push(getResult('failed', error.message, getActionContext(context, pull)));
-		}
-		await sleep(INTERVAL_MS);
+/**
+ * @param {GitHub} octokit octokit
+ * @param {Context} context context
+ * @return {AsyncIterable} pull
+ */
+async function* pullsForSchedule(octokit: GitHub, context: ActionContext): AsyncIterable<PullsParams> {
+	const logger = new Logger(replaceDirectory, true);
+
+	yield* await getApiHelper(logger).pullsList({}, octokit, context.actionContext);
+	if (checkDefaultBranch(context)) {
+		yield getPullsArgsForDefaultBranch(context);
 	}
-	await outputResults(results);
-};
+}
+
+const runCreatePrAll = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(pullsForSchedule(octokit, context), octokit, context);
+
+/**
+ * @param {GitHub} octokit octokit
+ * @param {Context} context context
+ * @return {AsyncIterable} pull
+ */
+async function* pullsForClosed(octokit: GitHub, context: ActionContext): AsyncIterable<PullsParams> {
+	const logger = new Logger(replaceDirectory, true);
+
+	yield* await getApiHelper(logger).pullsList({
+		base: `${context.actionContext.repo.owner}:${getBranch(getPrBaseRef(context), false)}`,
+	}, octokit, context.actionContext);
+}
+
+const runCreatePrClosed = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(pullsForClosed(octokit, context), octokit, context);
 
 export const execute = async(octokit: GitHub, context: ActionContext): Promise<void> => {
-	const helper = getHelper(context);
 	if (isClosePR(context)) {
-		await runCreatePrClosed(helper, octokit, context);
+		await runCreatePrClosed(octokit, context);
 	} else if (isPush(context.actionContext)) {
-		await createCommit(helper, commonLogger, octokit, context);
+		await createCommit(commonLogger, octokit, context);
 	} else if (isPr(context.actionContext)) {
-		await outputResult(await createPr(helper, commonLogger, octokit, context), true);
+		await outputResult(await createPr(commonLogger, octokit, context), true);
 	} else {
-		await runCreatePrAll(helper, octokit, context);
+		await runCreatePrAll(octokit, context);
 	}
 	commonLogger.endProcess();
 };
