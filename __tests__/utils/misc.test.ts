@@ -370,9 +370,11 @@ describe('getPrBranchName', () => {
 				},
 			},
 		}, {
+			prBranchPrefix: 'prefix/',
 			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
 			prBranchPrefixForDefaultBranch: 'release/',
-		}))).toBe('release/0::https://github.com/owner/repo/tree/master::21031067::master::master::test title::http://example.com::master::v1.2.4');
+			prBranchNameForDefaultBranch: '${PATCH_VERSION}',
+		}))).toBe('release/v1.2.4');
 	});
 
 	it('should get pr branch name for default branch 2', async() => {
