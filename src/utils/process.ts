@@ -162,6 +162,7 @@ const outputResults = (results: ProcessResult[]): void => {
 };
 
 const getActionContext = (context: ActionContext, pull: PullsParams): ActionContext => ({
+	...context,
 	actionContext: Object.assign({}, context.actionContext, {
 		payload: {
 			'pull_request': {
@@ -179,8 +180,6 @@ const getActionContext = (context: ActionContext, pull: PullsParams): ActionCont
 		},
 		ref: pull.head.ref,
 	}),
-	actionDetail: context.actionDetail,
-	defaultBranch: context.defaultBranch,
 });
 
 const runCreatePr = async(getPulls: (GitHub, ActionContext) => AsyncIterable<PullsParams>, octokit: GitHub, context: ActionContext): Promise<void> => {
