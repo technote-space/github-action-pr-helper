@@ -1,6 +1,7 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
-import { testEnv, generateContext } from '@technote-space/github-action-test-helper';
+import { GitHelper, Logger } from '@technote-space/github-action-helper';
+import { testEnv, generateContext, testChildProcess, setChildProcessParams } from '@technote-space/github-action-test-helper';
 import moment from 'moment';
 import { resolve } from 'path';
 import {
@@ -25,6 +26,12 @@ import {
 } from '../../src/utils/misc';
 import { ActionContext, ActionDetails } from '../../src/types';
 import { DEFAULT_COMMIT_NAME, DEFAULT_COMMIT_EMAIL } from '../../src/constant';
+
+beforeEach(() => {
+	Logger.resetForTesting();
+});
+const logger = new Logger();
+const helper = new GitHelper(logger, {depth: -1});
 
 const actionDetails: ActionDetails = {
 	actionName: 'Test Action',
@@ -334,30 +341,77 @@ describe('replaceDirectory', () => {
 
 describe('getPrBranchName', () => {
 	testEnv();
+	testChildProcess();
 
-	it('should get pr branch name', () => {
-		expect(getPrBranchName(generateActionContext({event: 'pull_request'}, {
+	it('should get pr branch name', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+		expect(await getPrBranchName(helper, generateActionContext({event: 'pull_request'}, {
 			payload: prPayload,
 		}, {
-			prBranchName: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}',
-		}))).toBe('hello-world/11::21031067::change::master::test title::http://example.com::change -> change');
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
+		}))).toBe('hello-world/11::#11::21031067::change::master::test title::http://example.com::change -> change::v1.2.4');
 	});
 
-	it('should get push branch name', () => {
-		expect(getPrBranchName(generateActionContext({event: 'push'}, {ref: 'heads/test-ref'}, {
-			prBranchName: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}',
+	it('should get pr branch name for default branch 1', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+		expect(await getPrBranchName(helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+			payload: {
+				'pull_request': {
+					number: 0,
+					id: 21031067,
+					head: {
+						ref: 'master',
+					},
+					base: {
+						ref: 'master',
+					},
+					title: 'test title',
+					'html_url': 'http://example.com',
+				},
+			},
+		}, {
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
+			prBranchPrefixForDefaultBranch: 'release/',
+		}))).toBe('release/0::https://github.com/owner/repo/tree/master::21031067::master::master::test title::http://example.com::master::v1.2.4');
+	});
+
+	it('should get pr branch name for default branch 2', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+		expect(await getPrBranchName(helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+			payload: {
+				'pull_request': {
+					number: 0,
+					id: 21031067,
+					head: {
+						ref: 'master',
+					},
+					base: {
+						ref: 'master',
+					},
+					title: 'test title',
+					'html_url': 'http://example.com',
+				},
+			},
+		}, {
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
+		}))).toBe('hello-world/0::https://github.com/owner/repo/tree/master::21031067::master::master::test title::http://example.com::master::v1.2.4');
+	});
+
+	it('should get push branch name', async() => {
+		expect(await getPrBranchName(helper, generateActionContext({event: 'push'}, {ref: 'heads/test-ref'}, {
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
 		}))).toBe('test-ref');
 	});
 
-	it('should throw error', () => {
-		expect(() => getPrBranchName(generateActionContext({}))).toThrow();
-		expect(() => getPrBranchName(generateActionContext({}, {}, {prBranchName: ''}))).toThrow();
+	it('should throw error', async() => {
+		await expect(getPrBranchName(helper, generateActionContext({}))).rejects.toThrow();
+		await expect(getPrBranchName(helper, generateActionContext({}, {}, {prBranchName: ''}))).rejects.toThrow();
 	});
 
-	it('should throw error', () => {
-		expect(() => getPrBranchName(generateActionContext({event: 'pull_request'}, {}, {
-			prBranchName: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}',
-		}))).toThrow();
+	it('should throw error', async() => {
+		await expect(getPrBranchName(helper, generateActionContext({event: 'pull_request'}, {}, {
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
+		}))).rejects.toThrow();
 	});
 });
 
@@ -433,21 +487,45 @@ describe('isActionPr', () => {
 
 describe('getPrTitle', () => {
 	testEnv();
+	testChildProcess();
 
-	it('should get PR title', () => {
-		expect(getPrTitle(generateActionContext({}, {payload: prPayload}, {
-			prTitle: '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}',
-		}))).toBe('11-21031067-change-master');
+	it('should get PR title', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+		expect(await getPrTitle(helper, generateActionContext({}, {payload: prPayload}, {
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}',
+		}))).toBe('11::21031067::change::master::change -> change::#11::v1.2.4');
 	});
 
-	it('should throw error', () => {
-		expect(() => getPrTitle(generateActionContext({}))).toThrow();
+	it('should get PR title for default branch', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+		expect(await getPrTitle(helper, generateActionContext({owner: 'owner', repo: 'repo'}, {
+			payload: {
+				'pull_request': {
+					number: 0,
+					id: 21031067,
+					head: {
+						ref: 'master',
+					},
+					base: {
+						ref: 'master',
+					},
+					title: 'test title',
+					'html_url': 'http://example.com',
+				},
+			},
+		}, {
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}',
+		}))).toBe('0::21031067::master::master::master::https://github.com/owner/repo/tree/master::v1.2.4');
 	});
 
-	it('should throw error', () => {
-		expect(() => getPrTitle(generateActionContext({}, {}, {
-			prTitle: '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}',
-		}))).toThrow();
+	it('should throw error', async() => {
+		await expect(getPrTitle(helper, generateActionContext({}))).rejects.toThrow();
+	});
+
+	it('should throw error', async() => {
+		await expect(getPrTitle(helper, generateActionContext({}, {}, {
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_BASE_REF}::${PATCH_VERSION}',
+		}))).rejects.toThrow();
 	});
 });
 
@@ -474,7 +552,7 @@ describe('getPrLink', () => {
 describe('getPrBody', () => {
 	testEnv();
 
-	it('should get PR Body 1', () => {
+	it('should get PR Body 1', async() => {
 		const prBody = `
       ## Base PullRequest
 
@@ -501,10 +579,10 @@ describe('getPrBody', () => {
       [:octocat: Repo](\${ACTION_URL}) | [:memo: Issues](\${ACTION_URL}/issues) | [:department_store: Marketplace](\${ACTION_MARKETPLACE_URL})
 `;
 
-		expect(getPrBody(['README.md', 'CHANGELOG.md'], [
+		expect(await getPrBody(['README.md', 'CHANGELOG.md'], [
 			{command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: []},
 			{command: 'test2', stdout: ['test2-1', 'test2-2'], stderr: ['test2-3']},
-		], generateActionContext({}, {
+		], helper, generateActionContext({}, {
 			payload: prPayload,
 		}, {
 			prBody,
@@ -561,7 +639,7 @@ describe('getPrBody', () => {
 		].join('\n'));
 	});
 
-	it('should get PR Body 2', () => {
+	it('should get PR Body 2', async() => {
 		const prBody = `
 		\${PR_LINK}
 		---------------------------
@@ -600,10 +678,10 @@ describe('getPrBody', () => {
 		\${VARIABLE2}
 `;
 
-		expect(getPrBody(['README.md'], [
+		expect(await getPrBody(['README.md'], [
 			{command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: ['test1-3', 'test1-4']},
 			{command: 'test2', stdout: [], stderr: []},
-		], generateActionContext({}, {
+		], helper, generateActionContext({}, {
 			payload: prPayload,
 		}, {
 			prBody,
@@ -722,16 +800,100 @@ describe('getPrBody', () => {
 		].join('\n'));
 	});
 
-	it('should not be code', () => {
-		expect(getPrBody([], [], generateActionContext({}, {
+	it('should get PR Body with empty output', async() => {
+		const prBody = `
+		\${PR_LINK}
+		---------------------------
+		\${COMMANDS}
+		---------------------------
+		\${COMMANDS_OUTPUT}
+		---------------------------
+		\${COMMANDS_STDOUT}
+		---------------------------
+		\${COMMANDS_STDOUT_OPENED}
+		---------------------------
+		\${COMMANDS_STDERR}
+		---------------------------
+		\${COMMANDS_STDERR_OPENED}
+		---------------------------
+		\${FILES}
+		---------------------------
+		\${FILES_SUMMARY}
+		---------------------------
+		\${ACTION_NAME}
+		---------------------------
+		\${ACTION_OWNER}
+		---------------------------
+		\${ACTION_REPO}
+		---------------------------
+		\${ACTION_URL}
+		---------------------------
+		\${ACTION_MARKETPLACE_URL}
+		---------------------------
+		\${DATE1}
+		---------------------------
+		\${DATE2}
+		---------------------------
+		\${VARIABLE1}
+		---------------------------
+		\${VARIABLE2}
+`;
+
+		expect(await getPrBody([], [], helper, generateActionContext({}, {
+			payload: prPayload,
+		}, {
+			prBody,
+			prVariables: ['variable1', ''],
+			prDateFormats: ['YYYY/MM/DD', 'DD/MM/YYYY'],
+		}))).toBe([
+			'[test title](http://example.com)',
+			'---------------------------',
+			'',
+			'---------------------------',
+			'',
+			'---------------------------',
+			'',
+			'---------------------------',
+			'',
+			'---------------------------',
+			'',
+			'---------------------------',
+			'',
+			'---------------------------',
+			'',
+			'---------------------------',
+			'Changed file',
+			'---------------------------',
+			'Test Action',
+			'---------------------------',
+			'octocat',
+			'---------------------------',
+			'hello-world',
+			'---------------------------',
+			'https://github.com/octocat/hello-world',
+			'---------------------------',
+			'https://github.com/marketplace/actions/hello-world',
+			'---------------------------',
+			moment().format('YYYY/MM/DD'),
+			'---------------------------',
+			moment().format('DD/MM/YYYY'),
+			'---------------------------',
+			'variable1',
+			'---------------------------',
+			'',
+		].join('\n'));
+	});
+
+	it('should not be code', async() => {
+		expect(await getPrBody([], [], helper, generateActionContext({}, {
 			payload: prPayload,
 		}, {
 			prBody: '${COMMANDS}',
 		}))).toBe('');
 	});
 
-	it('should throw error', () => {
-		expect(() => getPrBody([], [], generateActionContext({}))).toThrow();
+	it('should throw error', async() => {
+		await expect(getPrBody([], [], helper, generateActionContext({}))).rejects.toThrow();
 	});
 });
 

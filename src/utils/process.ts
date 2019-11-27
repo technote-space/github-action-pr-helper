@@ -74,7 +74,7 @@ const createPr = async(logger: Logger, octokit: GitHub, context: ActionContext):
 
 	const helper                        = getHelper(context);
 	const {files, output}               = await getChangedFiles(helper, logger, context);
-	const branchName                    = getPrBranchName(context);
+	const branchName                    = await getPrBranchName(helper, context);
 	let result: 'succeeded' | 'skipped' = 'succeeded';
 	let detail                          = 'updated';
 	let mergeable                       = false;
@@ -104,7 +104,7 @@ const createPr = async(logger: Logger, octokit: GitHub, context: ActionContext):
 			return getResult('succeeded', 'has been closed because there is no reference diff', context);
 		}
 		await push(branchName, helper, logger, context);
-		mergeable = await updatePr(branchName, files, output, logger, octokit, context);
+		mergeable = await updatePr(branchName, files, output, helper, logger, octokit, context);
 	}
 
 	if (!mergeable) {
@@ -162,6 +162,7 @@ const outputResults = (results: ProcessResult[]): void => {
 };
 
 const getActionContext = (context: ActionContext, pull: PullsParams): ActionContext => ({
+	...context,
 	actionContext: Object.assign({}, context.actionContext, {
 		payload: {
 			'pull_request': {
@@ -179,14 +180,12 @@ const getActionContext = (context: ActionContext, pull: PullsParams): ActionCont
 		},
 		ref: pull.head.ref,
 	}),
-	actionDetail: context.actionDetail,
-	defaultBranch: context.defaultBranch,
 });
 
-const runCreatePr = async(pulls: AsyncIterable<PullsParams>, octokit: GitHub, context: ActionContext): Promise<void> => {
+const runCreatePr = async(getPulls: (GitHub, ActionContext) => AsyncIterable<PullsParams>, octokit: GitHub, context: ActionContext): Promise<void> => {
 	const logger                   = new Logger(replaceDirectory, true);
 	const results: ProcessResult[] = [];
-	for await (const pull of pulls) {
+	for await (const pull of getPulls(octokit, context)) {
 		try {
 			results.push(await createPr(logger, octokit, getActionContext(context, pull)));
 		} catch (error) {
@@ -211,7 +210,7 @@ async function* pullsForSchedule(octokit: GitHub, context: ActionContext): Async
 	}
 }
 
-const runCreatePrAll = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(pullsForSchedule(octokit, context), octokit, context);
+const runCreatePrAll = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(pullsForSchedule, octokit, context);
 
 /**
  * @param {GitHub} octokit octokit
@@ -226,7 +225,7 @@ async function* pullsForClosed(octokit: GitHub, context: ActionContext): AsyncIt
 	}, octokit, context.actionContext);
 }
 
-const runCreatePrClosed = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(pullsForClosed(octokit, context), octokit, context);
+const runCreatePrClosed = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(pullsForClosed, octokit, context);
 
 export const execute = async(octokit: GitHub, context: ActionContext): Promise<void> => {
 	if (isClosePR(context)) {
