@@ -10,6 +10,7 @@ import {
 	replaceDirectory,
 	getPrBranchName,
 	getPrHeadRef,
+	getPrBaseRef,
 	isActionPr,
 	getPrTitle,
 	getPrLink,
@@ -375,6 +376,24 @@ describe('getPrHeadRef', () => {
 
 	it('should return empty', () => {
 		expect(getPrHeadRef(generateActionContext({}))).toBe('');
+	});
+});
+
+describe('getPrBaseRef', () => {
+	it('should get pr base ref', () => {
+		expect(getPrBaseRef(generateActionContext({}, {
+			payload: {
+				'pull_request': {
+					base: {
+						ref: 'change',
+					},
+				},
+			},
+		}))).toBe('change');
+	});
+
+	it('should return empty', () => {
+		expect(getPrBaseRef(generateActionContext({}))).toBe('');
 	});
 });
 
