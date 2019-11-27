@@ -55,6 +55,7 @@ const contextVariables = (context: ActionContext): { key: string; replace: () =>
 		{key: 'PR_BASE_REF', replace: (): string => getPrParam(pr => pr.base.ref)},
 		{key: 'PR_TITLE', replace: (): string => getPrParam(pr => pr.title)},
 		{key: 'PR_URL', replace: (): string => getPrParam(pr => pr.html_url)},
+		{key: 'PR_MERGE_REF', replace: (): string => getPrParam(pr => pr.number ? `${pr.head.ref} -> ${pr.head.ref}` : context.defaultBranch)},
 		// eslint-disable-next-line no-magic-numbers
 	].concat([...Array(context.actionDetail.prVariables?.length ?? 0).keys()].map(index => ({
 		// eslint-disable-next-line no-magic-numbers
@@ -81,6 +82,8 @@ const replaceVariables = (string: string, variables: { key: string; replace: () 
 const replaceContextVariables = (string: string, context: ActionContext): string => replaceVariables(string, contextVariables(context));
 
 export const getPrHeadRef = (context: ActionContext): string => context.actionContext.payload.pull_request?.head.ref ?? '';
+
+export const getPrBaseRef = (context: ActionContext): string => context.actionContext.payload.pull_request?.base.ref ?? '';
 
 const getPrBranchPrefix = (context: ActionContext): string => context.actionDetail.prBranchPrefix || `${context.actionDetail.actionRepo}/`;
 
