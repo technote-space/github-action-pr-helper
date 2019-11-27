@@ -14,8 +14,9 @@ export type ActionDetails = {
 	commitName?: string;
 	commitEmail?: string;
 	prBranchPrefix?: string;
-	prBranchPrefixForDefaultBranch?: string;
 	prBranchName?: string;
+	prBranchPrefixForDefaultBranch?: string;
+	prBranchNameForDefaultBranch?: string;
 	prTitle?: string;
 	prBody?: string;
 	prVariables?: string[];

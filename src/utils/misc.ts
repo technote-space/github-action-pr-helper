@@ -108,7 +108,7 @@ export const getPrBranchName = async(helper: GitHelper, context: ActionContext):
 		getBranch(context.actionContext) :
 		(
 			context.defaultBranch === getBranch(context.actionContext) ?
-				getPrBranchPrefixForDefaultBranch(context) + await replaceContextVariables(getActionDetail<string>('prBranchName', context), helper, context) :
+				getPrBranchPrefixForDefaultBranch(context) + await replaceContextVariables(getActionDetail<string>('prBranchNameForDefaultBranch', context, getActionDetail<string>('prBranchName', context)), helper, context) :
 				getPrBranchPrefix(context) + await replaceContextVariables(getActionDetail<string>('prBranchName', context), helper, context)
 		);
 
