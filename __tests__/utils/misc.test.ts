@@ -348,13 +348,13 @@ describe('getPrBranchName', () => {
 		expect(await getPrBranchName(helper, generateActionContext({event: 'pull_request'}, {
 			payload: prPayload,
 		}, {
-			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_TAG}',
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
 		}))).toBe('hello-world/11::#11::21031067::change::master::test title::http://example.com::change -> change::v1.2.4');
 	});
 
 	it('should get push branch name', async() => {
 		expect(await getPrBranchName(helper, generateActionContext({event: 'push'}, {ref: 'heads/test-ref'}, {
-			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_TAG}',
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
 		}))).toBe('test-ref');
 	});
 
@@ -365,7 +365,7 @@ describe('getPrBranchName', () => {
 
 	it('should throw error', async() => {
 		await expect(getPrBranchName(helper, generateActionContext({event: 'pull_request'}, {}, {
-			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_TAG}',
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
 		}))).rejects.toThrow();
 	});
 });
@@ -447,7 +447,7 @@ describe('getPrTitle', () => {
 	it('should get PR title', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
 		expect(await getPrTitle(helper, generateActionContext({}, {payload: prPayload}, {
-			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_TAG}',
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}',
 		}))).toBe('11::21031067::change::master::change -> change::#11::v1.2.4');
 	});
 
@@ -469,7 +469,7 @@ describe('getPrTitle', () => {
 				},
 			},
 		}, {
-			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_TAG}',
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}',
 		}))).toBe('0::21031067::change::master::master::https://github.com/owner/repo/tree/master::v1.2.4');
 	});
 
@@ -479,7 +479,7 @@ describe('getPrTitle', () => {
 
 	it('should throw error', async() => {
 		await expect(getPrTitle(helper, generateActionContext({}, {}, {
-			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_BASE_REF}::${PATCH_TAG}',
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_BASE_REF}::${PATCH_VERSION}',
 		}))).rejects.toThrow();
 	});
 });

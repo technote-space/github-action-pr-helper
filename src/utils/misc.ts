@@ -3,7 +3,7 @@ import { isTargetEvent, isTargetLabels } from '@technote-space/filter-github-act
 import moment from 'moment';
 import { DEFAULT_TARGET_EVENTS, DEFAULT_COMMIT_NAME, DEFAULT_COMMIT_EMAIL } from '../constant';
 import { ActionContext, PullsParams } from '../types';
-import { getNewPatchTag } from './command';
+import { getNewPatchVersion } from './command';
 
 const {getWorkspace, getPrefixRegExp, getRegExp} = Utils;
 const {escapeRegExp, replaceAll, getBranch}      = Utils;
@@ -58,7 +58,7 @@ const contextVariables = (helper: GitHelper, context: ActionContext): { key: str
 		{key: 'PR_TITLE', replace: getPrParamFunc(pr => pr.title)},
 		{key: 'PR_URL', replace: getPrParamFunc(pr => pr.html_url)},
 		{key: 'PR_MERGE_REF', replace: getPrParamFunc(pr => pr.number ? `${pr.head.ref} -> ${pr.head.ref}` : context.defaultBranch)},
-		{key: 'PATCH_TAG', replace: (): Promise<string> => getNewPatchTag(helper)},
+		{key: 'PATCH_VERSION', replace: (): Promise<string> => getNewPatchVersion(helper)},
 		// eslint-disable-next-line no-magic-numbers
 	].concat([...Array(context.actionDetail.prVariables?.length ?? 0).keys()].map(index => ({
 		// eslint-disable-next-line no-magic-numbers

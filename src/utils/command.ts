@@ -312,4 +312,4 @@ export const getDefaultBranch = async(octokit: GitHub, context: Context): Promis
 	return cache[key];
 };
 
-export const getNewPatchTag = async(helper: GitHelper): Promise<string> => helper.getNewPatchTag(getWorkspace());
+export const getNewPatchVersion = async(helper: GitHelper): Promise<string> => helper.getNewPatchVersion(getWorkspace());
