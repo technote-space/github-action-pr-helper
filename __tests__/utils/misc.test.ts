@@ -338,13 +338,13 @@ describe('getPrBranchName', () => {
 		expect(getPrBranchName(generateActionContext({event: 'pull_request'}, {
 			payload: prPayload,
 		}, {
-			prBranchName: '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}-${PR_TITLE}-${PR_URL}',
-		}))).toBe('hello-world/11-21031067-change-master-test title-http://example.com');
+			prBranchName: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}',
+		}))).toBe('hello-world/11::21031067::change::master::test title::http://example.com::change -> change');
 	});
 
 	it('should get push branch name', () => {
 		expect(getPrBranchName(generateActionContext({event: 'push'}, {ref: 'heads/test-ref'}, {
-			prBranchName: '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}-${PR_TITLE}-${PR_URL}',
+			prBranchName: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}',
 		}))).toBe('test-ref');
 	});
 
@@ -355,7 +355,7 @@ describe('getPrBranchName', () => {
 
 	it('should throw error', () => {
 		expect(() => getPrBranchName(generateActionContext({event: 'pull_request'}, {}, {
-			prBranchName: '${PR_NUMBER}-${PR_ID}-${PR_HEAD_REF}-${PR_BASE_REF}-${PR_TITLE}-${PR_URL}',
+			prBranchName: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}',
 		}))).toThrow();
 	});
 });
