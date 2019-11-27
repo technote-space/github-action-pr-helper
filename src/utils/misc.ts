@@ -99,9 +99,18 @@ export const getPrBaseRef = (context: ActionContext): string => context.actionCo
 
 const getPrBranchPrefix = (context: ActionContext): string => context.actionDetail.prBranchPrefix || `${context.actionDetail.actionRepo}/`;
 
-export const isActionPr = (context: ActionContext): boolean => getPrefixRegExp(getPrBranchPrefix(context)).test(getPrHeadRef(context));
+const getPrBranchPrefixForDefaultBranch = (context: ActionContext): string => context.actionDetail.prBranchPrefixForDefaultBranch || getPrBranchPrefix(context);
 
-export const getPrBranchName = async(helper: GitHelper, context: ActionContext): Promise<string> => isPush(context.actionContext) ? getBranch(context.actionContext) : (getPrBranchPrefix(context) + await replaceContextVariables(getActionDetail<string>('prBranchName', context), helper, context));
+export const isActionPr = (context: ActionContext): boolean => getPrefixRegExp(getPrBranchPrefix(context)).test(getPrHeadRef(context)) || getPrefixRegExp(getPrBranchPrefixForDefaultBranch(context)).test(getPrHeadRef(context));
+
+export const getPrBranchName = async(helper: GitHelper, context: ActionContext): Promise<string> =>
+	isPush(context.actionContext) ?
+		getBranch(context.actionContext) :
+		(
+			context.defaultBranch === getBranch(context.actionContext) ?
+				getPrBranchPrefixForDefaultBranch(context) + await replaceContextVariables(getActionDetail<string>('prBranchName', context), helper, context) :
+				getPrBranchPrefix(context) + await replaceContextVariables(getActionDetail<string>('prBranchName', context), helper, context)
+		);
 
 export const getPrTitle = async(helper: GitHelper, context: ActionContext): Promise<string> => replaceContextVariables(getActionDetail<string>('prTitle', context), helper, context);
 

@@ -352,6 +352,51 @@ describe('getPrBranchName', () => {
 		}))).toBe('hello-world/11::#11::21031067::change::master::test title::http://example.com::change -> change::v1.2.4');
 	});
 
+	it('should get pr branch name for default branch 1', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+		expect(await getPrBranchName(helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+			payload: {
+				'pull_request': {
+					number: 0,
+					id: 21031067,
+					head: {
+						ref: 'master',
+					},
+					base: {
+						ref: 'master',
+					},
+					title: 'test title',
+					'html_url': 'http://example.com',
+				},
+			},
+		}, {
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
+			prBranchPrefixForDefaultBranch: 'release/',
+		}))).toBe('release/0::https://github.com/owner/repo/tree/master::21031067::master::master::test title::http://example.com::master::v1.2.4');
+	});
+
+	it('should get pr branch name for default branch 2', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+		expect(await getPrBranchName(helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+			payload: {
+				'pull_request': {
+					number: 0,
+					id: 21031067,
+					head: {
+						ref: 'master',
+					},
+					base: {
+						ref: 'master',
+					},
+					title: 'test title',
+					'html_url': 'http://example.com',
+				},
+			},
+		}, {
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
+		}))).toBe('hello-world/0::https://github.com/owner/repo/tree/master::21031067::master::master::test title::http://example.com::master::v1.2.4');
+	});
+
 	it('should get push branch name', async() => {
 		expect(await getPrBranchName(helper, generateActionContext({event: 'push'}, {ref: 'heads/test-ref'}, {
 			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
@@ -459,7 +504,7 @@ describe('getPrTitle', () => {
 					number: 0,
 					id: 21031067,
 					head: {
-						ref: 'change',
+						ref: 'master',
 					},
 					base: {
 						ref: 'master',
@@ -470,7 +515,7 @@ describe('getPrTitle', () => {
 			},
 		}, {
 			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}',
-		}))).toBe('0::21031067::change::master::master::https://github.com/owner/repo/tree/master::v1.2.4');
+		}))).toBe('0::21031067::master::master::master::https://github.com/owner/repo/tree/master::v1.2.4');
 	});
 
 	it('should throw error', async() => {
