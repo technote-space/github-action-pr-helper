@@ -21,6 +21,7 @@ import {
 	getHelper,
 	checkDefaultBranch,
 	getPullsArgsForDefaultBranch,
+	getPrBaseRef,
 } from './misc';
 import { INTERVAL_MS } from '../constant';
 import { ActionContext, ProcessResult, PullsParams } from '../types';
@@ -179,36 +180,53 @@ const getActionContext = (context: ActionContext, pull: PullsParams): ActionCont
 	defaultBranch: context.defaultBranch,
 });
 
-export const execute = async(octokit: GitHub, context: ActionContext): Promise<void> => {
-	if (isClosePR(context)) {
-		await closePR(getPrBranchName(context), commonLogger, octokit, context);
-		return;
+const runCreatePrAll = async(helper: GitHelper, octokit: GitHub, context: ActionContext): Promise<void> => {
+	const logger                   = new Logger(replaceDirectory, true);
+	const results: ProcessResult[] = [];
+	for await (const pull of getApiHelper(logger).pullsList({}, octokit, context.actionContext)) {
+		try {
+			results.push(await createPr(helper, logger, octokit, getActionContext(context, pull)));
+		} catch (error) {
+			results.push(getResult('failed', error.message, getActionContext(context, pull)));
+		}
+		await sleep(INTERVAL_MS);
 	}
+	if (checkDefaultBranch(context)) {
+		try {
+			results.push(await createPr(helper, logger, octokit, getActionContext(context, getPullsArgsForDefaultBranch(context))));
+		} catch (error) {
+			results.push(getResult('failed', error.message, getActionContext(context, getPullsArgsForDefaultBranch(context))));
+		}
+	}
+	await outputResults(results);
+};
 
+const runCreatePrClosed = async(helper: GitHelper, octokit: GitHub, context: ActionContext): Promise<void> => {
+	const logger                   = new Logger(replaceDirectory, true);
+	const results: ProcessResult[] = [];
+	for await (const pull of getApiHelper(logger).pullsList({
+		base: `${context.actionContext.repo.owner}:${getBranch(getPrBaseRef(context), false)}`,
+	}, octokit, context.actionContext)) {
+		try {
+			results.push(await createPr(helper, logger, octokit, getActionContext(context, pull)));
+		} catch (error) {
+			results.push(getResult('failed', error.message, getActionContext(context, pull)));
+		}
+		await sleep(INTERVAL_MS);
+	}
+	await outputResults(results);
+};
+
+export const execute = async(octokit: GitHub, context: ActionContext): Promise<void> => {
 	const helper = getHelper(context);
-	if (isPush(context.actionContext)) {
+	if (isClosePR(context)) {
+		await runCreatePrClosed(helper, octokit, context);
+	} else if (isPush(context.actionContext)) {
 		await createCommit(helper, commonLogger, octokit, context);
 	} else if (isPr(context.actionContext)) {
-		outputResult(await createPr(helper, commonLogger, octokit, context), true);
+		await outputResult(await createPr(helper, commonLogger, octokit, context), true);
 	} else {
-		const logger                   = new Logger(replaceDirectory, true);
-		const results: ProcessResult[] = [];
-		if (checkDefaultBranch(context)) {
-			try {
-				results.push(await createPr(helper, logger, octokit, getActionContext(context, getPullsArgsForDefaultBranch(context))));
-			} catch (error) {
-				results.push(getResult('failed', error.message, getActionContext(context, getPullsArgsForDefaultBranch(context))));
-			}
-		}
-		for await (const pull of getApiHelper(logger).pullsList({}, octokit, context.actionContext)) {
-			await sleep(INTERVAL_MS);
-			try {
-				results.push(await createPr(helper, logger, octokit, getActionContext(context, pull)));
-			} catch (error) {
-				results.push(getResult('failed', error.message, getActionContext(context, pull)));
-			}
-		}
-		await outputResults(results);
+		await runCreatePrAll(helper, octokit, context);
 	}
 	commonLogger.endProcess();
 };
