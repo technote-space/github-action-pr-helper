@@ -1,5 +1,5 @@
 import { GitHub } from '@actions/github';
-import { Logger, GitHelper, Utils, ContextHelper } from '@technote-space/github-action-helper';
+import { Logger, Utils, ContextHelper } from '@technote-space/github-action-helper';
 import {
 	getApiHelper,
 	getChangedFiles,
