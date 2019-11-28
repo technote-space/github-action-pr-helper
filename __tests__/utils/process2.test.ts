@@ -715,9 +715,11 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=master&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=change&per_page=100&page=1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=master&per_page=100&page=2')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=change&per_page=100&page=2')
+			.reply(200, () => [])
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
