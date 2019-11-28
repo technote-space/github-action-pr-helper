@@ -66,9 +66,7 @@ const createPr = async(logger: Logger, octokit: GitHub, context: ActionContext):
 		if (result !== true) {
 			return result;
 		}
-	}
-
-	if (!isTargetBranch(getPrHeadRef(context), context)) {
+	} else if (!isTargetBranch(getPrHeadRef(context), context)) {
 		return getResult('skipped', 'This is not target branch', context);
 	}
 
