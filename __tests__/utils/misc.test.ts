@@ -349,7 +349,7 @@ describe('getPrBranchName', () => {
 			payload: prPayload,
 		}, {
 			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
-		}))).toBe('hello-world/11::#11::21031067::change::master::test title::http://example.com::change -> change::v1.2.4');
+		}))).toBe('hello-world/11::#11::21031067::change::master::test title::http://example.com::change -> master::v1.2.4');
 	});
 
 	it('should get pr branch name for default branch 1', async() => {
@@ -495,7 +495,7 @@ describe('getPrTitle', () => {
 		setChildProcessParams({stdout: '1.2.3'});
 		expect(await getPrTitle(helper, generateActionContext({}, {payload: prPayload}, {
 			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}',
-		}))).toBe('11::21031067::change::master::change -> change::#11::v1.2.4');
+		}))).toBe('11::21031067::change::master::change -> master::#11::v1.2.4');
 	});
 
 	it('should get PR title for default branch', async() => {

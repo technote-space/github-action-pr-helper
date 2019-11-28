@@ -97,6 +97,7 @@ describe('execute', () => {
 		}));
 
 		stdoutCalledWith(mockStdout, [
+			'::group::Target PullRequest Ref [hello-world/new-topic]',
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'> Cloning [hello-world/test-1] branch from the remote repo...',
@@ -118,6 +119,8 @@ describe('execute', () => {
 			'[command]git diff HEAD..origin/hello-world/new-topic --name-only',
 			'> Closing PullRequest... [hello-world/test-1]',
 			'> Deleting reference... [refs/heads/hello-world/test-1]',
+			'::endgroup::',
+			'::group::Target PullRequest Ref [hello-world/new-topic]',
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'> Cloning [hello-world/test-1] branch from the remote repo...',
@@ -139,6 +142,7 @@ describe('execute', () => {
 			'[command]git diff HEAD..origin/hello-world/new-topic --name-only',
 			'> Closing PullRequest... [hello-world/test-1]',
 			'> Deleting reference... [refs/heads/hello-world/test-1]',
+			'::endgroup::',
 			'::group::Total:2  Succeeded:2  Failed:0  Skipped:0',
 			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] There is no reference diff',
 			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] There is no reference diff',

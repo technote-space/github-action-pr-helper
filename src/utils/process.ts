@@ -26,9 +26,9 @@ import {
 import { INTERVAL_MS } from '../constant';
 import { ActionContext, ProcessResult, PullsParams } from '../types';
 
-const {sleep, getBranch}     = Utils;
-const {isPr, isCron, isPush} = ContextHelper;
-const commonLogger           = new Logger(replaceDirectory);
+const {sleep, getBranch} = Utils;
+const {isPr, isPush}     = ContextHelper;
+const commonLogger       = new Logger(replaceDirectory);
 
 const getResult = (result: 'succeeded' | 'failed' | 'skipped', detail: string, context: ActionContext): ProcessResult => ({
 	result,
@@ -56,8 +56,8 @@ const checkActionPr = async(logger: Logger, octokit: GitHub, context: ActionCont
 	return true;
 };
 
-const createPr = async(logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
-	if (isCron(context.actionContext)) {
+const createPr = async(makeGroup: boolean, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
+	if (makeGroup) {
 		commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
 	}
 
@@ -66,9 +66,7 @@ const createPr = async(logger: Logger, octokit: GitHub, context: ActionContext):
 		if (result !== true) {
 			return result;
 		}
-	}
-
-	if (!isTargetBranch(getPrHeadRef(context), context)) {
+	} else if (!isTargetBranch(getPrHeadRef(context), context)) {
 		return getResult('skipped', 'This is not target branch', context);
 	}
 
@@ -187,7 +185,7 @@ const runCreatePr = async(getPulls: (GitHub, ActionContext) => AsyncIterable<Pul
 	const results: ProcessResult[] = [];
 	for await (const pull of getPulls(octokit, context)) {
 		try {
-			results.push(await createPr(logger, octokit, getActionContext(context, pull)));
+			results.push(await createPr(true, logger, octokit, getActionContext(context, pull)));
 		} catch (error) {
 			results.push(getResult('failed', error.message, getActionContext(context, pull)));
 		}
@@ -233,7 +231,7 @@ export const execute = async(octokit: GitHub, context: ActionContext): Promise<v
 	} else if (isPush(context.actionContext)) {
 		await createCommit(commonLogger, octokit, context);
 	} else if (isPr(context.actionContext)) {
-		await outputResult(await createPr(commonLogger, octokit, context), true);
+		await outputResult(await createPr(false, commonLogger, octokit, context), true);
 	} else {
 		await runCreatePrAll(octokit, context);
 	}
