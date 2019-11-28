@@ -735,6 +735,7 @@ describe('execute', () => {
 		}));
 
 		stdoutCalledWith(mockStdout, [
+			'::group::Target PullRequest Ref [hello-world/new-topic]',
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'> Cloning [hello-world/test-1] branch from the remote repo...',
@@ -754,6 +755,8 @@ describe('execute', () => {
 			'[command]git status --short -uno',
 			'undefined',
 			'{}',
+			'::endgroup::',
+			'::group::Target PullRequest Ref [hello-world/new-topic]',
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'> Cloning [hello-world/test-1] branch from the remote repo...',
@@ -773,6 +776,7 @@ describe('execute', () => {
 			'[command]git status --short -uno',
 			'undefined',
 			'{}',
+			'::endgroup::',
 			'::group::Total:2  Succeeded:0  Failed:2  Skipped:0',
 			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic] test error',
 			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic] test error',
