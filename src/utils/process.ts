@@ -221,7 +221,7 @@ async function* pullsForClosed(octokit: GitHub, context: ActionContext): AsyncIt
 	const logger = new Logger(replaceDirectory, true);
 
 	yield* await getApiHelper(logger).pullsList({
-		base: `${context.actionContext.repo.owner}:${getBranch(getPrBaseRef(context), false)}`,
+		base: getBranch(getPrBaseRef(context), false),
 	}, octokit, context.actionContext);
 }
 
