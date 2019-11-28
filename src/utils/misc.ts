@@ -57,7 +57,7 @@ const contextVariables = (helper: GitHelper, context: ActionContext): { key: str
 		{key: 'PR_BASE_REF', replace: getPrParamFunc(pr => pr.base.ref)},
 		{key: 'PR_TITLE', replace: getPrParamFunc(pr => pr.title)},
 		{key: 'PR_URL', replace: getPrParamFunc(pr => pr.html_url)},
-		{key: 'PR_MERGE_REF', replace: getPrParamFunc(pr => pr.number ? `${pr.head.ref} -> ${pr.head.ref}` : context.defaultBranch)},
+		{key: 'PR_MERGE_REF', replace: getPrParamFunc(pr => pr.number ? `${pr.head.ref} -> ${pr.base.ref}` : context.defaultBranch)},
 		{key: 'PATCH_VERSION', replace: (): Promise<string> => getNewPatchVersion(helper)},
 		// eslint-disable-next-line no-magic-numbers
 	].concat([...Array(context.actionDetail.prVariables?.length ?? 0).keys()].map(index => ({
