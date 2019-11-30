@@ -34,7 +34,9 @@ const getPrBranchPrefixForDefaultBranch = (context: ActionContext): string => co
 
 export const isActionPr = (context: ActionContext): boolean => getPrefixRegExp(getPrBranchPrefix(context)).test(getPrHeadRef(context)) || getPrefixRegExp(getPrBranchPrefixForDefaultBranch(context)).test(getPrHeadRef(context));
 
-export const isDefaultBranch = (context: ActionContext): boolean => context.defaultBranch === getBranch(context.actionContext);
+export const isDefaultBranch = (context: ActionContext): boolean => context.defaultBranch === (
+	context.isBatchProcess ? getPrBaseRef(context) : getBranch(context.actionContext)
+);
 
 export const checkDefaultBranch = (context: ActionContext): boolean => context.actionDetail.checkDefaultBranch ?? true;
 

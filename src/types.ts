@@ -44,6 +44,7 @@ export type ActionContext = {
 	actionDetail: ActionDetails;
 	defaultBranch: string;
 	newPatchVersion?: string;
+	isBatchProcess?: boolean;
 }
 
 export type ProcessResult = {

@@ -24,6 +24,7 @@ import {
 	checkBranch,
 	getDiff,
 	getChangedFiles,
+	isMergeable,
 	updatePr,
 	resolveConflicts,
 	getDefaultBranch,
@@ -151,7 +152,7 @@ describe('checkBranch', () => {
 
 		execCalledWith(mockExec, [
 			'git branch -a | grep -E \'^\\*\' | cut -b 3-',
-			'git clone --branch=change https://octocat:test-token@github.com/hello/world.git . > /dev/null 2>&1 || :',
+			'git checkout -b "change" "origin/change" || :',
 			'git checkout -b "hello-world/test-branch"',
 			'ls -la',
 		]);
@@ -470,6 +471,26 @@ describe('getChangedFiles', () => {
 			'[command]git add --all',
 			'[command]git status --short -uno',
 		]);
+	});
+});
+
+describe('isMergeable', () => {
+	disableNetConnect(nock);
+
+	it('should use cache', async() => {
+		const fn = jest.fn();
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls/1347')
+			.reply(200, () => {
+				fn();
+				return getApiFixture(rootDir, 'pulls.get.mergeable.true');
+			});
+
+		expect(await isMergeable(1347, octokit, getActionContext(context({})))).toBe(true);
+		expect(fn).toBeCalledTimes(1);
+		expect(await isMergeable(1347, octokit, getActionContext(context({})))).toBe(true);
+		expect(fn).toBeCalledTimes(1);
 	});
 });
 

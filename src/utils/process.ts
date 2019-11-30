@@ -56,16 +56,58 @@ const checkActionPr = async(logger: Logger, octokit: GitHub, context: ActionCont
 	return true;
 };
 
+const createCommit = async(logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
+	const helper     = getHelper(context);
+	const branchName = await getPrBranchName(helper, context);
+	if (!isTargetBranch(branchName, context)) {
+		return getResult('skipped', 'This is not target branch', context);
+	}
+
+	const {files} = await getChangedFiles(helper, logger, context);
+	if (!files.length) {
+		logger.info('There is no diff.');
+		if (context.isBatchProcess) {
+			const pr = await getApiHelper(logger).findPullRequest(branchName, octokit, context.actionContext);
+			if (pr && !(await getRefDiff(getPrBaseRef(context), helper, logger, context)).length) {
+				// Close if there is no diff
+				await closePR(branchName, logger, octokit, context);
+				return getResult('succeeded', 'has been closed because there is no reference diff', context);
+			}
+		}
+		return getResult('skipped', 'There is no diff', context);
+	}
+
+	await commit(helper, logger, context);
+	if (context.isBatchProcess) {
+		if (!(await getRefDiff(getPrBaseRef(context), helper, logger, context)).length) {
+			// Close if there is no diff
+			await closePR(branchName, logger, octokit, context);
+			return getResult('succeeded', 'has been closed because there is no reference diff', context);
+		}
+	}
+	try {
+		await push(branchName, helper, logger, context);
+	} catch (error) {
+		if (/protected branch hook declined/.test(error.message)) {
+			logger.warn('Branch [%s] is protected.', branchName);
+			return getResult('failed', 'Branch is protected', context);
+		}
+		throw error;
+	}
+	return getResult('succeeded', 'updated', context);
+};
+
 const createPr = async(makeGroup: boolean, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
 	if (makeGroup) {
 		commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
 	}
 
 	if (isActionPr(context)) {
-		const result = await checkActionPr(logger, octokit, context);
-		if (result !== true) {
-			return result;
+		const processResult = await checkActionPr(logger, octokit, context);
+		if (processResult !== true) {
+			return processResult;
 		}
+		return createCommit(logger, octokit, context);
 	} else if (!isTargetBranch(getPrHeadRef(context), context)) {
 		return getResult('skipped', 'This is not target branch', context);
 	}
@@ -86,7 +128,7 @@ const createPr = async(makeGroup: boolean, logger: Logger, octokit: GitHub, cont
 		if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
 			// Close if there is no diff
 			await closePR(branchName, logger, octokit, context);
-			return getResult('succeeded', 'There is no reference diff', context);
+			return getResult('succeeded', 'has been closed because there is no reference diff', context);
 		}
 		mergeable = await isMergeable(pr.number, octokit, context);
 		if (mergeable) {
@@ -111,31 +153,6 @@ const createPr = async(makeGroup: boolean, logger: Logger, octokit: GitHub, cont
 	}
 
 	return getResult(result, detail, context);
-};
-
-const createCommit = async(logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => {
-	const branchName = getBranch(context.actionContext);
-	if (!isTargetBranch(branchName, context)) {
-		return;
-	}
-
-	const helper  = getHelper(context);
-	const {files} = await getChangedFiles(helper, logger, context);
-	if (!files.length) {
-		logger.info('There is no diff.');
-		return;
-	}
-
-	await commit(helper, logger, context);
-	try {
-		await push(branchName, helper, logger, context);
-	} catch (error) {
-		if (/protected branch hook declined/.test(error.message)) {
-			logger.warn('Branch [%s] is protected.', branchName);
-			return;
-		}
-		throw error;
-	}
 };
 
 const outputResult = (result: ProcessResult, endProcess = false): void => {
@@ -178,6 +195,7 @@ const getActionContext = (context: ActionContext, pull: PullsParams): ActionCont
 		},
 		ref: `refs/heads/${pull.head.ref}`,
 	}),
+	isBatchProcess: true,
 });
 
 const runCreatePr = async(getPulls: (GitHub, ActionContext) => AsyncIterable<PullsParams>, octokit: GitHub, context: ActionContext): Promise<void> => {
