@@ -16,7 +16,7 @@ import {
 	disableNetConnect,
 	getApiFixture,
 } from '@technote-space/github-action-test-helper';
-import { Logger, GitHelper } from '@technote-space/github-action-helper';
+import { Logger, GitHelper, Utils } from '@technote-space/github-action-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
 import {
 	clearCache,
@@ -34,7 +34,8 @@ beforeEach(() => {
 	Logger.resetForTesting();
 	clearCache();
 });
-const logger                       = new Logger();
+const workDir                      = resolve(__dirname, '..', 'test-dir');
+const logger                       = new Logger(string => Utils.replaceAll(string, workDir, '[Working Directory]'));
 const helper                       = new GitHelper(logger, {depth: -1});
 const setExists                    = testFs();
 const rootDir                      = resolve(__dirname, '..', 'fixtures');
@@ -76,7 +77,7 @@ describe('clone', () => {
 	testChildProcess();
 
 	it('should run clone command', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test-dir');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockExec                 = spyOnExec();
 		const mockStdout               = spyOnStdout();
@@ -93,12 +94,18 @@ describe('clone', () => {
 		}));
 
 		execCalledWith(mockExec, [
+			'rm -rdf /projects/gh-actions/github-action-pr-helper/__tests__/test-dir',
+			'git init .',
 			'git remote add origin https://octocat:test-token@github.com/hello/world.git > /dev/null 2>&1 || :',
 			'git fetch origin',
 			'git checkout -b "hello-world/test-branch" "origin/hello-world/test-branch"',
 		]);
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'  >> stdout',
+			'[command]git init .',
+			'  >> stdout',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'  >> stdout',
@@ -115,7 +122,7 @@ describe('checkBranch', () => {
 	testChildProcess();
 
 	it('should do nothing', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test-dir');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({stdout: 'hello-world/test-branch'});
 		const mockExec = spyOnExec();
@@ -132,7 +139,7 @@ describe('checkBranch', () => {
 	});
 
 	it('should checkout new branch', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test-dir');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({stdout: 'test-branch2'});
 		const mockExec = spyOnExec();
@@ -156,7 +163,7 @@ describe('getDiff', () => {
 	testChildProcess();
 
 	it('should get diff', async() => {
-		process.env.GITHUB_WORKSPACE        = resolve('test-dir');
+		process.env.GITHUB_WORKSPACE        = workDir;
 		process.env.INPUT_FILTER_GIT_STATUS = 'M';
 		process.env.INPUT_FILTER_EXTENSIONS = 'md';
 		setChildProcessParams({stdout: 'M  test1.txt\nM  test2.md\nA  test3.md'});
@@ -181,7 +188,7 @@ describe('getChangedFiles', () => {
 	});
 
 	it('should get changed files 1', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test-dir');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({stdout: 'M  file1\nA  file2\nD  file3\n   file4\n\nB  file5\n'});
 
@@ -205,7 +212,7 @@ describe('getChangedFiles', () => {
 	});
 
 	it('should get changed files 2', async() => {
-		process.env.GITHUB_WORKSPACE      = resolve('test-dir');
+		process.env.GITHUB_WORKSPACE      = workDir;
 		process.env.INPUT_GITHUB_TOKEN    = 'test-token';
 		process.env.INPUT_PACKAGE_MANAGER = 'yarn';
 		setChildProcessParams({stdout: 'M  file1\nA  file2\nD  file3\n   file4\n\nB  file5\n'});
@@ -248,7 +255,7 @@ describe('getChangedFiles', () => {
 	});
 
 	it('should return empty 1', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test-dir');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({stdout: 'test'});
 
@@ -302,7 +309,7 @@ describe('getChangedFiles', () => {
 	});
 
 	it('should return empty 2', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test-dir');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
@@ -350,6 +357,8 @@ describe('getChangedFiles', () => {
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
 			'::group::Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
@@ -384,7 +393,7 @@ describe('getChangedFiles', () => {
 	});
 
 	it('should return empty 3', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test-dir');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -433,6 +442,8 @@ describe('getChangedFiles', () => {
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
 			'::group::Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
@@ -519,7 +530,7 @@ describe('resolveConflicts', () => {
 	testChildProcess();
 
 	it('should merge', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test-dir');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({
 			stdout: (command: string): string => {
@@ -547,7 +558,7 @@ describe('resolveConflicts', () => {
 	});
 
 	it('should close pull request', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test-dir');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({
 			stdout: (command: string): string => {
@@ -584,7 +595,7 @@ describe('resolveConflicts', () => {
 	});
 
 	it('should rebase', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test-dir');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({
 			stdout: (command: string): string => {
