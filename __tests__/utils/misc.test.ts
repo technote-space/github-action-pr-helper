@@ -5,6 +5,7 @@ import { testEnv, generateContext, testChildProcess, setChildProcessParams, test
 import moment from 'moment';
 import { resolve } from 'path';
 import {
+	getActionDetail,
 	getCommitMessage,
 	getCommitName,
 	getCommitEmail,
@@ -73,6 +74,25 @@ const prPayload                    = {
 		'html_url': 'http://example.com',
 	},
 };
+
+describe('getActionDetail', () => {
+	it('should get detail', () => {
+		expect(getActionDetail('prVariables', generateActionContext({}, {}, {
+			prVariables: [1, 2, 3],
+		}))).toEqual([1, 2, 3]);
+		expect(getActionDetail('prVariables', generateActionContext({}, {}, {}), () => [2, 3, 4])).toEqual([2, 3, 4]);
+		expect(getActionDetail('prVariables', generateActionContext({}, {}, {
+			prVariables: false,
+		}))).toEqual(undefined);
+	});
+
+	it('should throw error', () => {
+		expect(() => getActionDetail('prTitle', generateActionContext({}))).toThrow();
+		expect(() => getActionDetail('prTitle', generateActionContext({}, {}, {
+			prTitle: '',
+		}))).toThrow();
+	});
+});
 
 describe('isTargetContext', () => {
 	testEnv();
@@ -827,7 +847,7 @@ describe('getPrBody', () => {
 	});
 
 	it('should get PR Body for default branch 1', async() => {
-		const prBody = '${ACTION_OWNER}';
+		const prBody                 = '${ACTION_OWNER}';
 		const prBodyForDefaultBranch = '${ACTION_REPO}';
 
 		expect(await getPrBody([], [], helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
@@ -847,7 +867,7 @@ describe('getPrBody', () => {
 			},
 		}, {
 			prBody,
-			prBodyForDefaultBranch
+			prBodyForDefaultBranch,
 		}))).toBe([
 			'hello-world',
 		].join('\n'));

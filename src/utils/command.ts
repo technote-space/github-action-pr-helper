@@ -68,7 +68,7 @@ const getClearPackageCommands = (context: ActionContext): string[] => {
 };
 
 const getGlobalInstallPackagesCommands = (context: ActionContext): string[] => {
-	const packages = getActionDetail<string[]>('globalInstallPackages', context, []);
+	const packages = getActionDetail<string[]>('globalInstallPackages', context, () => []);
 	if (packages.length) {
 		if (useNpm(getWorkspace(), getInput('PACKAGE_MANAGER'))) {
 			return [
@@ -84,7 +84,7 @@ const getGlobalInstallPackagesCommands = (context: ActionContext): string[] => {
 };
 
 const getDevInstallPackagesCommands = (context: ActionContext): string[] => {
-	const packages = getActionDetail<string[]>('devInstallPackages', context, []);
+	const packages = getActionDetail<string[]>('devInstallPackages', context, () => []);
 	if (packages.length) {
 		if (useNpm(getWorkspace(), getInput('PACKAGE_MANAGER'))) {
 			return [
@@ -100,7 +100,7 @@ const getDevInstallPackagesCommands = (context: ActionContext): string[] => {
 };
 
 const getInstallPackagesCommands = (context: ActionContext): string[] => {
-	const packages = getActionDetail<string[]>('installPackages', context, []);
+	const packages = getActionDetail<string[]>('installPackages', context, () => []);
 	if (packages.length) {
 		if (useNpm(getWorkspace(), getInput('PACKAGE_MANAGER'))) {
 			return [
@@ -117,7 +117,7 @@ const getInstallPackagesCommands = (context: ActionContext): string[] => {
 
 const normalizeCommand = (command: string): string => command.trim().replace(/\s{2,}/g, ' ');
 
-const getExecuteCommands = (context: ActionContext): string[] => getActionDetail<string[]>('executeCommands', context, []).map(normalizeCommand);
+const getExecuteCommands = (context: ActionContext): string[] => getActionDetail<string[]>('executeCommands', context, () => []).map(normalizeCommand);
 
 export const getDiff = async(helper: GitHelper, logger: Logger): Promise<string[]> => {
 	logger.startProcess('Checking diff...');

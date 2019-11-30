@@ -9,21 +9,21 @@ const {getWorkspace, getPrefixRegExp, getRegExp} = Utils;
 const {escapeRegExp, replaceAll, getBranch}      = Utils;
 const {isPr, isCron, isPush}                     = ContextHelper;
 
-export const getActionDetail = <T>(key: string, context: ActionContext, defaultValue?: T): T => {
+export const getActionDetail = <T>(key: string, context: ActionContext, defaultValue?: () => T): T => {
 	if (undefined === defaultValue && !(key in context.actionDetail)) {
 		throw new Error(`parameter [${key}] is required.`);
 	}
 	if (undefined === defaultValue && typeof context.actionDetail[key] === 'string' && context.actionDetail[key].trim() === '') {
 		throw new Error(`parameter [${key}] is required.`);
 	}
-	return context.actionDetail[key] ?? defaultValue;
+	return context.actionDetail[key] || (typeof defaultValue === 'function' ? defaultValue() : undefined);
 };
 
 export const getCommitMessage = (context: ActionContext): string => getActionDetail<string>('commitMessage', context);
 
-export const getCommitName = (context: ActionContext): string => getActionDetail<string>('commitName', context, DEFAULT_COMMIT_NAME);
+export const getCommitName = (context: ActionContext): string => getActionDetail<string>('commitName', context, () => DEFAULT_COMMIT_NAME);
 
-export const getCommitEmail = (context: ActionContext): string => getActionDetail<string>('commitEmail', context, DEFAULT_COMMIT_EMAIL);
+export const getCommitEmail = (context: ActionContext): string => getActionDetail<string>('commitEmail', context, () => DEFAULT_COMMIT_EMAIL);
 
 export const replaceDirectory = (message: string): string => {
 	const workDir = getWorkspace();
@@ -110,14 +110,14 @@ export const getPrBranchName = async(helper: GitHelper, context: ActionContext):
 		getBranch(context.actionContext) :
 		(
 			isDefaultBranch(context) ?
-				getPrBranchPrefixForDefaultBranch(context) + await replaceContextVariables(getActionDetail<string>('prBranchNameForDefaultBranch', context, getActionDetail<string>('prBranchName', context)), helper, context) :
+				getPrBranchPrefixForDefaultBranch(context) + await replaceContextVariables(getActionDetail<string>('prBranchNameForDefaultBranch', context, () => getActionDetail<string>('prBranchName', context)), helper, context) :
 				getPrBranchPrefix(context) + await replaceContextVariables(getActionDetail<string>('prBranchName', context), helper, context)
 		);
 
 export const getPrTitle = async(helper: GitHelper, context: ActionContext): Promise<string> => await replaceContextVariables(
 	(
 		isDefaultBranch(context) ?
-			getActionDetail<string>('prTitleForDefaultBranch', context, getActionDetail<string>('prTitle', context)) :
+			getActionDetail<string>('prTitleForDefaultBranch', context, () => getActionDetail<string>('prTitle', context)) :
 			getActionDetail<string>('prTitle', context)
 	).trim(),
 	helper,
@@ -223,7 +223,7 @@ export const getPrBody = async(files: string[], output: {
 }[], helper: GitHelper, context: ActionContext): Promise<string> => replacePrBodyVariables(
 	(
 		isDefaultBranch(context) ?
-			getActionDetail<string>('prBodyForDefaultBranch', context, getActionDetail<string>('prBody', context)) :
+			getActionDetail<string>('prBodyForDefaultBranch', context, () => getActionDetail<string>('prBody', context)) :
 			getActionDetail<string>('prBody', context)
 	).trim().split(/\r?\n/).map(line => line.replace(/^[\s\t]+/, '')).join('\n'),
 	files,
@@ -242,7 +242,7 @@ export const isTargetBranch = (branchName: string, context: ActionContext): bool
 	if (branchName === context.defaultBranch) {
 		return checkDefaultBranch(context);
 	}
-	const prefix = getActionDetail<string>('targetBranchPrefix', context, '');
+	const prefix = getActionDetail<string>('targetBranchPrefix', context, () => '');
 	if (prefix) {
 		return getPrefixRegExp(prefix).test(branchName);
 	}
@@ -270,7 +270,7 @@ export const isTargetContext = (context: ActionContext): boolean => {
 		return false;
 	}
 
-	return isTargetLabels(getActionDetail<string[]>('includeLabels', context, []), [], context.actionContext);
+	return isTargetLabels(getActionDetail<string[]>('includeLabels', context, () => []), [], context.actionContext);
 };
 
 export const getGitFilterStatus = (context: ActionContext): string | undefined => context.actionDetail.filterGitStatus;
@@ -289,7 +289,7 @@ export const filterGitStatus = (line: string, context: ActionContext): boolean =
 };
 
 export const filterExtension = (line: string, context: ActionContext): boolean => {
-	const extensions = getActionDetail<string[]>('filterExtensions', context, []);
+	const extensions = getActionDetail<string[]>('filterExtensions', context, () => []);
 	if (extensions.length) {
 		const pattern = '(' + extensions.map(item => escapeRegExp('.' + item.replace(/^\./, ''))).join('|') + ')';
 		return (new RegExp(`${pattern}$`)).test(line);
