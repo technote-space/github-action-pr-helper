@@ -20,6 +20,7 @@ import { execute } from '../../src';
 import { clearCache } from '../../src/utils/command';
 import * as constants from '../../src/constant';
 
+const workDir   = resolve(__dirname, 'test');
 const rootDir   = resolve(__dirname, '..', 'fixtures');
 const setExists = testFs();
 beforeEach(() => {
@@ -67,7 +68,7 @@ describe('execute', () => {
 	testChildProcess();
 
 	it('should create pull request', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -111,6 +112,8 @@ describe('execute', () => {
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
 			'::group::Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
@@ -155,7 +158,7 @@ describe('execute', () => {
 	});
 
 	it('should create commit', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -184,6 +187,8 @@ describe('execute', () => {
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
 			'::group::Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
@@ -215,7 +220,7 @@ describe('execute', () => {
 	});
 
 	it('should do schedule', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -272,6 +277,8 @@ describe('execute', () => {
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/test-1]...',
@@ -306,6 +313,8 @@ describe('execute', () => {
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/test-1]...',
@@ -344,7 +353,7 @@ describe('execute', () => {
 	});
 
 	it('should do schedule (action base pull request has not been closed)', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 
@@ -377,6 +386,10 @@ describe('execute', () => {
 			'[command]rm -rdf ./* ./.[!.]*',
 			'  >> stdout',
 			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'  >> stdout',
+			'[command]git init .',
+			'  >> stdout',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'  >> stdout',
@@ -406,6 +419,10 @@ describe('execute', () => {
 			'[command]rm -rdf ./* ./.[!.]*',
 			'  >> stdout',
 			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'  >> stdout',
+			'[command]git init .',
+			'  >> stdout',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'  >> stdout',
@@ -438,7 +455,7 @@ describe('execute', () => {
 	});
 
 	it('should do schedule (action base pull request is default branch)', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 
@@ -469,6 +486,10 @@ describe('execute', () => {
 			'[command]rm -rdf ./* ./.[!.]*',
 			'  >> stdout',
 			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'  >> stdout',
+			'[command]git init .',
+			'  >> stdout',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'  >> stdout',
@@ -498,6 +519,10 @@ describe('execute', () => {
 			'[command]rm -rdf ./* ./.[!.]*',
 			'  >> stdout',
 			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'  >> stdout',
+			'[command]git init .',
+			'  >> stdout',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'  >> stdout',
@@ -530,7 +555,7 @@ describe('execute', () => {
 	});
 
 	it('should process default branch', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -581,6 +606,8 @@ describe('execute', () => {
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/test-0]...',
@@ -618,7 +645,7 @@ describe('execute', () => {
 	});
 
 	it('should do fail', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -662,6 +689,8 @@ describe('execute', () => {
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/test-1]...',
@@ -686,6 +715,8 @@ describe('execute', () => {
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/test-1]...',
@@ -710,6 +741,8 @@ describe('execute', () => {
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/test-0]...',
@@ -739,7 +772,7 @@ describe('execute', () => {
 	});
 
 	it('should do fail (closed action)', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -787,6 +820,8 @@ describe('execute', () => {
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/test-1]...',
@@ -811,6 +846,8 @@ describe('execute', () => {
 			'> Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/test-1]...',
@@ -839,7 +876,7 @@ describe('execute', () => {
 	});
 
 	it('should resolve conflicts', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
@@ -881,6 +918,8 @@ describe('execute', () => {
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
 			'::group::Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
@@ -924,7 +963,7 @@ describe('execute', () => {
 	});
 
 	it('should throw error if push branch not found', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({stdout: ''});
@@ -939,6 +978,8 @@ describe('execute', () => {
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
 			'::group::Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
@@ -948,7 +989,7 @@ describe('execute', () => {
 	});
 
 	it('should throw error if push failed', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
@@ -980,6 +1021,8 @@ describe('execute', () => {
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
 			'::group::Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
@@ -1012,7 +1055,7 @@ describe('execute', () => {
 	});
 
 	it('should create commit', async() => {
-		process.env.GITHUB_WORKSPACE   = resolve('test');
+		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
@@ -1041,6 +1084,8 @@ describe('execute', () => {
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
 			'::group::Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
