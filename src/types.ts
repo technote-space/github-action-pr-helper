@@ -15,10 +15,12 @@ export type ActionDetails = {
 	commitEmail?: string;
 	prBranchPrefix?: string;
 	prBranchName?: string;
-	prBranchPrefixForDefaultBranch?: string;
-	prBranchNameForDefaultBranch?: string;
 	prTitle?: string;
 	prBody?: string;
+	prBranchPrefixForDefaultBranch?: string;
+	prBranchNameForDefaultBranch?: string;
+	prTitleForDefaultBranch?: string;
+	prBodyForDefaultBranch?: string;
 	prVariables?: string[];
 	prDateFormats?: string[];
 	prCloseMessage?: string;
@@ -41,6 +43,7 @@ export type ActionContext = {
 	actionContext: Context;
 	actionDetail: ActionDetails;
 	defaultBranch: string;
+	newPatchVersion?: string;
 }
 
 export type ProcessResult = {

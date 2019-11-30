@@ -27,27 +27,31 @@ export const clearCache = (): void => Object.getOwnPropertyNames(cache).forEach(
 export const getApiHelper = (logger: Logger): ApiHelper => new ApiHelper(logger);
 
 export const clone = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
-	logger.startProcess('Cloning [%s] branch from the remote repo...', await getPrBranchName(helper, context));
+	logger.startProcess('Fetching...');
+	await helper.fetchOrigin(getWorkspace(), context.actionContext);
 
-	await helper.cloneBranch(getWorkspace(), await getPrBranchName(helper, context), context.actionContext);
+	const branchName = await getPrBranchName(helper, context);
+	logger.startProcess('Switching branch to [%s]...', branchName);
+	await helper.switchBranch(getWorkspace(), branchName);
 };
 
 export const checkBranch = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<boolean> => {
 	const clonedBranch = await helper.getCurrentBranchName(getWorkspace());
-	if (await getPrBranchName(helper, context) === clonedBranch) {
+	const branchName   = await getPrBranchName(helper, context);
+	if (branchName === clonedBranch) {
 		await helper.runCommand(getWorkspace(), 'ls -la');
 		return !isPush(context.actionContext);
 	}
 
 	if (isPush(context.actionContext)) {
-		throw new Error(`remote branch [${await getPrBranchName(helper, context)}] not found.`);
+		throw new Error(`remote branch [${branchName}] not found.`);
 	}
 
-	logger.info('remote branch [%s] not found.', await getPrBranchName(helper, context));
+	logger.info('remote branch [%s] not found.', branchName);
 	logger.info('now branch: %s', clonedBranch);
 	logger.startProcess('Cloning [%s] from the remote repo...', getPrHeadRef(context));
 	await helper.cloneBranch(getWorkspace(), getPrHeadRef(context), context.actionContext);
-	await helper.createBranch(getWorkspace(), await getPrBranchName(helper, context));
+	await helper.createBranch(getWorkspace(), branchName);
 	await helper.runCommand(getWorkspace(), 'ls -la');
 	return false;
 };
@@ -312,4 +316,11 @@ export const getDefaultBranch = async(octokit: GitHub, context: Context): Promis
 	return cache[key];
 };
 
-export const getNewPatchVersion = async(helper: GitHelper): Promise<string> => helper.getNewPatchVersion(getWorkspace());
+
+export const getNewPatchVersion = async(helper: GitHelper, context: ActionContext): Promise<string> => {
+	if (!context.newPatchVersion) {
+		// eslint-disable-next-line require-atomic-updates
+		context.newPatchVersion = await helper.getNewPatchVersion(getWorkspace());
+	}
+	return context.newPatchVersion;
+};
