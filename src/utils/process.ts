@@ -176,7 +176,7 @@ const getActionContext = (context: ActionContext, pull: PullsParams): ActionCont
 			owner: pull.base.repo.owner.login,
 			repo: pull.base.repo.name,
 		},
-		ref: pull.head.ref,
+		ref: `refs/heads/${pull.head.ref}`,
 	}),
 });
 

@@ -58,7 +58,7 @@ const contextVariables = (helper: GitHelper, context: ActionContext): { key: str
 		{key: 'PR_TITLE', replace: getPrParamFunc(pr => pr.title)},
 		{key: 'PR_URL', replace: getPrParamFunc(pr => pr.html_url)},
 		{key: 'PR_MERGE_REF', replace: getPrParamFunc(pr => pr.number ? `${pr.head.ref} -> ${pr.base.ref}` : context.defaultBranch)},
-		{key: 'PATCH_VERSION', replace: (): Promise<string> => getNewPatchVersion(helper)},
+		{key: 'PATCH_VERSION', replace: (): Promise<string> => getNewPatchVersion(helper, context)},
 		// eslint-disable-next-line no-magic-numbers
 	].concat([...Array(context.actionDetail.prVariables?.length ?? 0).keys()].map(index => ({
 		// eslint-disable-next-line no-magic-numbers
@@ -103,16 +103,26 @@ const getPrBranchPrefixForDefaultBranch = (context: ActionContext): string => co
 
 export const isActionPr = (context: ActionContext): boolean => getPrefixRegExp(getPrBranchPrefix(context)).test(getPrHeadRef(context)) || getPrefixRegExp(getPrBranchPrefixForDefaultBranch(context)).test(getPrHeadRef(context));
 
+const isDefaultBranch = (context: ActionContext): boolean => context.defaultBranch === getBranch(context.actionContext);
+
 export const getPrBranchName = async(helper: GitHelper, context: ActionContext): Promise<string> =>
 	isPush(context.actionContext) ?
 		getBranch(context.actionContext) :
 		(
-			context.defaultBranch === getBranch(context.actionContext) ?
+			isDefaultBranch(context) ?
 				getPrBranchPrefixForDefaultBranch(context) + await replaceContextVariables(getActionDetail<string>('prBranchNameForDefaultBranch', context, getActionDetail<string>('prBranchName', context)), helper, context) :
 				getPrBranchPrefix(context) + await replaceContextVariables(getActionDetail<string>('prBranchName', context), helper, context)
 		);
 
-export const getPrTitle = async(helper: GitHelper, context: ActionContext): Promise<string> => replaceContextVariables(getActionDetail<string>('prTitle', context), helper, context);
+export const getPrTitle = async(helper: GitHelper, context: ActionContext): Promise<string> => await replaceContextVariables(
+	(
+		isDefaultBranch(context) ?
+			getActionDetail<string>('prTitleForDefaultBranch', context, getActionDetail<string>('prTitle', context)) :
+			getActionDetail<string>('prTitle', context)
+	).trim(),
+	helper,
+	context,
+);
 
 export const getPrLink = (context: ActionContext): string => context.actionContext.payload.pull_request ? `[${context.actionContext.payload.pull_request.title}](${context.actionContext.payload.pull_request.html_url})` : '';
 
@@ -211,7 +221,11 @@ export const getPrBody = async(files: string[], output: {
 	stdout: string[];
 	stderr: string[];
 }[], helper: GitHelper, context: ActionContext): Promise<string> => replacePrBodyVariables(
-	getActionDetail<string>('prBody', context).trim().split(/\r?\n/).map(line => line.replace(/^[\s\t]+/, '')).join('\n'),
+	(
+		isDefaultBranch(context) ?
+			getActionDetail<string>('prBodyForDefaultBranch', context, getActionDetail<string>('prBody', context)) :
+			getActionDetail<string>('prBody', context)
+	).trim().split(/\r?\n/).map(line => line.replace(/^[\s\t]+/, '')).join('\n'),
 	files,
 	output,
 	helper,

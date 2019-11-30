@@ -1,7 +1,7 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
 import { GitHelper, Logger } from '@technote-space/github-action-helper';
-import { testEnv, generateContext, testChildProcess, setChildProcessParams } from '@technote-space/github-action-test-helper';
+import { testEnv, generateContext, testChildProcess, setChildProcessParams, testFs } from '@technote-space/github-action-test-helper';
 import moment from 'moment';
 import { resolve } from 'path';
 import {
@@ -32,6 +32,7 @@ beforeEach(() => {
 });
 const logger = new Logger();
 const helper = new GitHelper(logger, {depth: -1});
+testFs(true);
 
 const actionDetails: ActionDetails = {
 	actionName: 'Test Action',
@@ -498,9 +499,32 @@ describe('getPrTitle', () => {
 		}))).toBe('11::21031067::change::master::change -> master::#11::v1.2.4');
 	});
 
-	it('should get PR title for default branch', async() => {
+	it('should get PR title for default branch 1', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
-		expect(await getPrTitle(helper, generateActionContext({owner: 'owner', repo: 'repo'}, {
+		expect(await getPrTitle(helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+			payload: {
+				'pull_request': {
+					number: 0,
+					id: 21031067,
+					head: {
+						ref: 'master',
+					},
+					base: {
+						ref: 'master',
+					},
+					title: 'test title',
+					'html_url': 'http://example.com',
+				},
+			},
+		}, {
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}',
+			prTitleForDefaultBranch: 'release/${PATCH_VERSION}',
+		}))).toBe('release/v1.2.4');
+	});
+
+	it('should get PR title for default branch 2', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+		expect(await getPrTitle(helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
 					number: 0,
@@ -799,6 +823,58 @@ describe('getPrBody', () => {
 			'variable1',
 			'---------------------------',
 			'',
+		].join('\n'));
+	});
+
+	it('should get PR Body for default branch 1', async() => {
+		const prBody = '${ACTION_OWNER}';
+		const prBodyForDefaultBranch = '${ACTION_REPO}';
+
+		expect(await getPrBody([], [], helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+			payload: {
+				'pull_request': {
+					number: 0,
+					id: 21031067,
+					head: {
+						ref: 'master',
+					},
+					base: {
+						ref: 'master',
+					},
+					title: 'test title',
+					'html_url': 'http://example.com',
+				},
+			},
+		}, {
+			prBody,
+			prBodyForDefaultBranch
+		}))).toBe([
+			'hello-world',
+		].join('\n'));
+	});
+
+	it('should get PR Body for default branch 2', async() => {
+		const prBody = '${ACTION_OWNER}';
+
+		expect(await getPrBody([], [], helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+			payload: {
+				'pull_request': {
+					number: 0,
+					id: 21031067,
+					head: {
+						ref: 'master',
+					},
+					base: {
+						ref: 'master',
+					},
+					title: 'test title',
+					'html_url': 'http://example.com',
+				},
+			},
+		}, {
+			prBody,
+		}))).toBe([
+			'octocat',
 		].join('\n'));
 	});
 

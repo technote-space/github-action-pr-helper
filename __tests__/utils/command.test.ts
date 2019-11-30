@@ -4,7 +4,7 @@ import nock from 'nock';
 import { GitHub } from '@actions/github';
 import { Context } from '@actions/github/lib/context';
 import {
-	getContext,
+	generateContext,
 	testEnv,
 	spyOnExec,
 	execCalledWith,
@@ -27,6 +27,7 @@ import {
 	updatePr,
 	resolveConflicts,
 	getDefaultBranch,
+	getNewPatchVersion,
 } from '../../src/utils/command';
 
 beforeEach(() => {
@@ -38,11 +39,12 @@ const helper                       = new GitHelper(logger, {depth: -1});
 const setExists                    = testFs();
 const rootDir                      = resolve(__dirname, '..', 'fixtures');
 const octokit                      = new GitHub('');
-const context                      = (pr: object): Context => getContext({
-	repo: {
-		owner: 'hello',
-		repo: 'world',
-	},
+const context                      = (pr: object): Context => generateContext({
+	owner: 'hello',
+	repo: 'world',
+	event: 'pull_request',
+	ref: 'heads/feature/change',
+}, {
 	payload: {
 		'pull_request': Object.assign({
 			number: 11,
@@ -91,11 +93,19 @@ describe('clone', () => {
 		}));
 
 		execCalledWith(mockExec, [
-			'git clone --branch=hello-world/test-branch https://octocat:test-token@github.com/hello/world.git . > /dev/null 2>&1 || :',
+			'git remote add origin https://octocat:test-token@github.com/hello/world.git > /dev/null 2>&1 || :',
+			'git fetch origin',
+			'git checkout -b "hello-world/test-branch" "origin/hello-world/test-branch"',
 		]);
 		stdoutCalledWith(mockStdout, [
-			'::group::Cloning [hello-world/test-branch] branch from the remote repo...',
-			'[command]git clone --branch=hello-world/test-branch',
+			'::group::Fetching...',
+			'[command]git remote add origin',
+			'[command]git fetch origin',
+			'  >> stdout',
+			'::endgroup::',
+			'::group::Switching branch to [hello-world/test-branch]...',
+			'[command]git checkout -b "hello-world/test-branch" "origin/hello-world/test-branch"',
+			'  >> stdout',
 		]);
 	});
 });
@@ -339,8 +349,12 @@ describe('getChangedFiles', () => {
 			'::group::Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
-			'::group::Cloning [hello-world/test-branch] branch from the remote repo...',
-			'[command]git clone --branch=hello-world/test-branch',
+			'::group::Fetching...',
+			'[command]git remote add origin',
+			'[command]git fetch origin',
+			'::endgroup::',
+			'::group::Switching branch to [hello-world/test-branch]...',
+			'[command]git checkout -b "hello-world/test-branch" "origin/hello-world/test-branch"',
 			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
 			'  >> hello-world/test-branch',
 			'[command]ls -la',
@@ -418,8 +432,12 @@ describe('getChangedFiles', () => {
 			'::group::Initializing working directory...',
 			'[command]rm -rdf ./* ./.[!.]*',
 			'::endgroup::',
-			'::group::Cloning [hello-world/test-branch] branch from the remote repo...',
-			'[command]git clone --branch=hello-world/test-branch',
+			'::group::Fetching...',
+			'[command]git remote add origin',
+			'[command]git fetch origin',
+			'::endgroup::',
+			'::group::Switching branch to [hello-world/test-branch]...',
+			'[command]git checkout -b "hello-world/test-branch" "origin/hello-world/test-branch"',
 			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
 			'  >> hello-world/test-branch',
 			'[command]ls -la',
@@ -624,5 +642,31 @@ describe('getDefaultBranch', () => {
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
 		expect(await getDefaultBranch(octokit, context({}))).toBe('master');
+	});
+});
+
+describe('getNewPatchVersion', () => {
+	testChildProcess();
+
+	it('should get new patch version', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+		setExists(true);
+		const actionContext = getActionContext(context({}));
+		expect(actionContext.newPatchVersion).toBeUndefined();
+
+		await getNewPatchVersion(helper, actionContext);
+
+		expect(actionContext.newPatchVersion).toBe('v1.2.4');
+	});
+
+	it('should get new patch version from cache', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+		setExists(true);
+		const actionContext = Object.assign({}, getActionContext(context({})), {newPatchVersion: 'v1.2.5'});
+		expect(actionContext.newPatchVersion).toBe('v1.2.5');
+
+		await getNewPatchVersion(helper, actionContext);
+
+		expect(actionContext.newPatchVersion).toBe('v1.2.5');
 	});
 });
