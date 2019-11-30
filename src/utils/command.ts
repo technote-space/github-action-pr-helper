@@ -8,14 +8,16 @@ import {
 	isDisabledDeletePackage,
 	filterExtension,
 	getPrHeadRef,
-	getPrBranchName,
 	getGitFilterStatus,
+} from './misc';
+import {
+	getPrBranchName,
 	getCommitName,
 	getCommitEmail,
 	getCommitMessage,
 	getPrTitle,
 	getPrBody,
-} from './misc';
+} from './variables';
 import { ActionContext } from '../types';
 
 const {getWorkspace, useNpm}  = Utils;

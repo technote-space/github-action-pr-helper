@@ -13,7 +13,6 @@ import {
 } from './command';
 import {
 	replaceDirectory,
-	getPrBranchName,
 	isActionPr,
 	isClosePR,
 	isTargetBranch,
@@ -23,6 +22,7 @@ import {
 	getPullsArgsForDefaultBranch,
 	getPrBaseRef,
 } from './misc';
+import { getPrBranchName } from './variables';
 import { INTERVAL_MS } from '../constant';
 import { ActionContext, ProcessResult, PullsParams } from '../types';
 
