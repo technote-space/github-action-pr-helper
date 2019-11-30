@@ -34,7 +34,7 @@ beforeEach(() => {
 	Logger.resetForTesting();
 	clearCache();
 });
-const workDir                      = resolve(__dirname, '..', 'test-dir');
+const workDir                      = resolve(__dirname, 'test-dir');
 const logger                       = new Logger(string => Utils.replaceAll(string, workDir, '[Working Directory]'));
 const helper                       = new GitHelper(logger, {depth: -1});
 const setExists                    = testFs();
@@ -94,7 +94,7 @@ describe('clone', () => {
 		}));
 
 		execCalledWith(mockExec, [
-			'rm -rdf /projects/gh-actions/github-action-pr-helper/__tests__/test-dir',
+			'rm -rdf /projects/gh-actions/github-action-pr-helper/__tests__/utils/test-dir',
 			'git init .',
 			'git remote add origin https://octocat:test-token@github.com/hello/world.git > /dev/null 2>&1 || :',
 			'git fetch origin',
