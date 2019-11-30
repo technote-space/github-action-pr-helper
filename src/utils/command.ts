@@ -52,7 +52,7 @@ export const checkBranch = async(helper: GitHelper, logger: Logger, context: Act
 	logger.info('remote branch [%s] not found.', branchName);
 	logger.info('now branch: %s', clonedBranch);
 	logger.startProcess('Cloning [%s] from the remote repo...', getPrHeadRef(context));
-	await helper.cloneBranch(getWorkspace(), getPrHeadRef(context), context.actionContext);
+	await helper.switchBranch(getWorkspace(), getPrHeadRef(context));
 	await helper.createBranch(getWorkspace(), branchName);
 	await helper.runCommand(getWorkspace(), 'ls -la');
 	return false;

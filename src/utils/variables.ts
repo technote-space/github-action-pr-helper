@@ -5,7 +5,7 @@ import { ActionContext } from '../types';
 import { getNewPatchVersion } from './command';
 import {
 	getActionDetail,
-	getDefaultBranchUrl,
+	getDefaultBranchUrl, getPrHeadRef, isActionPr,
 	isDefaultBranch,
 } from './misc';
 
@@ -87,9 +87,11 @@ export const getPrBranchName = async(helper: GitHelper, context: ActionContext):
 	isPush(context.actionContext) ?
 		getBranch(context.actionContext) :
 		(
-			isDefaultBranch(context) ?
-				getPrBranchPrefixForDefaultBranch(context) + await replaceContextVariables(getActionDetail<string>('prBranchNameForDefaultBranch', context, () => getActionDetail<string>('prBranchName', context)), helper, context) :
-				getPrBranchPrefix(context) + await replaceContextVariables(getActionDetail<string>('prBranchName', context), helper, context)
+			context.isBatchProcess && isActionPr(context) ? getPrHeadRef(context) : (
+				isDefaultBranch(context) ?
+					getPrBranchPrefixForDefaultBranch(context) + await replaceContextVariables(getActionDetail<string>('prBranchNameForDefaultBranch', context, () => getActionDetail<string>('prBranchName', context)), helper, context) :
+					getPrBranchPrefix(context) + await replaceContextVariables(getActionDetail<string>('prBranchName', context), helper, context)
+			)
 		);
 
 export const getPrTitle = async(helper: GitHelper, context: ActionContext): Promise<string> => await replaceContextVariables(

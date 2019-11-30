@@ -125,7 +125,7 @@ describe('execute', () => {
 			'> now branch: test',
 			'::endgroup::',
 			'::group::Cloning [change] from the remote repo...',
-			'[command]git clone --branch=change',
+			'[command]git checkout -b "change" "origin/change"',
 			'[command]git checkout -b "hello-world/test-21031067"',
 			'[command]ls -la',
 			'::endgroup::',
@@ -154,6 +154,79 @@ describe('execute', () => {
 			'::group::Creating comment to PullRequest... [hello-world/test-21031067] -> [heads/test]',
 			'::endgroup::',
 			'> \x1b[32;40;0m✔\x1b[0m\t[change] updated',
+		]);
+	});
+
+	it('should skip', async() => {
+		process.env.GITHUB_WORKSPACE   = workDir;
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.includes(' diff ')) {
+					return '__tests__/fixtures/test.md';
+				}
+				if (command.includes(' branch -a ')) {
+					return 'test';
+				}
+				return '';
+			},
+		});
+		setExists(true);
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Ftest-21031067')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/hello/world/pulls/1347')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'));
+
+		await execute(octokit, getActionContext(context('synchronize'), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create pull request',
+			prBranchName: 'test-${PR_ID}',
+			prTitle: 'test: create pull request (${PR_NUMBER})',
+			prBody: 'pull request body',
+		}));
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Initializing working directory...',
+			'[command]rm -rdf ./* ./.[!.]*',
+			'::endgroup::',
+			'::group::Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
+			'[command]git remote add origin',
+			'[command]git fetch origin',
+			'::endgroup::',
+			'::group::Switching branch to [hello-world/test-21031067]...',
+			'[command]git checkout -b "hello-world/test-21031067" "origin/hello-world/test-21031067"',
+			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'  >> test',
+			'> remote branch [hello-world/test-21031067] not found.',
+			'> now branch: test',
+			'::endgroup::',
+			'::group::Cloning [change] from the remote repo...',
+			'[command]git checkout -b "change" "origin/change"',
+			'[command]git checkout -b "hello-world/test-21031067"',
+			'[command]ls -la',
+			'::endgroup::',
+			'::group::Running commands...',
+			'[command]yarn upgrade',
+			'::endgroup::',
+			'::group::Checking diff...',
+			'[command]git add --all',
+			'[command]git status --short -uno',
+			'> There is no diff.',
+			'::endgroup::',
+			'::group::Checking references diff...',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/change:refs/remotes/origin/change',
+			'[command]git diff HEAD..origin/change --name-only',
+			'::endgroup::',
+			'> \x1b[33;40;0m→\x1b[0m\t[change] There is no diff',
 		]);
 	});
 
@@ -215,6 +288,124 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Pushing to hello/world@test...',
 			'[command]git push origin "test":"refs/heads/test"',
+			'::endgroup::',
+		]);
+	});
+
+	it('should create commit (action pull request)', async() => {
+		process.env.GITHUB_WORKSPACE   = workDir;
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.endsWith('status --short -uno')) {
+					return 'M  __tests__/fixtures/test.md';
+				}
+				if (command.includes(' diff ')) {
+					return '__tests__/fixtures/test.md';
+				}
+				if (command.includes(' branch -a ')) {
+					return 'hello-world/new-topic';
+				}
+				return '';
+			},
+		});
+		setExists(true);
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=change&per_page=100&page=1')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=change&per_page=100&page=2')
+			.reply(200, () => [])
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
+			.reply(200, () => [])
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'));
+
+		await execute(octokit, getActionContext(context('closed'), {
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create pull request',
+			prBranchName: 'test-${PR_ID}',
+			prTitle: 'test: create pull request (${PR_NUMBER})',
+			prBody: 'pull request body',
+			prCloseMessage: 'close message',
+			checkDefaultBranch: false,
+		}));
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Target PullRequest Ref [hello-world/new-topic]',
+			'> Initializing working directory...',
+			'[command]rm -rdf ./* ./.[!.]*',
+			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
+			'[command]git remote add origin',
+			'[command]git fetch origin',
+			'> Switching branch to [hello-world/new-topic]...',
+			'[command]git checkout -b "hello-world/new-topic" "origin/hello-world/new-topic"',
+			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'  >> hello-world/new-topic',
+			'[command]ls -la',
+			'> Configuring git committer to be GitHub Actions <example@example.com>',
+			'[command]git config user.name "GitHub Actions"',
+			'[command]git config user.email "example@example.com"',
+			'> Merging [hello-world/new-topic] branch...',
+			'[command]git merge --no-edit origin/hello-world/new-topic || :',
+			'> Running commands...',
+			'> Checking diff...',
+			'[command]git add --all',
+			'[command]git status --short -uno',
+			'> Configuring git committer to be GitHub Actions <example@example.com>',
+			'[command]git config user.name "GitHub Actions"',
+			'[command]git config user.email "example@example.com"',
+			'> Committing...',
+			'[command]git commit -qm "test: create pull request"',
+			'[command]git show --stat-count=10 HEAD',
+			'> Checking references diff...',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
+			'[command]git diff HEAD..origin/master --name-only',
+			'> Pushing to octocat/Hello-World@hello-world/new-topic...',
+			'[command]git push origin "hello-world/new-topic":"refs/heads/hello-world/new-topic"',
+			'::endgroup::',
+			'::group::Target PullRequest Ref [hello-world/new-topic]',
+			'> Initializing working directory...',
+			'[command]rm -rdf ./* ./.[!.]*',
+			'> Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init .',
+			'[command]git remote add origin',
+			'[command]git fetch origin',
+			'> Switching branch to [hello-world/new-topic]...',
+			'[command]git checkout -b "hello-world/new-topic" "origin/hello-world/new-topic"',
+			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'  >> hello-world/new-topic',
+			'[command]ls -la',
+			'> Configuring git committer to be GitHub Actions <example@example.com>',
+			'[command]git config user.name "GitHub Actions"',
+			'[command]git config user.email "example@example.com"',
+			'> Merging [hello-world/new-topic] branch...',
+			'[command]git merge --no-edit origin/hello-world/new-topic || :',
+			'> Running commands...',
+			'> Checking diff...',
+			'[command]git add --all',
+			'[command]git status --short -uno',
+			'> Configuring git committer to be GitHub Actions <example@example.com>',
+			'[command]git config user.name "GitHub Actions"',
+			'[command]git config user.email "example@example.com"',
+			'> Committing...',
+			'[command]git commit -qm "test: create pull request"',
+			'[command]git show --stat-count=10 HEAD',
+			'> Checking references diff...',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
+			'[command]git diff HEAD..origin/master --name-only',
+			'> Pushing to octocat/Hello-World@hello-world/new-topic...',
+			'[command]git push origin "hello-world/new-topic":"refs/heads/hello-world/new-topic"',
+			'::endgroup::',
+			'::group::Total:2  Succeeded:2  Failed:0  Skipped:0',
+			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] updated',
+			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] updated',
 			'::endgroup::',
 		]);
 	});
@@ -288,7 +479,7 @@ describe('execute', () => {
 			'> remote branch [hello-world/test-1] not found.',
 			'> now branch: test',
 			'> Cloning [feature/new-topic] from the remote repo...',
-			'[command]git clone --branch=feature/new-topic',
+			'[command]git checkout -b "feature/new-topic" "origin/feature/new-topic"',
 			'[command]git checkout -b "hello-world/test-1"',
 			'[command]ls -la',
 			'> Running commands...',
@@ -324,7 +515,7 @@ describe('execute', () => {
 			'> remote branch [hello-world/test-1] not found.',
 			'> now branch: test',
 			'> Cloning [feature/new-topic] from the remote repo...',
-			'[command]git clone --branch=feature/new-topic',
+			'[command]git checkout -b "feature/new-topic" "origin/feature/new-topic"',
 			'[command]git checkout -b "hello-world/test-1"',
 			'[command]ls -la',
 			'> Running commands...',
@@ -356,6 +547,15 @@ describe('execute', () => {
 		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.includes(' branch -a ')) {
+					return 'hello-world/new-topic';
+				}
+				return 'stdout';
+			},
+		});
+		setExists(true);
 
 		nock('https://api.github.com')
 			.persist()
@@ -393,16 +593,20 @@ describe('execute', () => {
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'  >> stdout',
-			'> Switching branch to [hello-world/test-1]...',
-			'[command]git checkout -b "hello-world/test-1" "origin/hello-world/test-1"',
+			'> Switching branch to [hello-world/new-topic]...',
+			'[command]git checkout -b "hello-world/new-topic" "origin/hello-world/new-topic"',
 			'  >> stdout',
-			'> remote branch [hello-world/test-1] not found.',
-			'> now branch: ',
-			'> Cloning [hello-world/new-topic] from the remote repo...',
-			'[command]git clone --branch=hello-world/new-topic',
-			'[command]git checkout -b "hello-world/test-1"',
-			'  >> stdout',
+			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'  >> hello-world/new-topic',
 			'[command]ls -la',
+			'  >> stdout',
+			'> Configuring git committer to be github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>',
+			'[command]git config user.name "github-actions[bot]"',
+			'  >> stdout',
+			'[command]git config user.email "41898282+github-actions[bot]@users.noreply.github.com"',
+			'  >> stdout',
+			'> Merging [hello-world/new-topic] branch...',
+			'[command]git merge --no-edit origin/hello-world/new-topic || :',
 			'  >> stdout',
 			'> Running commands...',
 			'> Checking diff...',
@@ -411,8 +615,8 @@ describe('execute', () => {
 			'[command]git status --short -uno',
 			'> There is no diff.',
 			'> Checking references diff...',
-			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/hello-world/new-topic:refs/remotes/origin/hello-world/new-topic',
-			'[command]git diff HEAD..origin/hello-world/new-topic --name-only',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
+			'[command]git diff HEAD..origin/master --name-only',
 			'::endgroup::',
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
 			'> Initializing working directory...',
@@ -426,16 +630,20 @@ describe('execute', () => {
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'  >> stdout',
-			'> Switching branch to [hello-world/test-1]...',
-			'[command]git checkout -b "hello-world/test-1" "origin/hello-world/test-1"',
+			'> Switching branch to [hello-world/new-topic]...',
+			'[command]git checkout -b "hello-world/new-topic" "origin/hello-world/new-topic"',
 			'  >> stdout',
-			'> remote branch [hello-world/test-1] not found.',
-			'> now branch: ',
-			'> Cloning [hello-world/new-topic] from the remote repo...',
-			'[command]git clone --branch=hello-world/new-topic',
-			'[command]git checkout -b "hello-world/test-1"',
-			'  >> stdout',
+			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'  >> hello-world/new-topic',
 			'[command]ls -la',
+			'  >> stdout',
+			'> Configuring git committer to be github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>',
+			'[command]git config user.name "github-actions[bot]"',
+			'  >> stdout',
+			'[command]git config user.email "41898282+github-actions[bot]@users.noreply.github.com"',
+			'  >> stdout',
+			'> Merging [hello-world/new-topic] branch...',
+			'[command]git merge --no-edit origin/hello-world/new-topic || :',
 			'  >> stdout',
 			'> Running commands...',
 			'> Checking diff...',
@@ -444,8 +652,8 @@ describe('execute', () => {
 			'[command]git status --short -uno',
 			'> There is no diff.',
 			'> Checking references diff...',
-			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/hello-world/new-topic:refs/remotes/origin/hello-world/new-topic',
-			'[command]git diff HEAD..origin/hello-world/new-topic --name-only',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
+			'[command]git diff HEAD..origin/master --name-only',
 			'::endgroup::',
 			'::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
 			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] There is no diff',
@@ -458,6 +666,15 @@ describe('execute', () => {
 		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.includes(' branch -a ')) {
+					return 'hello-world/new-topic';
+				}
+				return 'stdout';
+			},
+		});
+		setExists(true);
 
 		nock('https://api.github.com')
 			.persist()
@@ -493,16 +710,20 @@ describe('execute', () => {
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'  >> stdout',
-			'> Switching branch to [hello-world/test-1]...',
-			'[command]git checkout -b "hello-world/test-1" "origin/hello-world/test-1"',
+			'> Switching branch to [hello-world/new-topic]...',
+			'[command]git checkout -b "hello-world/new-topic" "origin/hello-world/new-topic"',
 			'  >> stdout',
-			'> remote branch [hello-world/test-1] not found.',
-			'> now branch: ',
-			'> Cloning [hello-world/new-topic] from the remote repo...',
-			'[command]git clone --branch=hello-world/new-topic',
-			'[command]git checkout -b "hello-world/test-1"',
-			'  >> stdout',
+			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'  >> hello-world/new-topic',
 			'[command]ls -la',
+			'  >> stdout',
+			'> Configuring git committer to be github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>',
+			'[command]git config user.name "github-actions[bot]"',
+			'  >> stdout',
+			'[command]git config user.email "41898282+github-actions[bot]@users.noreply.github.com"',
+			'  >> stdout',
+			'> Merging [hello-world/new-topic] branch...',
+			'[command]git merge --no-edit origin/hello-world/new-topic || :',
 			'  >> stdout',
 			'> Running commands...',
 			'> Checking diff...',
@@ -511,8 +732,8 @@ describe('execute', () => {
 			'[command]git status --short -uno',
 			'> There is no diff.',
 			'> Checking references diff...',
-			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/hello-world/new-topic:refs/remotes/origin/hello-world/new-topic',
-			'[command]git diff HEAD..origin/hello-world/new-topic --name-only',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
+			'[command]git diff HEAD..origin/master --name-only',
 			'::endgroup::',
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
 			'> Initializing working directory...',
@@ -526,16 +747,20 @@ describe('execute', () => {
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'  >> stdout',
-			'> Switching branch to [hello-world/test-1]...',
-			'[command]git checkout -b "hello-world/test-1" "origin/hello-world/test-1"',
+			'> Switching branch to [hello-world/new-topic]...',
+			'[command]git checkout -b "hello-world/new-topic" "origin/hello-world/new-topic"',
 			'  >> stdout',
-			'> remote branch [hello-world/test-1] not found.',
-			'> now branch: ',
-			'> Cloning [hello-world/new-topic] from the remote repo...',
-			'[command]git clone --branch=hello-world/new-topic',
-			'[command]git checkout -b "hello-world/test-1"',
-			'  >> stdout',
+			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'  >> hello-world/new-topic',
 			'[command]ls -la',
+			'  >> stdout',
+			'> Configuring git committer to be github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>',
+			'[command]git config user.name "github-actions[bot]"',
+			'  >> stdout',
+			'[command]git config user.email "41898282+github-actions[bot]@users.noreply.github.com"',
+			'  >> stdout',
+			'> Merging [hello-world/new-topic] branch...',
+			'[command]git merge --no-edit origin/hello-world/new-topic || :',
 			'  >> stdout',
 			'> Running commands...',
 			'> Checking diff...',
@@ -544,8 +769,8 @@ describe('execute', () => {
 			'[command]git status --short -uno',
 			'> There is no diff.',
 			'> Checking references diff...',
-			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/hello-world/new-topic:refs/remotes/origin/hello-world/new-topic',
-			'[command]git diff HEAD..origin/hello-world/new-topic --name-only',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
+			'[command]git diff HEAD..origin/master --name-only',
 			'::endgroup::',
 			'::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
 			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] There is no diff',
@@ -617,7 +842,7 @@ describe('execute', () => {
 			'> remote branch [hello-world/test-0] not found.',
 			'> now branch: test',
 			'> Cloning [master] from the remote repo...',
-			'[command]git clone --branch=master',
+			'[command]git checkout -b "master" "origin/master"',
 			'[command]git checkout -b "hello-world/test-0"',
 			'[command]ls -la',
 			'> Running commands...',
@@ -700,7 +925,7 @@ describe('execute', () => {
 			'> remote branch [hello-world/test-1] not found.',
 			'> now branch: test',
 			'> Cloning [feature/new-topic] from the remote repo...',
-			'[command]git clone --branch=feature/new-topic',
+			'[command]git checkout -b "feature/new-topic" "origin/feature/new-topic"',
 			'[command]git checkout -b "hello-world/test-1"',
 			'[command]ls -la',
 			'> Running commands...',
@@ -726,7 +951,7 @@ describe('execute', () => {
 			'> remote branch [hello-world/test-1] not found.',
 			'> now branch: test',
 			'> Cloning [feature/new-topic] from the remote repo...',
-			'[command]git clone --branch=feature/new-topic',
+			'[command]git checkout -b "feature/new-topic" "origin/feature/new-topic"',
 			'[command]git checkout -b "hello-world/test-1"',
 			'[command]ls -la',
 			'> Running commands...',
@@ -752,7 +977,7 @@ describe('execute', () => {
 			'> remote branch [hello-world/test-0] not found.',
 			'> now branch: test',
 			'> Cloning [master] from the remote repo...',
-			'[command]git clone --branch=master',
+			'[command]git checkout -b "master" "origin/master"',
 			'[command]git checkout -b "hello-world/test-0"',
 			'[command]ls -la',
 			'> Running commands...',
@@ -782,7 +1007,7 @@ describe('execute', () => {
 					throw new Error('test error');
 				}
 				if (command.includes(' branch -a ')) {
-					return 'test';
+					return 'hello-world/new-topic';
 				}
 				return '';
 			},
@@ -801,8 +1026,6 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
-			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
-			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Ftest-1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'));
 
 		await execute(octokit, getActionContext(context('closed'), {
@@ -824,16 +1047,16 @@ describe('execute', () => {
 			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
-			'> Switching branch to [hello-world/test-1]...',
-			'[command]git checkout -b "hello-world/test-1" "origin/hello-world/test-1"',
+			'> Switching branch to [hello-world/new-topic]...',
+			'[command]git checkout -b "hello-world/new-topic" "origin/hello-world/new-topic"',
 			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
-			'  >> test',
-			'> remote branch [hello-world/test-1] not found.',
-			'> now branch: test',
-			'> Cloning [hello-world/new-topic] from the remote repo...',
-			'[command]git clone --branch=hello-world/new-topic',
-			'[command]git checkout -b "hello-world/test-1"',
+			'  >> hello-world/new-topic',
 			'[command]ls -la',
+			'> Configuring git committer to be GitHub Actions <example@example.com>',
+			'[command]git config user.name "GitHub Actions"',
+			'[command]git config user.email "example@example.com"',
+			'> Merging [hello-world/new-topic] branch...',
+			'[command]git merge --no-edit origin/hello-world/new-topic || :',
 			'> Running commands...',
 			'[command]yarn upgrade',
 			'> Checking diff...',
@@ -850,16 +1073,16 @@ describe('execute', () => {
 			'[command]git init .',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
-			'> Switching branch to [hello-world/test-1]...',
-			'[command]git checkout -b "hello-world/test-1" "origin/hello-world/test-1"',
+			'> Switching branch to [hello-world/new-topic]...',
+			'[command]git checkout -b "hello-world/new-topic" "origin/hello-world/new-topic"',
 			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
-			'  >> test',
-			'> remote branch [hello-world/test-1] not found.',
-			'> now branch: test',
-			'> Cloning [hello-world/new-topic] from the remote repo...',
-			'[command]git clone --branch=hello-world/new-topic',
-			'[command]git checkout -b "hello-world/test-1"',
+			'  >> hello-world/new-topic',
 			'[command]ls -la',
+			'> Configuring git committer to be GitHub Actions <example@example.com>',
+			'[command]git config user.name "GitHub Actions"',
+			'[command]git config user.email "example@example.com"',
+			'> Merging [hello-world/new-topic] branch...',
+			'[command]git merge --no-edit origin/hello-world/new-topic || :',
 			'> Running commands...',
 			'[command]yarn upgrade',
 			'> Checking diff...',
@@ -931,7 +1154,7 @@ describe('execute', () => {
 			'> now branch: test',
 			'::endgroup::',
 			'::group::Cloning [change] from the remote repo...',
-			'[command]git clone --branch=change',
+			'[command]git checkout -b "change" "origin/change"',
 			'[command]git checkout -b "hello-world/test-21031067"',
 			'[command]ls -la',
 			'::endgroup::',
