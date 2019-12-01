@@ -215,7 +215,7 @@ describe('isTargetContext', () => {
 		}))).toBe(true);
 	});
 
-	it('should return false 11', () => {
+	it('should return true 11', () => {
 		expect(isTargetContext(generateActionContext({
 			event: 'pull_request',
 			action: 'closed',
@@ -263,14 +263,14 @@ describe('isTargetContext', () => {
 		}, {includeLabels: 'test1'}))).toBe(false);
 	});
 
-	it('should return false 6', () => {
+	it('should return false 4', () => {
 		expect(isTargetContext(generateActionContext({
 			ref: 'heads/test/change',
 			event: 'push',
 		}))).toBe(false);
 	});
 
-	it('should return false 7', () => {
+	it('should return false 5', () => {
 		expect(isTargetContext(generateActionContext({
 			ref: 'heads/change',
 			event: 'pull_request',
