@@ -1,7 +1,7 @@
 import { Utils, ContextHelper, GitHelper } from '@technote-space/github-action-helper';
 import moment from 'moment';
 import { DEFAULT_COMMIT_NAME, DEFAULT_COMMIT_EMAIL } from '../constant';
-import { ActionContext } from '../types';
+import { ActionContext, CommandOutput } from '../types';
 import { getNewPatchVersion } from './command';
 import {
 	getActionDetail,
@@ -87,7 +87,7 @@ export const getPrBranchName = async(helper: GitHelper, context: ActionContext):
 	isPush(context.actionContext) ?
 		getBranch(context.actionContext) :
 		(
-			context.isBatchProcess && isActionPr(context) ? getPrHeadRef(context) : (
+			isActionPr(context) ? getPrHeadRef(context) : (
 				isDefaultBranch(context) ?
 					getPrBranchPrefixForDefaultBranch(context) + await replaceContextVariables(getActionDetail<string>('prBranchNameForDefaultBranch', context, () => getActionDetail<string>('prBranchName', context)), helper, context) :
 					getPrBranchPrefix(context) + await replaceContextVariables(getActionDetail<string>('prBranchName', context), helper, context)
@@ -106,11 +106,7 @@ export const getPrTitle = async(helper: GitHelper, context: ActionContext): Prom
 
 export const getPrLink = (context: ActionContext): string => context.actionContext.payload.pull_request ? `[${context.actionContext.payload.pull_request.title}](${context.actionContext.payload.pull_request.html_url})` : '';
 
-const prBodyVariables = (files: string[], output: {
-	command: string;
-	stdout: string[];
-	stderr: string[];
-}[], helper: GitHelper, context: ActionContext): { key: string; replace: () => Promise<string> }[] => {
+const prBodyVariables = (files: string[], output: CommandOutput[], helper: GitHelper, context: ActionContext): { key: string; replace: () => Promise<string> }[] => {
 	const toCode = (string: string): string => string.length ? ['', '```Shell', string, '```', ''].join('\n') : '';
 	return [
 		{
@@ -190,17 +186,9 @@ const prBodyVariables = (files: string[], output: {
 	].concat(contextVariables(helper, context));
 };
 
-const replacePrBodyVariables = (prBody: string, files: string[], output: {
-	command: string;
-	stdout: string[];
-	stderr: string[];
-}[], helper: GitHelper, context: ActionContext): Promise<string> => replaceVariables(prBody, prBodyVariables(files, output, helper, context));
+const replacePrBodyVariables = (prBody: string, files: string[], output: CommandOutput[], helper: GitHelper, context: ActionContext): Promise<string> => replaceVariables(prBody, prBodyVariables(files, output, helper, context));
 
-export const getPrBody = async(files: string[], output: {
-	command: string;
-	stdout: string[];
-	stderr: string[];
-}[], helper: GitHelper, context: ActionContext): Promise<string> => replacePrBodyVariables(
+export const getPrBody = async(files: string[], output: CommandOutput[], helper: GitHelper, context: ActionContext): Promise<string> => replacePrBodyVariables(
 	(
 		isDefaultBranch(context) ?
 			getActionDetail<string>('prBodyForDefaultBranch', context, () => getActionDetail<string>('prBody', context)) :

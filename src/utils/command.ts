@@ -18,7 +18,7 @@ import {
 	getPrTitle,
 	getPrBody,
 } from './variables';
-import { ActionContext } from '../types';
+import { ActionContext, CommandOutput } from '../types';
 
 const {getWorkspace, useNpm}  = Utils;
 const {getRepository, isPush} = ContextHelper;
@@ -205,11 +205,7 @@ export const isMergeable = async(number: number, octokit: GitHub, context: Actio
 	return cache[key];
 };
 
-export const updatePr = async(branchName: string, files: string[], output: {
-	command: string;
-	stdout: string[];
-	stderr: string[];
-}[], helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<boolean> => {
+export const updatePr = async(branchName: string, files: string[], output: CommandOutput[], helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<boolean> => {
 	const info = await getApiHelper(logger).pullsCreateOrComment(branchName, {
 		title: await getPrTitle(helper, context),
 		body: await getPrBody(files, output, helper, context),
@@ -224,11 +220,7 @@ export const updatePr = async(branchName: string, files: string[], output: {
 
 const runCommands = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<{
 	files: string[];
-	output: {
-		command: string;
-		stdout: string[];
-		stderr: string[];
-	}[];
+	output: CommandOutput[];
 }> => {
 	const commands: string[] = ([] as string[]).concat.apply([], [
 		getClearPackageCommands(context),
@@ -249,11 +241,7 @@ const runCommands = async(helper: GitHelper, logger: Logger, context: ActionCont
 
 export const getChangedFiles = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<{
 	files: string[];
-	output: {
-		command: string;
-		stdout: string[];
-		stderr: string[];
-	}[];
+	output: CommandOutput[];
 }> => {
 	await initDirectory(helper, logger);
 	await clone(helper, logger, context);
@@ -268,11 +256,7 @@ export const getChangedFiles = async(helper: GitHelper, logger: Logger, context:
 
 export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<{
 	files: string[];
-	output: {
-		command: string;
-		stdout: string[];
-		stderr: string[];
-	}[];
+	output: CommandOutput[];
 }> => {
 	await initDirectory(helper, logger);
 	await helper.cloneBranch(getWorkspace(), getPrHeadRef(context), context.actionContext);

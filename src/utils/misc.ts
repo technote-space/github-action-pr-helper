@@ -72,6 +72,10 @@ export const isTargetContext = (context: ActionContext): boolean => {
 		return true;
 	}
 
+	if (isClosePR(context)) {
+		return true;
+	}
+
 	if (!isTargetBranch(getPrHeadRef(context), context)) {
 		return false;
 	}
