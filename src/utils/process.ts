@@ -1,5 +1,5 @@
 import { GitHub } from '@actions/github';
-import { Logger, Utils, ContextHelper } from '@technote-space/github-action-helper';
+import { Logger, Utils, ContextHelper, GitHelper } from '@technote-space/github-action-helper';
 import {
 	getApiHelper,
 	getChangedFiles,
@@ -24,7 +24,7 @@ import {
 } from './misc';
 import { getPrBranchName } from './variables';
 import { INTERVAL_MS } from '../constant';
-import { ActionContext, ProcessResult, PullsParams } from '../types';
+import { ActionContext, ProcessResult, PullsParams, CommandOutput } from '../types';
 
 const {sleep, getBranch} = Utils;
 const {isPr, isPush}     = ContextHelper;
@@ -97,7 +97,59 @@ const createCommit = async(logger: Logger, octokit: GitHub, context: ActionConte
 	return getResult('succeeded', 'updated', context);
 };
 
-const createPr = async(makeGroup: boolean, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
+const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: GitHub, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
+	logger.info('There is no diff.');
+	const pr = await getApiHelper(logger).findPullRequest(branchName, octokit, context.actionContext);
+	if (!pr) {
+		// There is no PR
+		return {
+			mergeable: false,
+			result: getResult('skipped', 'There is no diff', context),
+		};
+	}
+	if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
+		// Close if there is no diff
+		await closePR(branchName, logger, octokit, context);
+		return {
+			mergeable: false,
+			result: getResult('succeeded', 'has been closed because there is no reference diff', context),
+		};
+	}
+	if (isClose) {
+		return {
+			mergeable: false,
+			result: getResult('skipped', 'This is close event', context),
+		};
+	}
+	return {
+		mergeable: await isMergeable(pr.number, octokit, context),
+	};
+};
+
+const diffProcess = async(files: string[], output: CommandOutput[], branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: GitHub, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
+	// Commit local diffs
+	await commit(helper, logger, context);
+	if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
+		// Close if there is no diff
+		await closePR(branchName, logger, octokit, context);
+		return {
+			mergeable: false,
+			result: getResult('succeeded', 'has been closed because there is no reference diff', context),
+		};
+	}
+	if (isClose) {
+		return {
+			mergeable: false,
+			result: getResult('skipped', 'This is close event', context),
+		};
+	}
+	await push(branchName, helper, logger, context);
+	return {
+		mergeable: await updatePr(branchName, files, output, helper, logger, octokit, context),
+	};
+};
+
+const createPr = async(makeGroup: boolean, isClose: boolean, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
 	if (makeGroup) {
 		commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
 	}
@@ -119,32 +171,21 @@ const createPr = async(makeGroup: boolean, logger: Logger, octokit: GitHub, cont
 	let detail                          = 'updated';
 	let mergeable                       = false;
 	if (!files.length) {
-		logger.info('There is no diff.');
-		const pr = await getApiHelper(logger).findPullRequest(branchName, octokit, context.actionContext);
-		if (!pr) {
-			// There is no PR
-			return getResult('skipped', 'There is no diff', context);
+		const processResult = await noDiffProcess(branchName, isClose, logger, helper, octokit, context);
+		if (processResult.result) {
+			return processResult.result;
 		}
-		if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
-			// Close if there is no diff
-			await closePR(branchName, logger, octokit, context);
-			return getResult('succeeded', 'has been closed because there is no reference diff', context);
-		}
-		mergeable = await isMergeable(pr.number, octokit, context);
+		mergeable = processResult.mergeable;
 		if (mergeable) {
 			result = 'skipped';
 			detail = 'There is no diff';
 		}
 	} else {
-		// Commit local diffs
-		await commit(helper, logger, context);
-		if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
-			// Close if there is no diff
-			await closePR(branchName, logger, octokit, context);
-			return getResult('succeeded', 'has been closed because there is no reference diff', context);
+		const processResult = await diffProcess(files, output, branchName, isClose, logger, helper, octokit, context);
+		if (processResult.result) {
+			return processResult.result;
 		}
-		await push(branchName, helper, logger, context);
-		mergeable = await updatePr(branchName, files, output, helper, logger, octokit, context);
+		mergeable = processResult.mergeable;
 	}
 
 	if (!mergeable) {
@@ -198,12 +239,12 @@ const getActionContext = (context: ActionContext, pull: PullsParams): ActionCont
 	isBatchProcess: true,
 });
 
-const runCreatePr = async(getPulls: (GitHub, ActionContext) => AsyncIterable<PullsParams>, octokit: GitHub, context: ActionContext): Promise<void> => {
+const runCreatePr = async(isClose: boolean, getPulls: (GitHub, ActionContext) => AsyncIterable<PullsParams>, octokit: GitHub, context: ActionContext): Promise<void> => {
 	const logger                   = new Logger(replaceDirectory, true);
 	const results: ProcessResult[] = [];
 	for await (const pull of getPulls(octokit, context)) {
 		try {
-			results.push(await createPr(true, logger, octokit, getActionContext(context, pull)));
+			results.push(await createPr(true, isClose, logger, octokit, getActionContext(context, pull)));
 		} catch (error) {
 			results.push(getResult('failed', error.message, getActionContext(context, pull)));
 		}
@@ -226,7 +267,7 @@ async function* pullsForSchedule(octokit: GitHub, context: ActionContext): Async
 	}
 }
 
-const runCreatePrAll = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(pullsForSchedule, octokit, context);
+const runCreatePrAll = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(false, pullsForSchedule, octokit, context);
 
 /**
  * @param {GitHub} octokit octokit
@@ -245,7 +286,7 @@ async function* pullsForClosed(octokit: GitHub, context: ActionContext): AsyncIt
 	}, octokit, context.actionContext);
 }
 
-const runCreatePrClosed = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(pullsForClosed, octokit, context);
+const runCreatePrClosed = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(true, pullsForClosed, octokit, context);
 
 export const execute = async(octokit: GitHub, context: ActionContext): Promise<void> => {
 	if (isClosePR(context)) {
@@ -253,7 +294,7 @@ export const execute = async(octokit: GitHub, context: ActionContext): Promise<v
 	} else if (isPush(context.actionContext)) {
 		await createCommit(commonLogger, octokit, context);
 	} else if (isPr(context.actionContext)) {
-		await outputResult(await createPr(false, commonLogger, octokit, context), true);
+		await outputResult(await createPr(false, false, commonLogger, octokit, context), true);
 	} else {
 		await runCreatePrAll(octokit, context);
 	}
