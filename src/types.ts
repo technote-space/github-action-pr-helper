@@ -71,3 +71,9 @@ export type PullsParams = {
 	title: string;
 	'html_url': string;
 }
+
+export type CommandOutput = {
+	command: string;
+	stdout: string[];
+	stderr: string[];
+}
