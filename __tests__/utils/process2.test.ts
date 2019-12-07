@@ -532,7 +532,11 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
-			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'));
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World/pulls/1347')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
+			.post('/repos/octocat/Hello-World/issues/1347/comments')
+			.reply(201);
 
 		await execute(octokit, getActionContext(context('closed'), {
 			commitName: 'GitHub Actions',
@@ -579,6 +583,7 @@ describe('execute', () => {
 			'[command]git diff \'HEAD..origin/master\' --name-only',
 			'> Pushing to octocat/Hello-World@hello-world/new-topic...',
 			'[command]git push origin hello-world/new-topic:refs/heads/hello-world/new-topic',
+			'> Creating comment to PullRequest... [hello-world/new-topic] -> [heads/hello-world/new-topic]',
 			'::endgroup::',
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
 			'> Initializing working directory...',
@@ -613,6 +618,7 @@ describe('execute', () => {
 			'[command]git diff \'HEAD..origin/master\' --name-only',
 			'> Pushing to octocat/Hello-World@hello-world/new-topic...',
 			'[command]git push origin hello-world/new-topic:refs/heads/hello-world/new-topic',
+			'> Creating comment to PullRequest... [hello-world/new-topic] -> [heads/hello-world/new-topic]',
 			'::endgroup::',
 			'::group::Total:2  Succeeded:2  Failed:0  Skipped:0',
 			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] updated',
@@ -657,10 +663,10 @@ describe('execute', () => {
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.patch('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-			.post('/repos/octocat/Hello-World/issues/1347/comments')
-			.reply(201)
 			.get('/repos/octocat/Hello-World/pulls/1347')
-			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'));
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
+			.post('/repos/octocat/Hello-World/issues/1347/comments')
+			.reply(201);
 
 		await execute(octokit, getActionContext(context('', 'schedule'), {
 			executeCommands: ['yarn upgrade'],
