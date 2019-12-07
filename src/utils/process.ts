@@ -56,14 +56,14 @@ const checkActionPr = async(logger: Logger, octokit: GitHub, context: ActionCont
 	return true;
 };
 
-const createCommit = async(logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
+const createCommit = async(addComment: boolean, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
 	const helper     = getHelper(context);
 	const branchName = await getPrBranchName(helper, context);
 	if (!isTargetBranch(branchName, context)) {
 		return getResult('skipped', 'This is not target branch', context);
 	}
 
-	const {files} = await getChangedFiles(helper, logger, context);
+	const {files, output} = await getChangedFiles(helper, logger, context);
 	if (!files.length) {
 		logger.info('There is no diff.');
 		if (context.isBatchProcess) {
@@ -93,6 +93,9 @@ const createCommit = async(logger: Logger, octokit: GitHub, context: ActionConte
 			return getResult('failed', 'Branch is protected', context);
 		}
 		throw error;
+	}
+	if (addComment) {
+		await updatePr(branchName, files, output, helper, logger, octokit, context);
 	}
 	return getResult('succeeded', 'updated', context);
 };
@@ -159,7 +162,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, logger: Logger, oct
 		if (processResult !== true) {
 			return processResult;
 		}
-		return createCommit(logger, octokit, context);
+		return createCommit(true, logger, octokit, context);
 	} else if (!isTargetBranch(getPrHeadRef(context), context)) {
 		return getResult('skipped', 'This is not target branch', context);
 	}
@@ -292,7 +295,7 @@ export const execute = async(octokit: GitHub, context: ActionContext): Promise<v
 	if (isClosePR(context)) {
 		await runCreatePrClosed(octokit, context);
 	} else if (isPush(context.actionContext)) {
-		await createCommit(commonLogger, octokit, context);
+		await createCommit(false, commonLogger, octokit, context);
 	} else if (isPr(context.actionContext)) {
 		await outputResult(await createPr(false, false, commonLogger, octokit, context), true);
 	} else {
