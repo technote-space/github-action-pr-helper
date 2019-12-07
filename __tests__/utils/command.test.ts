@@ -96,23 +96,23 @@ describe('clone', () => {
 
 		execCalledWith(mockExec, [
 			`rm -rdf ${workDir}`,
-			'git init .',
-			'git remote add origin https://octocat:test-token@github.com/hello/world.git > /dev/null 2>&1 || :',
+			'git init \'.\'',
+			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
 			'git fetch origin',
-			'git checkout -b "hello-world/test-branch" "origin/hello-world/test-branch" || :',
+			'git checkout -b hello-world/test-branch origin/hello-world/test-branch || :',
 		]);
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'  >> stdout',
-			'[command]git init .',
+			'[command]git init \'.\'',
 			'  >> stdout',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'  >> stdout',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
-			'[command]git checkout -b "hello-world/test-branch" "origin/hello-world/test-branch"',
+			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
 			'  >> stdout',
 		]);
 	});
@@ -125,7 +125,7 @@ describe('checkBranch', () => {
 	it('should do nothing', async() => {
 		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
-		setChildProcessParams({stdout: 'hello-world/test-branch'});
+		setChildProcessParams({stdout: '  master\n* hello-world/test-branch'});
 		const mockExec = spyOnExec();
 		setExists(true);
 
@@ -134,7 +134,7 @@ describe('checkBranch', () => {
 		}))).toBe(true);
 
 		execCalledWith(mockExec, [
-			'git branch -a | grep -E \'^\\*\' | cut -b 3-',
+			'git branch -a',
 			'ls -la',
 		]);
 	});
@@ -142,7 +142,7 @@ describe('checkBranch', () => {
 	it('should checkout new branch', async() => {
 		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
-		setChildProcessParams({stdout: 'test-branch2'});
+		setChildProcessParams({stdout: '* test-branch2\n  master'});
 		const mockExec = spyOnExec();
 		setExists(true);
 
@@ -151,9 +151,9 @@ describe('checkBranch', () => {
 		}))).toBe(false);
 
 		execCalledWith(mockExec, [
-			'git branch -a | grep -E \'^\\*\' | cut -b 3-',
-			'git checkout -b "change" "origin/change" || :',
-			'git checkout -b "hello-world/test-branch"',
+			'git branch -a',
+			'git checkout -b change origin/change || :',
+			'git checkout -b hello-world/test-branch',
 			'ls -la',
 		]);
 	});
@@ -315,8 +315,8 @@ describe('getChangedFiles', () => {
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
-				if (command.includes(' branch -a ')) {
-					return 'hello-world/test-branch';
+				if (command.includes(' branch -a')) {
+					return '* hello-world/test-branch';
 				}
 				if (command.startsWith('git merge --no-edit')) {
 					return 'Auto-merging merge.txt\nCONFLICT (content): Merge conflict in merge.txt\nAutomatic merge failed; fix conflicts and then commit the result.';
@@ -359,19 +359,19 @@ describe('getChangedFiles', () => {
 			'::endgroup::',
 			'::group::Fetching...',
 			'[command]rm -rdf [Working Directory]',
-			'[command]git init .',
+			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
-			'[command]git checkout -b "hello-world/test-branch" "origin/hello-world/test-branch"',
-			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
-			'  >> hello-world/test-branch',
+			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
+			'[command]git branch -a',
+			'  >> * hello-world/test-branch',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Configuring git committer to be GitHub Actions <example@example.com>',
-			'[command]git config user.name "GitHub Actions"',
-			'[command]git config user.email "example@example.com"',
+			'[command]git config \'user.name\' \'GitHub Actions\'',
+			'[command]git config \'user.email\' \'example@example.com\'',
 			'::endgroup::',
 			'::group::Merging [hello-world/test-branch] branch...',
 			'[command]git merge --no-edit origin/hello-world/test-branch || :',
@@ -400,8 +400,8 @@ describe('getChangedFiles', () => {
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
-				if (command.includes(' branch -a ')) {
-					return 'hello-world/test-branch';
+				if (command.includes(' branch -a')) {
+					return '* hello-world/test-branch';
 				}
 				if (command.startsWith('git merge')) {
 					return 'Already up to date.';
@@ -444,19 +444,19 @@ describe('getChangedFiles', () => {
 			'::endgroup::',
 			'::group::Fetching...',
 			'[command]rm -rdf [Working Directory]',
-			'[command]git init .',
+			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
-			'[command]git checkout -b "hello-world/test-branch" "origin/hello-world/test-branch"',
-			'[command]git branch -a | grep -E \'^\\*\' | cut -b 3-',
-			'  >> hello-world/test-branch',
+			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
+			'[command]git branch -a',
+			'  >> * hello-world/test-branch',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Configuring git committer to be GitHub Actions <example@example.com>',
-			'[command]git config user.name "GitHub Actions"',
-			'[command]git config user.email "example@example.com"',
+			'[command]git config \'user.name\' \'GitHub Actions\'',
+			'[command]git config \'user.email\' \'example@example.com\'',
 			'::endgroup::',
 			'::group::Merging [hello-world/test-branch] branch...',
 			'[command]git merge --no-edit origin/hello-world/test-branch || :',
@@ -571,10 +571,10 @@ describe('resolveConflicts', () => {
 		}));
 
 		execCalledWith(mockExec, [
-			'git config user.name "GitHub Actions"',
-			'git config user.email "example@example.com"',
+			'git config \'user.name\' \'GitHub Actions\'',
+			'git config \'user.email\' \'example@example.com\'',
 			'git merge --no-edit origin/change || :',
-			'git push https://octocat:test-token@github.com/hello/world.git "test":"refs/heads/test" > /dev/null 2>&1',
+			'git push  \'https://octocat:test-token@github.com/hello/world.git\' \'test:refs/heads/test\' > /dev/null 2>&1',
 		]);
 	});
 
@@ -603,12 +603,12 @@ describe('resolveConflicts', () => {
 		}));
 
 		execCalledWith(mockExec, [
-			'git config user.name "GitHub Actions"',
-			'git config user.email "example@example.com"',
+			'git config \'user.name\' \'GitHub Actions\'',
+			'git config \'user.email\' \'example@example.com\'',
 			'git merge --no-edit origin/change || :',
 			'rm -rdf ./* ./.[!.]*',
-			'git clone --branch=change https://octocat:test-token@github.com/hello/world.git . > /dev/null 2>&1 || :',
-			'git checkout -b "hello-world/test-branch"',
+			'git clone \'--branch=change\'  \'https://octocat:test-token@github.com/hello/world.git\' \'.\' > /dev/null 2>&1 || :',
+			'git checkout -b hello-world/test-branch',
 			'yarn upgrade',
 			'git add --all',
 			'git status --short -uno',
@@ -648,20 +648,20 @@ describe('resolveConflicts', () => {
 		}));
 
 		execCalledWith(mockExec, [
-			'git config user.name "GitHub Actions"',
-			'git config user.email "example@example.com"',
+			'git config \'user.name\' \'GitHub Actions\'',
+			'git config \'user.email\' \'example@example.com\'',
 			'git merge --no-edit origin/change || :',
 			'rm -rdf ./* ./.[!.]*',
-			'git clone --branch=change https://octocat:test-token@github.com/hello/world.git . > /dev/null 2>&1 || :',
-			'git checkout -b "hello-world/test-branch"',
+			'git clone \'--branch=change\'  \'https://octocat:test-token@github.com/hello/world.git\' \'.\' > /dev/null 2>&1 || :',
+			'git checkout -b hello-world/test-branch',
 			'yarn upgrade',
 			'git add --all',
 			'git status --short -uno',
-			'git config user.name "GitHub Actions"',
-			'git config user.email "example@example.com"',
-			'git commit -qm "commit message"',
-			'git show --stat-count=10 HEAD',
-			'git push --force https://octocat:test-token@github.com/hello/world.git "test":"refs/heads/test" > /dev/null 2>&1',
+			'git config \'user.name\' \'GitHub Actions\'',
+			'git config \'user.email\' \'example@example.com\'',
+			'git commit -qm \'commit message\'',
+			'git show \'--stat-count=10\' HEAD',
+			'git push --force \'https://octocat:test-token@github.com/hello/world.git\' \'test:refs/heads/test\' > /dev/null 2>&1',
 		]);
 	});
 });
