@@ -1,8 +1,9 @@
 /* eslint-disable no-magic-numbers */
-import { resolve } from 'path';
-import nock from 'nock';
-import { GitHub } from '@actions/github';
 import { Context } from '@actions/github/lib/context';
+import { GitHub } from '@actions/github';
+import nock from 'nock';
+import { resolve } from 'path';
+import { Logger, GitHelper, Utils } from '@technote-space/github-action-helper';
 import {
 	generateContext,
 	testEnv,
@@ -16,10 +17,8 @@ import {
 	disableNetConnect,
 	getApiFixture,
 } from '@technote-space/github-action-test-helper';
-import { Logger, GitHelper, Utils } from '@technote-space/github-action-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
 import {
-	clearCache,
 	clone,
 	checkBranch,
 	getDiff,
@@ -30,10 +29,10 @@ import {
 	getDefaultBranch,
 	getNewPatchVersion,
 } from '../../src/utils/command';
+import { getCacheKey, isCached } from '../../src/utils/misc';
 
 beforeEach(() => {
 	Logger.resetForTesting();
-	clearCache();
 });
 const workDir                      = resolve(__dirname, 'test-dir');
 const logger                       = new Logger(string => Utils.replaceAll(string, workDir, '[Working Directory]'));
@@ -67,10 +66,12 @@ const actionDetails: ActionDetails = {
 	actionOwner: 'octocat',
 	actionRepo: 'hello-world',
 };
-const getActionContext             = (context: Context, _actionDetails?: object): ActionContext => ({
+const getActionContext             = (context: Context, _actionDetails?: object, defaultBranch?: string): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ? Object.assign({}, actionDetails, _actionDetails) : actionDetails,
-	defaultBranch: 'master',
+	cache: {
+		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: defaultBranch ?? 'master',
+	},
 });
 
 describe('clone', () => {
@@ -83,7 +84,7 @@ describe('clone', () => {
 		const mockExec                 = spyOnExec();
 		const mockStdout               = spyOnStdout();
 
-		await clone(helper, logger, getActionContext(context({
+		await clone(helper, logger, octokit, getActionContext(context({
 			head: {
 				ref: 'head-test',
 			},
@@ -129,7 +130,7 @@ describe('checkBranch', () => {
 		const mockExec = spyOnExec();
 		setExists(true);
 
-		expect(await checkBranch(helper, logger, getActionContext(context({}), {
+		expect(await checkBranch(helper, logger, octokit, getActionContext(context({}), {
 			prBranchName: 'test-branch',
 		}))).toBe(true);
 
@@ -146,7 +147,7 @@ describe('checkBranch', () => {
 		const mockExec = spyOnExec();
 		setExists(true);
 
-		expect(await checkBranch(helper, logger, getActionContext(context({}), {
+		expect(await checkBranch(helper, logger, octokit, getActionContext(context({}), {
 			prBranchName: 'test-branch',
 		}))).toBe(false);
 
@@ -193,7 +194,7 @@ describe('getChangedFiles', () => {
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({stdout: 'M  file1\nA  file2\nD  file3\n   file4\n\nB  file5\n'});
 
-		expect(await getChangedFiles(helper, logger, getActionContext(_context, {
+		expect(await getChangedFiles(helper, logger, octokit, getActionContext(_context, {
 			executeCommands: ['yarn upgrade'],
 			prBranchName: 'test-branch',
 		}))).toEqual({
@@ -218,7 +219,7 @@ describe('getChangedFiles', () => {
 		process.env.INPUT_PACKAGE_MANAGER = 'yarn';
 		setChildProcessParams({stdout: 'M  file1\nA  file2\nD  file3\n   file4\n\nB  file5\n'});
 
-		expect(await getChangedFiles(helper, logger, getActionContext(_context, {
+		expect(await getChangedFiles(helper, logger, octokit, getActionContext(_context, {
 			executeCommands: ['yarn upgrade'],
 			globalInstallPackages: ['npm-check-updates'],
 			devInstallPackages: ['test1', 'test2'],
@@ -260,7 +261,7 @@ describe('getChangedFiles', () => {
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		setChildProcessParams({stdout: 'test'});
 
-		expect(await getChangedFiles(helper, logger, getActionContext(_context, {
+		expect(await getChangedFiles(helper, logger, octokit, getActionContext(_context, {
 			executeCommands: ['npm update'],
 			deletePackage: true,
 			globalInstallPackages: ['npm-check-updates'],
@@ -326,7 +327,7 @@ describe('getChangedFiles', () => {
 		});
 		setExists(true);
 
-		expect(await getChangedFiles(helper, logger, getActionContext(_context, {
+		expect(await getChangedFiles(helper, logger, octokit, getActionContext(_context, {
 			executeCommands: ['npm update'],
 			globalInstallPackages: ['npm-check-updates'],
 			installPackages: ['test1', 'test2'],
@@ -411,7 +412,7 @@ describe('getChangedFiles', () => {
 		});
 		setExists(true);
 
-		expect(await getChangedFiles(helper, logger, getActionContext(_context, {
+		expect(await getChangedFiles(helper, logger, octokit, getActionContext(_context, {
 			executeCommands: ['npm update'],
 			globalInstallPackages: ['npm-check-updates'],
 			installPackages: ['test1', 'test2'],
@@ -478,7 +479,8 @@ describe('isMergeable', () => {
 	disableNetConnect(nock);
 
 	it('should use cache', async() => {
-		const fn = jest.fn();
+		const fn            = jest.fn();
+		const actionContext = getActionContext(context({}));
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world/pulls/1347')
@@ -487,9 +489,9 @@ describe('isMergeable', () => {
 				return getApiFixture(rootDir, 'pulls.get.mergeable.true');
 			});
 
-		expect(await isMergeable(1347, octokit, getActionContext(context({})))).toBe(true);
+		expect(await isMergeable(1347, octokit, actionContext)).toBe(true);
 		expect(fn).toBeCalledTimes(1);
-		expect(await isMergeable(1347, octokit, getActionContext(context({})))).toBe(true);
+		expect(await isMergeable(1347, octokit, actionContext)).toBe(true);
 		expect(fn).toBeCalledTimes(1);
 	});
 });
@@ -673,7 +675,7 @@ describe('getDefaultBranch', () => {
 			.get('/repos/hello/world')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
-		expect(await getDefaultBranch(octokit, context({}))).toBe('master');
+		expect(await getDefaultBranch(octokit, getActionContext(context({})))).toBe('master');
 	});
 });
 
@@ -684,11 +686,11 @@ describe('getNewPatchVersion', () => {
 		setChildProcessParams({stdout: '1.2.3'});
 		setExists(true);
 		const actionContext = getActionContext(context({}));
-		expect(actionContext.newPatchVersion).toBeUndefined();
+		expect(isCached(getCacheKey('new-patch-version'), actionContext)).toBe(false);
 
-		await getNewPatchVersion(helper, actionContext);
+		expect(await getNewPatchVersion(helper, actionContext)).toBe('v1.2.4');
 
-		expect(actionContext.newPatchVersion).toBe('v1.2.4');
+		expect(isCached(getCacheKey('new-patch-version'), actionContext)).toBe(true);
 	});
 
 	it('should get new patch version from cache', async() => {

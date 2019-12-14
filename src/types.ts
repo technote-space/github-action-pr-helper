@@ -43,9 +43,9 @@ export type MainArguments = ActionDetails & {
 export type ActionContext = {
 	actionContext: Context;
 	actionDetail: ActionDetails;
-	defaultBranch: string;
-	newPatchVersion?: string;
 	isBatchProcess?: boolean;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	cache: { [key: string]: any };
 }
 
 export type ProcessResult = {

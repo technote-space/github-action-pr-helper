@@ -1,8 +1,20 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
-import { GitHelper, Logger } from '@technote-space/github-action-helper';
-import { testEnv, generateContext, testChildProcess, setChildProcessParams, testFs } from '@technote-space/github-action-test-helper';
+import { GitHub } from '@actions/github';
 import moment from 'moment';
+import nock from 'nock';
+import { resolve } from 'path';
+import { GitHelper, Logger } from '@technote-space/github-action-helper';
+import {
+	testEnv,
+	generateContext,
+	testChildProcess,
+	setChildProcessParams,
+	testFs,
+	getApiFixture,
+	disableNetConnect,
+} from '@technote-space/github-action-test-helper';
+import { getCacheKey } from '../../src/utils/misc';
 import {
 	getCommitMessage,
 	getCommitName,
@@ -18,8 +30,10 @@ import { DEFAULT_COMMIT_NAME, DEFAULT_COMMIT_EMAIL } from '../../src/constant';
 beforeEach(() => {
 	Logger.resetForTesting();
 });
-const logger = new Logger();
-const helper = new GitHelper(logger, {depth: -1});
+const octokit = new GitHub('');
+const logger  = new Logger();
+const helper  = new GitHelper(logger, {depth: -1});
+const rootDir = resolve(__dirname, '..', 'fixtures');
 testFs(true);
 
 const actionDetails: ActionDetails = {
@@ -27,10 +41,12 @@ const actionDetails: ActionDetails = {
 	actionOwner: 'octocat',
 	actionRepo: 'hello-world',
 };
-const getActionContext             = (context: Context, _actionDetails?: ActionDetails): ActionContext => ({
+const getActionContext             = (context: Context, _actionDetails?: ActionDetails, defaultBranch?: string, cache?: object): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ?? actionDetails,
-	defaultBranch: 'master',
+	cache: Object.assign(cache ?? {}, {
+		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: defaultBranch ?? 'master',
+	}),
 });
 const generateActionContext        = (
 	settings: {
@@ -43,9 +59,13 @@ const generateActionContext        = (
 	},
 	override?: object,
 	_actionDetails?: object,
+	defaultBranch?: string,
+	cache?: object,
 ): ActionContext => getActionContext(
 	generateContext(settings, override),
 	_actionDetails ? Object.assign({}, actionDetails, _actionDetails) : undefined,
+	defaultBranch,
+	cache,
 );
 const prPayload                    = {
 	'pull_request': {
@@ -104,16 +124,16 @@ describe('getPrBranchName', () => {
 
 	it('should get pr branch name', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
-		expect(await getPrBranchName(helper, generateActionContext({event: 'pull_request'}, {
+		expect(await getPrBranchName(helper, logger, octokit, generateActionContext({event: 'pull_request'}, {
 			payload: prPayload,
 		}, {
-			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
-		}))).toBe('hello-world/11::#11::21031067::change::master::test title::http://example.com::change -> master::v1.2.4');
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${PR_LINK}',
+		}))).toBe('hello-world/11::#11::21031067::change::master::test title::http://example.com::change -> master::v1.2.4::[test title](http://example.com)');
 	});
 
 	it('should get pr branch name for default branch 1', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
-		expect(await getPrBranchName(helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+		expect(await getPrBranchName(helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
 					number: 0,
@@ -130,7 +150,7 @@ describe('getPrBranchName', () => {
 			},
 		}, {
 			prBranchPrefix: 'prefix/',
-			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${PR_LINK}',
 			prBranchPrefixForDefaultBranch: 'release/',
 			prBranchNameForDefaultBranch: '${PATCH_VERSION}',
 		}))).toBe('release/v1.2.4');
@@ -138,7 +158,7 @@ describe('getPrBranchName', () => {
 
 	it('should get pr branch name for default branch 2', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
-		expect(await getPrBranchName(helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+		expect(await getPrBranchName(helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
 					number: 0,
@@ -154,24 +174,24 @@ describe('getPrBranchName', () => {
 				},
 			},
 		}, {
-			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
-		}))).toBe('hello-world/0::https://github.com/owner/repo/tree/master::21031067::master::master::test title::http://example.com::master::v1.2.4');
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${PR_LINK}',
+		}))).toBe('hello-world/0::https://github.com/owner/repo/tree/master::21031067::master::master::test title::http://example.com::master::v1.2.4::[test title](http://example.com)');
 	});
 
 	it('should get push branch name', async() => {
-		expect(await getPrBranchName(helper, generateActionContext({event: 'push'}, {ref: 'heads/test-ref'}, {
-			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
+		expect(await getPrBranchName(helper, logger, octokit, generateActionContext({event: 'push'}, {ref: 'heads/test-ref'}, {
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${PR_LINK}',
 		}))).toBe('test-ref');
 	});
 
 	it('should throw error', async() => {
-		await expect(getPrBranchName(helper, generateActionContext({}))).rejects.toThrow();
-		await expect(getPrBranchName(helper, generateActionContext({}, {}, {prBranchName: ''}))).rejects.toThrow();
+		await expect(getPrBranchName(helper, logger, octokit, generateActionContext({}))).rejects.toThrow();
+		await expect(getPrBranchName(helper, logger, octokit, generateActionContext({}, {}, {prBranchName: ''}))).rejects.toThrow();
 	});
 
 	it('should throw error', async() => {
-		await expect(getPrBranchName(helper, generateActionContext({event: 'pull_request'}, {}, {
-			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}',
+		await expect(getPrBranchName(helper, logger, octokit, generateActionContext({event: 'pull_request'}, {}, {
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${PR_LINK}',
 		}))).rejects.toThrow();
 	});
 });
@@ -179,17 +199,20 @@ describe('getPrBranchName', () => {
 describe('getPrTitle', () => {
 	testEnv();
 	testChildProcess();
+	disableNetConnect(nock);
 
 	it('should get PR title', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
-		expect(await getPrTitle(helper, generateActionContext({}, {payload: prPayload}, {
-			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}',
-		}))).toBe('11::21031067::change::master::change -> master::#11::v1.2.4');
+
+		expect(await getPrTitle(helper, logger, octokit, generateActionContext({}, {payload: prPayload}, {
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${PR_LINK}',
+		}))).toBe('11::21031067::change::master::change -> master::#11::v1.2.4::[test title](http://example.com)');
 	});
 
 	it('should get PR title for default branch 1', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
-		expect(await getPrTitle(helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+
+		expect(await getPrTitle(helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
 					number: 0,
@@ -205,14 +228,15 @@ describe('getPrTitle', () => {
 				},
 			},
 		}, {
-			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}',
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${PR_LINK}',
 			prTitleForDefaultBranch: 'release/${PATCH_VERSION}',
 		}))).toBe('release/v1.2.4');
 	});
 
 	it('should get PR title for default branch 2', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
-		expect(await getPrTitle(helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+
+		expect(await getPrTitle(helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
 					number: 0,
@@ -228,18 +252,66 @@ describe('getPrTitle', () => {
 				},
 			},
 		}, {
-			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}',
-		}))).toBe('0::21031067::master::master::master::https://github.com/owner/repo/tree/master::v1.2.4');
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${PR_LINK}',
+		}))).toBe('0::21031067::master::master::master::https://github.com/owner/repo/tree/master::v1.2.4::[test title](http://example.com)');
 	});
 
 	it('should throw error', async() => {
-		await expect(getPrTitle(helper, generateActionContext({}))).rejects.toThrow();
+		await expect(getPrTitle(helper, logger, octokit, generateActionContext({}))).rejects.toThrow();
 	});
 
 	it('should throw error', async() => {
-		await expect(getPrTitle(helper, generateActionContext({}, {}, {
-			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_BASE_REF}::${PATCH_VERSION}',
+		await expect(getPrTitle(helper, logger, octokit, generateActionContext({}, {}, {
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_BASE_REF}::${PATCH_VERSION}::${PR_LINK}',
 		}))).rejects.toThrow();
+	});
+
+	it('should get PR title (schedule)', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/octocat/hello-world/pulls?head=octocat%3Amaster')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'));
+
+		expect(await getPrTitle(helper, logger, octokit, generateActionContext({
+			event: 'schedule',
+			owner: 'octocat',
+			repo: 'hello-world',
+		}, {payload: prPayload}, {
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${PR_LINK}',
+		}, 'develop'))).toBe('1347::1::feature/new-topic::master::feature/new-topic -> master::#1347::v1.2.4::[test title](http://example.com)');
+	});
+
+	it('should throw error (schedule, pr not found)', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+
+		await expect(getPrTitle(helper, logger, octokit, generateActionContext({
+			event: 'schedule',
+		}, {payload: prPayload}, {
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${PR_LINK}',
+		}, 'develop', {
+			[getCacheKey('pr', {branchName: 'master'})]: null,
+		}))).rejects.toThrow('Invalid context.');
+	});
+
+	it('should get PR title (schedule, default branch)', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+
+		expect(await getPrTitle(helper, logger, octokit, generateActionContext({
+			event: 'schedule',
+		}, {payload: prPayload}, {
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${PR_LINK}',
+		}))).toBe('0::0::master::master::master::https://github.com///tree/master::v1.2.4::[test title](http://example.com)');
+	});
+
+	it('should', async() => {
+		setChildProcessParams({stdout: '1.2.3'});
+
+		expect(await getPrTitle(helper, logger, octokit, generateActionContext({}, {payload: prPayload}, {
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${PR_LINK}',
+		}, 'develop', {
+			[getCacheKey('pr', {branchName: 'master'})]: null,
+		}))).toBe('11::21031067::change::master::change -> master::#11::v1.2.4::[test title](http://example.com)');
 	});
 });
 
@@ -296,7 +368,7 @@ describe('getPrBody', () => {
 		expect(await getPrBody(['README.md', 'CHANGELOG.md'], [
 			{command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: []},
 			{command: 'test2', stdout: ['test2-1', 'test2-2'], stderr: ['test2-3']},
-		], helper, generateActionContext({}, {
+		], helper, logger, octokit, generateActionContext({}, {
 			payload: prPayload,
 		}, {
 			prBody,
@@ -355,8 +427,6 @@ describe('getPrBody', () => {
 
 	it('should get PR Body 2', async() => {
 		const prBody = `
-		\${PR_LINK}
-		---------------------------
 		\${COMMANDS}
 		---------------------------
 		\${COMMANDS_OUTPUT}
@@ -395,15 +465,13 @@ describe('getPrBody', () => {
 		expect(await getPrBody(['README.md'], [
 			{command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: ['test1-3', 'test1-4']},
 			{command: 'test2', stdout: [], stderr: []},
-		], helper, generateActionContext({}, {
+		], helper, logger, octokit, generateActionContext({}, {
 			payload: prPayload,
 		}, {
 			prBody,
 			prVariables: ['variable1', ''],
 			prDateFormats: ['YYYY/MM/DD', 'DD/MM/YYYY'],
 		}))).toBe([
-			'[test title](http://example.com)',
-			'---------------------------',
 			'',
 			'```Shell',
 			'$ test1',
@@ -518,7 +586,7 @@ describe('getPrBody', () => {
 		const prBody                 = '${ACTION_OWNER}';
 		const prBodyForDefaultBranch = '${ACTION_REPO}';
 
-		expect(await getPrBody([], [], helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+		expect(await getPrBody([], [], helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
 					number: 0,
@@ -544,7 +612,7 @@ describe('getPrBody', () => {
 	it('should get PR Body for default branch 2', async() => {
 		const prBody = '${ACTION_OWNER}';
 
-		expect(await getPrBody([], [], helper, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+		expect(await getPrBody([], [], helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
 					number: 0,
@@ -568,8 +636,6 @@ describe('getPrBody', () => {
 
 	it('should get PR Body with empty output', async() => {
 		const prBody = `
-		\${PR_LINK}
-		---------------------------
 		\${COMMANDS}
 		---------------------------
 		\${COMMANDS_OUTPUT}
@@ -605,15 +671,13 @@ describe('getPrBody', () => {
 		\${VARIABLE2}
 `;
 
-		expect(await getPrBody([], [], helper, generateActionContext({}, {
+		expect(await getPrBody([], [], helper, logger, octokit, generateActionContext({}, {
 			payload: prPayload,
 		}, {
 			prBody,
 			prVariables: ['variable1', ''],
 			prDateFormats: ['YYYY/MM/DD', 'DD/MM/YYYY'],
 		}))).toBe([
-			'[test title](http://example.com)',
-			'---------------------------',
 			'',
 			'---------------------------',
 			'',
@@ -651,7 +715,7 @@ describe('getPrBody', () => {
 	});
 
 	it('should not be code', async() => {
-		expect(await getPrBody([], [], helper, generateActionContext({}, {
+		expect(await getPrBody([], [], helper, logger, octokit, generateActionContext({}, {
 			payload: prPayload,
 		}, {
 			prBody: '${COMMANDS}',
@@ -659,6 +723,6 @@ describe('getPrBody', () => {
 	});
 
 	it('should throw error', async() => {
-		await expect(getPrBody([], [], helper, generateActionContext({}))).rejects.toThrow();
+		await expect(getPrBody([], [], helper, logger, octokit, generateActionContext({}))).rejects.toThrow();
 	});
 });
