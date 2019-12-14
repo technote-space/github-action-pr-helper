@@ -612,7 +612,7 @@ describe('resolveConflicts', () => {
 			'git config \'user.name\' \'GitHub Actions\'',
 			'git config \'user.email\' \'example@example.com\'',
 			'git merge --no-edit origin/change || :',
-			'rm -rdf /var/www/html/misc/gh-actions/github-action-pr-helper/__tests__/utils/test-dir',
+			`rm -rdf ${workDir}`,
 			'git init \'.\'',
 			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
 			'git clone \'--branch=change\'  \'https://octocat:test-token@github.com/hello/world.git\' \'.\' > /dev/null 2>&1 || :',
