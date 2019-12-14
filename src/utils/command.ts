@@ -1,4 +1,3 @@
-import { mkdirSync } from 'fs';
 import { PullsListResponseItem } from '@octokit/rest';
 import { Logger, GitHelper, Utils, ContextHelper, ApiHelper } from '@technote-space/github-action-helper';
 import { GitHub } from '@actions/github';
@@ -134,11 +133,10 @@ export const getRefDiff = async(compare: string, helper: GitHelper, logger: Logg
 	return (await helper.getRefDiff(getWorkspace(), 'HEAD', compare, getGitFilterStatus(context), '..')).filter(line => filterExtension(line, context));
 };
 
-const initDirectory = async(helper: GitHelper, logger: Logger): Promise<void> => {
+const initDirectory = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
 	logger.startProcess('Initializing working directory...');
 
-	await helper.runCommand(getWorkspace(), 'rm -rdf ./* ./.[!.]*');
-	mkdirSync(getWorkspace(), {recursive: true});
+	await helper.addOrigin(getWorkspace(), context.actionContext);
 };
 
 export const config = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
@@ -233,7 +231,7 @@ export const getChangedFiles = async(helper: GitHelper, logger: Logger, octokit:
 	files: string[];
 	output: CommandOutput[];
 }> => {
-	await initDirectory(helper, logger);
+	await initDirectory(helper, logger, context);
 	await clone(helper, logger, octokit, context);
 	if (await checkBranch(helper, logger, octokit, context)) {
 		if (!await merge(getPrHeadRef(context), helper, logger, context)) {
@@ -248,7 +246,7 @@ export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger,
 	files: string[];
 	output: CommandOutput[];
 }> => {
-	await initDirectory(helper, logger);
+	await initDirectory(helper, logger, context);
 	await helper.cloneBranch(getWorkspace(), getPrHeadRef(context), context.actionContext);
 	await helper.createBranch(getWorkspace(), await getPrBranchName(helper, logger, octokit, context));
 
