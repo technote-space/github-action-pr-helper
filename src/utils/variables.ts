@@ -10,7 +10,7 @@ import {
 } from './misc';
 
 const {getRegExp, replaceAll, getBranch} = Utils;
-const {isPush}                           = ContextHelper;
+const {isPush, isCron}                   = ContextHelper;
 
 export const getCommitMessage = (context: ActionContext): string => getActionDetail<string>('commitMessage', context);
 
@@ -190,9 +190,13 @@ const replacePrBodyVariables = (prBody: string, files: string[], output: Command
 
 export const getPrBody = async(files: string[], output: CommandOutput[], helper: GitHelper, context: ActionContext): Promise<string> => replacePrBodyVariables(
 	(
-		isDefaultBranch(context) ?
-			getActionDetail<string>('prBodyForDefaultBranch', context, () => getActionDetail<string>('prBody', context)) :
-			getActionDetail<string>('prBody', context)
+		isCron(context.actionContext) ?
+			getActionDetail<string>('prBodyForSchedule', context, () => getActionDetail<string>('prBody', context)) :
+			(
+				isDefaultBranch(context) ?
+					getActionDetail<string>('prBodyForDefaultBranch', context, () => getActionDetail<string>('prBody', context)) :
+					getActionDetail<string>('prBody', context)
+			)
 	).trim().split(/\r?\n/).map(line => line.replace(/^[\s\t]+/, '')).join('\n'),
 	files,
 	output,

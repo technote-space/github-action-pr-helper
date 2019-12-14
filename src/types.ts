@@ -21,6 +21,7 @@ export type ActionDetails = {
 	prBranchNameForDefaultBranch?: string;
 	prTitleForDefaultBranch?: string;
 	prBodyForDefaultBranch?: string;
+	prBodyForSchedule?: string;
 	prVariables?: string[];
 	prDateFormats?: string[];
 	prCloseMessage?: string;
