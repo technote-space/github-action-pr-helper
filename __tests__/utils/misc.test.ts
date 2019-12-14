@@ -1,8 +1,9 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
+import { GitHub } from '@actions/github';
+import { resolve } from 'path';
 import { Logger } from '@technote-space/github-action-helper';
 import { testEnv, generateContext, testFs } from '@technote-space/github-action-test-helper';
-import { resolve } from 'path';
 import {
 	getActionDetail,
 	replaceDirectory,
@@ -16,6 +17,7 @@ import {
 	filterGitStatus,
 	filterExtension,
 	checkDefaultBranch,
+	getCacheKey,
 } from '../../src/utils/misc';
 import { ActionContext, ActionDetails } from '../../src/types';
 
@@ -24,15 +26,18 @@ beforeEach(() => {
 });
 testFs(true);
 
+const octokit                      = new GitHub('');
 const actionDetails: ActionDetails = {
 	actionName: 'Test Action',
 	actionOwner: 'octocat',
 	actionRepo: 'hello-world',
 };
-const getActionContext             = (context: Context, _actionDetails?: ActionDetails): ActionContext => ({
+const getActionContext             = (context: Context, _actionDetails?: ActionDetails, defaultBranch?: string): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ?? actionDetails,
-	defaultBranch: 'master',
+	cache: {
+		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: defaultBranch ?? 'master',
+	},
 });
 const generateActionContext        = (
 	settings: {
@@ -45,9 +50,11 @@ const generateActionContext        = (
 	},
 	override?: object,
 	_actionDetails?: object,
+	defaultBranch?: string,
 ): ActionContext => getActionContext(
 	generateContext(settings, override),
 	_actionDetails ? Object.assign({}, actionDetails, _actionDetails) : undefined,
+	defaultBranch,
 );
 
 describe('getActionDetail', () => {
@@ -72,8 +79,8 @@ describe('getActionDetail', () => {
 describe('isTargetContext', () => {
 	testEnv();
 
-	it('should return true 1', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return true 1', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'opened',
 		}, {
@@ -88,8 +95,8 @@ describe('isTargetContext', () => {
 		}))).toBe(true);
 	});
 
-	it('should return true 2', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return true 2', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'synchronize',
 		}, {
@@ -104,8 +111,8 @@ describe('isTargetContext', () => {
 		}, {includeLabels: ['label2']}))).toBe(true);
 	});
 
-	it('should return true 3', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return true 3', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'synchronize',
 		}, {
@@ -120,8 +127,8 @@ describe('isTargetContext', () => {
 		}, {includeLabels: ['label1', 'label2', 'label3']}))).toBe(true);
 	});
 
-	it('should return true 4', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return true 4', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'opened',
 		}, {
@@ -136,8 +143,8 @@ describe('isTargetContext', () => {
 		}))).toBe(true);
 	});
 
-	it('should return true 5', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return true 5', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'closed',
 		}, {
@@ -152,21 +159,21 @@ describe('isTargetContext', () => {
 		}))).toBe(true);
 	});
 
-	it('should return true 6', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return true 6', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'schedule',
 		}))).toBe(true);
 	});
 
-	it('should return true 7', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return true 7', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			ref: 'heads/test/change',
 			event: 'push',
 		}, {}, {targetBranchPrefix: 'test/', targetEvents: {push: '*'}}))).toBe(true);
 	});
 
-	it('should return true 8', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return true 8', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'synchronize',
 		}, {
@@ -183,8 +190,8 @@ describe('isTargetContext', () => {
 		}))).toBe(true);
 	});
 
-	it('should return true 9', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return true 9', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'synchronize',
 		}, {
@@ -198,8 +205,8 @@ describe('isTargetContext', () => {
 		}))).toBe(true);
 	});
 
-	it('should return true 10', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return true 10', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'synchronize',
 		}, {
@@ -215,23 +222,23 @@ describe('isTargetContext', () => {
 		}))).toBe(true);
 	});
 
-	it('should return true 11', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return true 11', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'closed',
 		}))).toBe(true);
 	});
 
-	it('should return false 1', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return false 1', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			ref: 'tags/test',
 			event: 'issues',
 			action: 'opened',
 		}))).toBe(false);
 	});
 
-	it('should return false 2', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return false 2', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'opened',
 		}, {
@@ -246,8 +253,8 @@ describe('isTargetContext', () => {
 		}, {includeLabels: 'test2'}))).toBe(false);
 	});
 
-	it('should return false 3', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return false 3', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			ref: 'heads/master',
 			event: 'pull_request',
 			action: 'synchronize',
@@ -263,15 +270,15 @@ describe('isTargetContext', () => {
 		}, {includeLabels: 'test1'}))).toBe(false);
 	});
 
-	it('should return false 4', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return false 4', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			ref: 'heads/test/change',
 			event: 'push',
 		}))).toBe(false);
 	});
 
-	it('should return false 5', () => {
-		expect(isTargetContext(generateActionContext({
+	it('should return false 5', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			ref: 'heads/change',
 			event: 'pull_request',
 			action: 'synchronize',
@@ -417,18 +424,18 @@ describe('isClosePR', () => {
 describe('isTargetBranch', () => {
 	testEnv();
 
-	it('should return true 1', () => {
-		expect(isTargetBranch('test', generateActionContext({}))).toBe(true);
+	it('should return true 1', async() => {
+		expect(await isTargetBranch('test', octokit, generateActionContext({}))).toBe(true);
 	});
 
-	it('should return true 2', () => {
-		expect(isTargetBranch('feature/test', generateActionContext({}, {}, {
+	it('should return true 2', async() => {
+		expect(await isTargetBranch('feature/test', octokit, generateActionContext({}, {}, {
 			targetBranchPrefix: 'feature/',
 		}))).toBe(true);
 	});
 
-	it('should return false', () => {
-		expect(isTargetBranch('test', generateActionContext({}, {}, {
+	it('should return false', async() => {
+		expect(await isTargetBranch('test', octokit, generateActionContext({}, {}, {
 			targetBranchPrefix: 'feature/',
 		}))).toBe(false);
 	});

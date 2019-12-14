@@ -3,6 +3,7 @@ import { Context } from '@actions/github/lib/context';
 import { GitHub } from '@actions/github';
 import nock from 'nock';
 import { resolve } from 'path';
+import { Logger } from '@technote-space/github-action-helper';
 import {
 	generateContext,
 	testEnv,
@@ -14,18 +15,16 @@ import {
 	setChildProcessParams,
 	testChildProcess,
 } from '@technote-space/github-action-test-helper';
-import { Logger } from '@technote-space/github-action-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
 import { execute } from '../../src';
-import { clearCache } from '../../src/utils/command';
 import * as constants from '../../src/constant';
+import { getCacheKey } from '../../src/utils/misc';
 
 const workDir   = resolve(__dirname, 'test');
 const rootDir   = resolve(__dirname, '..', 'fixtures');
 const setExists = testFs();
 beforeEach(() => {
 	Logger.resetForTesting();
-	clearCache();
 });
 
 const actionDetails: ActionDetails = {
@@ -36,7 +35,9 @@ const actionDetails: ActionDetails = {
 const getActionContext             = (context: Context, _actionDetails?: object, branch?: string): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ? Object.assign({}, actionDetails, _actionDetails) : actionDetails,
-	defaultBranch: branch ?? 'master',
+	cache: {
+		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: branch ?? 'master',
+	},
 });
 
 const context = (action: string, event = 'pull_request', ref = 'heads/test'): Context => generateContext({
@@ -91,6 +92,8 @@ describe('execute', () => {
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
 			.post('/repos/octocat/Hello-World/issues/1347/comments')
 			.reply(201)
 			.patch('/repos/octocat/Hello-World/pulls/1347')
@@ -379,12 +382,7 @@ describe('execute', () => {
 			'> Closing PullRequest... [hello-world/new-topic]',
 			'> Deleting reference... [refs/heads/hello-world/new-topic]',
 			'::endgroup::',
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Closing PullRequest... [hello-world/new-topic]',
-			'> Deleting reference... [refs/heads/hello-world/new-topic]',
-			'::endgroup::',
-			'::group::Total:2  Succeeded:2  Failed:0  Skipped:0',
-			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest has been closed',
+			'::group::Total:1  Succeeded:1  Failed:0  Skipped:0',
 			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest has been closed',
 			'::endgroup::',
 		]);
@@ -417,6 +415,8 @@ describe('execute', () => {
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
 			.post('/repos/octocat/Hello-World/issues/1347/comments')
 			.reply(201)
 			.patch('/repos/octocat/Hello-World/pulls/1347')
@@ -543,12 +543,7 @@ describe('execute', () => {
 			'> Closing PullRequest... [hello-world/new-topic]',
 			'> Deleting reference... [refs/heads/hello-world/new-topic]',
 			'::endgroup::',
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Closing PullRequest... [hello-world/new-topic]',
-			'> Deleting reference... [refs/heads/hello-world/new-topic]',
-			'::endgroup::',
-			'::group::Total:2  Succeeded:2  Failed:0  Skipped:0',
-			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest does not exist',
+			'::group::Total:1  Succeeded:1  Failed:0  Skipped:0',
 			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest does not exist',
 			'::endgroup::',
 		]);
@@ -575,10 +570,7 @@ describe('execute', () => {
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
 			'::endgroup::',
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'::endgroup::',
-			'::group::Total:2  Succeeded:0  Failed:2  Skipped:0',
-			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic] not found',
+			'::group::Total:1  Succeeded:0  Failed:1  Skipped:0',
 			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic] not found',
 			'::endgroup::',
 		]);

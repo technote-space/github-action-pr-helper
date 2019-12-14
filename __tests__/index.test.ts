@@ -1,6 +1,7 @@
 /* eslint-disable no-magic-numbers */
 import nock from 'nock';
 import { resolve } from 'path';
+import { Logger } from '@technote-space/github-action-helper';
 import {
 	generateContext,
 	testEnv,
@@ -11,15 +12,12 @@ import {
 	testChildProcess,
 	getApiFixture,
 } from '@technote-space/github-action-test-helper';
-import { Logger } from '@technote-space/github-action-helper';
-import { clearCache } from '../src/utils/command';
 import { main } from '../src';
 import { MainArguments } from '../src/types';
 
 testFs();
 beforeEach(() => {
 	Logger.resetForTesting();
-	clearCache();
 });
 
 const mainArgs = (override?: object): MainArguments => Object.assign({}, {

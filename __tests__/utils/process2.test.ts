@@ -3,6 +3,7 @@ import { Context } from '@actions/github/lib/context';
 import { GitHub } from '@actions/github';
 import nock from 'nock';
 import { resolve } from 'path';
+import { Logger } from '@technote-space/github-action-helper';
 import {
 	generateContext,
 	testEnv,
@@ -14,18 +15,16 @@ import {
 	setChildProcessParams,
 	testChildProcess,
 } from '@technote-space/github-action-test-helper';
-import { Logger } from '@technote-space/github-action-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
 import { execute } from '../../src';
-import { clearCache } from '../../src/utils/command';
 import * as constants from '../../src/constant';
+import { getCacheKey } from '../../src/utils/misc';
 
 const workDir   = resolve(__dirname, 'test');
 const rootDir   = resolve(__dirname, '..', 'fixtures');
 const setExists = testFs();
 beforeEach(() => {
 	Logger.resetForTesting();
-	clearCache();
 });
 
 const actionDetails: ActionDetails = {
@@ -36,7 +35,9 @@ const actionDetails: ActionDetails = {
 const getActionContext             = (context: Context, _actionDetails?: object, branch?: string): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ? Object.assign({}, actionDetails, _actionDetails) : actionDetails,
-	defaultBranch: branch ?? 'master',
+	cache: {
+		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: branch ?? 'master',
+	},
 });
 
 const context = (action: string, event = 'pull_request', ref = 'heads/test'): Context => generateContext({
@@ -256,7 +257,9 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Atest%2Ftest-1')
-			.reply(200, () => getApiFixture(rootDir, 'pulls.list'));
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
 		await execute(octokit, getActionContext(context('closed'), {
 			prBranchPrefix: 'test/',
@@ -357,7 +360,9 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=change&per_page=100&page=2')
 			.reply(200, () => [])
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
-			.reply(200, () => []);
+			.reply(200, () => [])
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
 		await execute(octokit, getActionContext(context('closed'), {
 			prBranchPrefix: 'test/',
@@ -533,6 +538,8 @@ describe('execute', () => {
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
 			.get('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
 			.post('/repos/octocat/Hello-World/issues/1347/comments')
@@ -661,6 +668,8 @@ describe('execute', () => {
 			.reply(200, () => ([]))
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Ftest-1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
 			.patch('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
 			.get('/repos/octocat/Hello-World/pulls/1347')
@@ -717,44 +726,7 @@ describe('execute', () => {
 			'[command]git push origin hello-world/test-1:refs/heads/hello-world/test-1',
 			'> Creating comment to PullRequest... [hello-world/test-1] -> [heads/feature/new-topic]',
 			'::endgroup::',
-			'::group::Target PullRequest Ref [feature/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf ./* ./.[!.]*',
-			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'[command]git fetch origin',
-			'> Switching branch to [hello-world/test-1]...',
-			'[command]git checkout -b hello-world/test-1 origin/hello-world/test-1',
-			'[command]git branch -a',
-			'  >> * test',
-			'> remote branch [hello-world/test-1] not found.',
-			'> now branch: test',
-			'> Cloning [feature/new-topic] from the remote repo...',
-			'[command]git checkout -b feature/new-topic origin/feature/new-topic',
-			'[command]git checkout -b hello-world/test-1',
-			'[command]ls -la',
-			'> Running commands...',
-			'[command]yarn upgrade',
-			'> Checking diff...',
-			'[command]git add --all',
-			'[command]git status --short -uno',
-			'> Configuring git committer to be GitHub Actions <example@example.com>',
-			'[command]git config \'user.name\' \'GitHub Actions\'',
-			'[command]git config \'user.email\' \'example@example.com\'',
-			'> Committing...',
-			'[command]git commit -qm \'test: create pull request\'',
-			'[command]git show \'--stat-count=10\' HEAD',
-			'> Checking references diff...',
-			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/feature/new-topic:refs/remotes/origin/feature/new-topic',
-			'[command]git diff \'HEAD..origin/feature/new-topic\' --name-only',
-			'> Pushing to octocat/Hello-World@hello-world/test-1...',
-			'[command]git push origin hello-world/test-1:refs/heads/hello-world/test-1',
-			'> Creating comment to PullRequest... [hello-world/test-1] -> [heads/feature/new-topic]',
-			'::endgroup::',
-			'::group::Total:2  Succeeded:2  Failed:0  Skipped:0',
-			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-topic] updated',
+			'::group::Total:1  Succeeded:1  Failed:0  Skipped:0',
 			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-topic] updated',
 			'::endgroup::',
 		]);
@@ -835,45 +807,7 @@ describe('execute', () => {
 			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
 			'[command]git diff \'HEAD..origin/master\' --name-only',
 			'::endgroup::',
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf ./* ./.[!.]*',
-			'  >> stdout',
-			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'  >> stdout',
-			'[command]git init \'.\'',
-			'  >> stdout',
-			'[command]git remote add origin',
-			'[command]git fetch origin',
-			'  >> stdout',
-			'> Switching branch to [hello-world/new-topic]...',
-			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
-			'  >> stdout',
-			'[command]git branch -a',
-			'  >> * hello-world/new-topic',
-			'[command]ls -la',
-			'  >> stdout',
-			'> Configuring git committer to be github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>',
-			'[command]git config \'user.name\' \'github-actions[bot]\'',
-			'  >> stdout',
-			'[command]git config \'user.email\' \'41898282+github-actions[bot]@users.noreply.github.com\'',
-			'  >> stdout',
-			'> Merging [hello-world/new-topic] branch...',
-			'[command]git merge --no-edit origin/hello-world/new-topic || :',
-			'  >> stdout',
-			'> Running commands...',
-			'> Checking diff...',
-			'[command]git add --all',
-			'  >> stdout',
-			'[command]git status --short -uno',
-			'> There is no diff.',
-			'> Checking references diff...',
-			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
-			'[command]git diff \'HEAD..origin/master\' --name-only',
-			'::endgroup::',
-			'::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
-			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] There is no diff',
+			'::group::Total:1  Succeeded:0  Failed:0  Skipped:1',
 			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] There is no diff',
 			'::endgroup::',
 		]);
@@ -952,45 +886,7 @@ describe('execute', () => {
 			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
 			'[command]git diff \'HEAD..origin/master\' --name-only',
 			'::endgroup::',
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf ./* ./.[!.]*',
-			'  >> stdout',
-			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'  >> stdout',
-			'[command]git init \'.\'',
-			'  >> stdout',
-			'[command]git remote add origin',
-			'[command]git fetch origin',
-			'  >> stdout',
-			'> Switching branch to [hello-world/new-topic]...',
-			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
-			'  >> stdout',
-			'[command]git branch -a',
-			'  >> * hello-world/new-topic',
-			'[command]ls -la',
-			'  >> stdout',
-			'> Configuring git committer to be github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>',
-			'[command]git config \'user.name\' \'github-actions[bot]\'',
-			'  >> stdout',
-			'[command]git config \'user.email\' \'41898282+github-actions[bot]@users.noreply.github.com\'',
-			'  >> stdout',
-			'> Merging [hello-world/new-topic] branch...',
-			'[command]git merge --no-edit origin/hello-world/new-topic || :',
-			'  >> stdout',
-			'> Running commands...',
-			'> Checking diff...',
-			'[command]git add --all',
-			'  >> stdout',
-			'[command]git status --short -uno',
-			'> There is no diff.',
-			'> Checking references diff...',
-			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
-			'[command]git diff \'HEAD..origin/master\' --name-only',
-			'::endgroup::',
-			'::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
-			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] There is no diff',
+			'::group::Total:1  Succeeded:0  Failed:0  Skipped:1',
 			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic] There is no diff',
 			'::endgroup::',
 		]);
@@ -1114,7 +1010,9 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list2'))
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
-			.reply(200, () => ([]));
+			.reply(200, () => ([]))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
 		await execute(octokit, getActionContext(context('', 'schedule'), {
 			executeCommands: ['yarn upgrade'],
@@ -1153,62 +1051,8 @@ describe('execute', () => {
 			'undefined',
 			'{}',
 			'::endgroup::',
-			'::group::Target PullRequest Ref [feature/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf ./* ./.[!.]*',
-			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'[command]git fetch origin',
-			'> Switching branch to [hello-world/test-1]...',
-			'[command]git checkout -b hello-world/test-1 origin/hello-world/test-1',
-			'[command]git branch -a',
-			'  >> * test',
-			'> remote branch [hello-world/test-1] not found.',
-			'> now branch: test',
-			'> Cloning [feature/new-topic] from the remote repo...',
-			'[command]git checkout -b feature/new-topic origin/feature/new-topic',
-			'[command]git checkout -b hello-world/test-1',
-			'[command]ls -la',
-			'> Running commands...',
-			'[command]yarn upgrade',
-			'> Checking diff...',
-			'[command]git add --all',
-			'[command]git status --short -uno',
-			'undefined',
-			'{}',
-			'::endgroup::',
-			'::group::Target PullRequest Ref [master]',
-			'> Initializing working directory...',
-			'[command]rm -rdf ./* ./.[!.]*',
-			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'[command]git fetch origin',
-			'> Switching branch to [hello-world/test-0]...',
-			'[command]git checkout -b hello-world/test-0 origin/hello-world/test-0',
-			'[command]git branch -a',
-			'  >> * test',
-			'> remote branch [hello-world/test-0] not found.',
-			'> now branch: test',
-			'> Cloning [master] from the remote repo...',
-			'[command]git checkout -b master origin/master',
-			'[command]git checkout -b hello-world/test-0',
-			'[command]ls -la',
-			'> Running commands...',
-			'[command]yarn upgrade',
-			'> Checking diff...',
-			'[command]git add --all',
-			'[command]git status --short -uno',
-			'undefined',
-			'{}',
-			'::endgroup::',
-			'::group::Total:3  Succeeded:0  Failed:3  Skipped:0',
+			'::group::Total:1  Succeeded:0  Failed:1  Skipped:0',
 			'> \x1b[31;40;0m×\x1b[0m\t[feature/new-topic] test error',
-			'> \x1b[31;40;0m×\x1b[0m\t[feature/new-topic] test error',
-			'> \x1b[31;40;0m×\x1b[0m\t[master] test error',
 			'::endgroup::',
 		]);
 	});
@@ -1243,7 +1087,9 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
-			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'));
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
 		await execute(octokit, getActionContext(context('closed'), {
 			executeCommands: ['yarn upgrade'],
