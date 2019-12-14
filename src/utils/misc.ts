@@ -1,7 +1,9 @@
 import { Utils, ContextHelper, GitHelper, Logger } from '@technote-space/github-action-helper';
 import { isTargetEvent, isTargetLabels } from '@technote-space/filter-github-action';
+import { GitHub } from '@actions/github';
 import { DEFAULT_TARGET_EVENTS } from '../constant';
 import { ActionContext, PullsParams } from '../types';
+import { getDefaultBranch } from './command';
 
 const {getWorkspace, getPrefixRegExp}       = Utils;
 const {escapeRegExp, replaceAll, getBranch} = Utils;
@@ -22,7 +24,7 @@ export const replaceDirectory = (message: string): string => {
 	return replaceAll(replaceAll(message, ` -C ${workDir}`, ''), workDir, '[Working Directory]');
 };
 
-export const getDefaultBranchUrl = (context: ActionContext): string => `https://github.com/${context.actionContext.repo.owner}/${context.actionContext.repo.repo}/tree/${context.defaultBranch}`;
+export const getDefaultBranchUrl = async(octokit: GitHub, context: ActionContext): Promise<string> => `https://github.com/${context.actionContext.repo.owner}/${context.actionContext.repo.repo}/tree/${await getDefaultBranch(octokit, context)}`;
 
 export const getPrHeadRef = (context: ActionContext): string => context.actionContext.payload.pull_request?.head.ref ?? '';
 
@@ -34,7 +36,7 @@ const getPrBranchPrefixForDefaultBranch = (context: ActionContext): string => co
 
 export const isActionPr = (context: ActionContext): boolean => getPrefixRegExp(getPrBranchPrefix(context)).test(getPrHeadRef(context)) || getPrefixRegExp(getPrBranchPrefixForDefaultBranch(context)).test(getPrHeadRef(context));
 
-export const isDefaultBranch = (context: ActionContext): boolean => context.defaultBranch === (
+export const isDefaultBranch = async(octokit: GitHub, context: ActionContext): Promise<boolean> => await getDefaultBranch(octokit, context) === (
 	context.isBatchProcess ? getPrBaseRef(context) : getBranch(context.actionContext)
 );
 
@@ -44,8 +46,8 @@ export const isDisabledDeletePackage = (context: ActionContext): boolean => !(co
 
 export const isClosePR = (context: ActionContext): boolean => isPr(context.actionContext) && context.actionContext.payload.action === 'closed';
 
-export const isTargetBranch = (branchName: string, context: ActionContext): boolean => {
-	if (branchName === context.defaultBranch) {
+export const isTargetBranch = async(branchName: string, octokit: GitHub, context: ActionContext): Promise<boolean> => {
+	if (branchName === await getDefaultBranch(octokit, context)) {
 		return checkDefaultBranch(context);
 	}
 	const prefix = getActionDetail<string>('targetBranchPrefix', context, () => '');
@@ -55,7 +57,7 @@ export const isTargetBranch = (branchName: string, context: ActionContext): bool
 	return true;
 };
 
-export const isTargetContext = (context: ActionContext): boolean => {
+export const isTargetContext = async(octokit: GitHub, context: ActionContext): Promise<boolean> => {
 	if (!isTargetEvent(context.actionDetail.targetEvents ?? DEFAULT_TARGET_EVENTS, context.actionContext)) {
 		return false;
 	}
@@ -65,7 +67,7 @@ export const isTargetContext = (context: ActionContext): boolean => {
 	}
 
 	if (isPush(context.actionContext)) {
-		return isTargetBranch(getBranch(context.actionContext), context);
+		return isTargetBranch(getBranch(context.actionContext), octokit, context);
 	}
 
 	if (isActionPr(context)) {
@@ -76,7 +78,7 @@ export const isTargetContext = (context: ActionContext): boolean => {
 		return true;
 	}
 
-	if (!isTargetBranch(getPrHeadRef(context), context)) {
+	if (!await isTargetBranch(getPrHeadRef(context), octokit, context)) {
 		return false;
 	}
 
@@ -112,11 +114,33 @@ export const getHelper = (context: ActionContext): GitHelper => new GitHelper(ne
 	filter: (line: string): boolean => filterGitStatus(line, context) && filterExtension(line, context),
 });
 
-export const getPullsArgsForDefaultBranch = (context: ActionContext): PullsParams => ({
+export const getActionContext = (context: ActionContext, pull: PullsParams): ActionContext => ({
+	...context,
+	actionContext: Object.assign({}, context.actionContext, {
+		payload: {
+			'pull_request': {
+				number: pull.number,
+				id: pull.id,
+				head: pull.head,
+				base: pull.base,
+				title: pull.title,
+				'html_url': pull.html_url,
+			},
+		},
+		repo: {
+			owner: pull.base.repo.owner.login,
+			repo: pull.base.repo.name,
+		},
+		ref: `refs/heads/${pull.head.ref}`,
+	}),
+	isBatchProcess: true,
+});
+
+export const getPullsArgsForDefaultBranch = async(octokit: GitHub, context: ActionContext): Promise<PullsParams> => ({
 	number: 0,
 	id: 0,
 	head: {
-		ref: context.defaultBranch,
+		ref: await getDefaultBranch(octokit, context),
 	},
 	base: {
 		repo: {
@@ -125,8 +149,20 @@ export const getPullsArgsForDefaultBranch = (context: ActionContext): PullsParam
 				login: context.actionContext.repo.owner,
 			},
 		},
-		ref: context.defaultBranch,
+		ref: await getDefaultBranch(octokit, context),
 	},
 	title: 'default branch',
-	'html_url': getDefaultBranchUrl(context),
+	'html_url': await getDefaultBranchUrl(octokit, context),
 });
+
+export const getCacheKey = (method: string, args = {}): string => method + JSON.stringify(args);
+
+export const getCache = async <T>(key: string, generator: () => (T | Promise<T>), context: ActionContext): Promise<T> => {
+	if (!(key in context.cache)) {
+		// eslint-disable-next-line require-atomic-updates
+		context.cache[key] = await generator();
+	}
+	return context.cache[key];
+};
+
+export const isCached = (key: string, context: ActionContext): boolean => key in context.cache;

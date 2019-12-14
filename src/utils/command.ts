@@ -1,5 +1,5 @@
-import { Context } from '@actions/github/lib/context';
 import { mkdirSync } from 'fs';
+import { PullsListResponseItem } from '@octokit/rest';
 import { Logger, GitHelper, Utils, ContextHelper, ApiHelper } from '@technote-space/github-action-helper';
 import { GitHub } from '@actions/github';
 import { getInput } from '@actions/core' ;
@@ -9,6 +9,8 @@ import {
 	filterExtension,
 	getPrHeadRef,
 	getGitFilterStatus,
+	getCacheKey,
+	getCache,
 } from './misc';
 import {
 	getPrBranchName,
@@ -22,24 +24,21 @@ import { ActionContext, CommandOutput } from '../types';
 
 const {getWorkspace, useNpm}  = Utils;
 const {getRepository, isPush} = ContextHelper;
-const cache                   = {};
-
-export const clearCache = (): void => Object.getOwnPropertyNames(cache).forEach(prop => delete cache[prop]);
 
 export const getApiHelper = (logger: Logger): ApiHelper => new ApiHelper(logger);
 
-export const clone = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
+export const clone = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => {
 	logger.startProcess('Fetching...');
 	await helper.fetchOrigin(getWorkspace(), context.actionContext);
 
-	const branchName = await getPrBranchName(helper, context);
+	const branchName = await getPrBranchName(helper, logger, octokit, context);
 	logger.startProcess('Switching branch to [%s]...', branchName);
 	await helper.switchBranch(getWorkspace(), branchName);
 };
 
-export const checkBranch = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<boolean> => {
+export const checkBranch = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<boolean> => {
 	const clonedBranch = await helper.getCurrentBranchName(getWorkspace());
-	const branchName   = await getPrBranchName(helper, context);
+	const branchName   = await getPrBranchName(helper, logger, octokit, context);
 	if (branchName === clonedBranch) {
 		await helper.runCommand(getWorkspace(), 'ls -la');
 		return !isPush(context.actionContext);
@@ -186,29 +185,20 @@ const forcePush = async(branchName: string, helper: GitHelper, logger: Logger, c
 	await helper.forcePush(getWorkspace(), branchName, context.actionContext);
 };
 
-const getCacheKey = (method: string, args: object): string => method + JSON.stringify(args);
-
-export const isMergeable = async(number: number, octokit: GitHub, context: ActionContext): Promise<boolean> => {
-	const key = getCacheKey('pulls.get', {
-		owner: context.actionContext.repo.owner,
-		repo: context.actionContext.repo.repo,
-		'pull_number': number,
-	});
-	if (!(key in cache)) {
-		// eslint-disable-next-line require-atomic-updates
-		cache[key] = (await octokit.pulls.get({
-			owner: context.actionContext.repo.owner,
-			repo: context.actionContext.repo.repo,
-			'pull_number': number,
-		})).data.mergeable;
-	}
-	return cache[key];
-};
+export const isMergeable = async(number: number, octokit: GitHub, context: ActionContext): Promise<boolean> => getCache<boolean>(getCacheKey('pulls.get', {
+	owner: context.actionContext.repo.owner,
+	repo: context.actionContext.repo.repo,
+	'pull_number': number,
+}), async() => (await octokit.pulls.get({
+	owner: context.actionContext.repo.owner,
+	repo: context.actionContext.repo.repo,
+	'pull_number': number,
+})).data.mergeable, context);
 
 export const updatePr = async(branchName: string, files: string[], output: CommandOutput[], helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<boolean> => {
 	const info = await getApiHelper(logger).pullsCreateOrComment(branchName, {
-		title: await getPrTitle(helper, context),
-		body: await getPrBody(files, output, helper, context),
+		title: await getPrTitle(helper, logger, octokit, context),
+		body: await getPrBody(files, output, helper, logger, octokit, context),
 	}, octokit, context.actionContext);
 
 	if (!info.isPrCreated) {
@@ -239,13 +229,13 @@ const runCommands = async(helper: GitHelper, logger: Logger, context: ActionCont
 	};
 };
 
-export const getChangedFiles = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<{
+export const getChangedFiles = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<{
 	files: string[];
 	output: CommandOutput[];
 }> => {
 	await initDirectory(helper, logger);
-	await clone(helper, logger, context);
-	if (await checkBranch(helper, logger, context)) {
+	await clone(helper, logger, octokit, context);
+	if (await checkBranch(helper, logger, octokit, context)) {
 		if (!await merge(getPrHeadRef(context), helper, logger, context)) {
 			await abortMerge(helper, logger);
 		}
@@ -254,13 +244,13 @@ export const getChangedFiles = async(helper: GitHelper, logger: Logger, context:
 	return runCommands(helper, logger, context);
 };
 
-export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<{
+export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<{
 	files: string[];
 	output: CommandOutput[];
 }> => {
 	await initDirectory(helper, logger);
 	await helper.cloneBranch(getWorkspace(), getPrHeadRef(context), context.actionContext);
-	await helper.createBranch(getWorkspace(), await getPrBranchName(helper, context));
+	await helper.createBranch(getWorkspace(), await getPrBranchName(helper, logger, octokit, context));
 
 	return runCommands(helper, logger, context);
 };
@@ -273,7 +263,7 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
 		await push(branchName, helper, logger, context);
 	} else {
 		// failed to merge
-		const {files, output} = await getChangedFilesForRebase(helper, logger, context);
+		const {files, output} = await getChangedFilesForRebase(helper, logger, octokit, context);
 		if (!files.length) {
 			await closePR(branchName, logger, octokit, context);
 			return;
@@ -281,32 +271,20 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
 		await commit(helper, logger, context);
 		await forcePush(branchName, helper, logger, context);
 		await getApiHelper(logger).pullsCreateOrUpdate(branchName, {
-			title: await getPrTitle(helper, context),
-			body: await getPrBody(files, output, helper, context),
+			title: await getPrTitle(helper, logger, octokit, context),
+			body: await getPrBody(files, output, helper, logger, octokit, context),
 		}, octokit, context.actionContext);
 	}
 };
 
-export const getDefaultBranch = async(octokit: GitHub, context: Context): Promise<string> => {
-	const key = getCacheKey('repos', {
-		owner: context.repo.owner,
-		repo: context.repo.repo,
-	});
-	if (!(key in cache)) {
-		// eslint-disable-next-line require-atomic-updates
-		cache[key] = (await octokit.repos.get({
-			owner: context.repo.owner,
-			repo: context.repo.repo,
-		})).data.default_branch;
-	}
-	return cache[key];
-};
+export const getDefaultBranch = async(octokit: GitHub, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('repos', {
+	owner: context.actionContext.repo.owner,
+	repo: context.actionContext.repo.repo,
+}), async() => (await octokit.repos.get({
+	owner: context.actionContext.repo.owner,
+	repo: context.actionContext.repo.repo,
+})).data.default_branch, context);
 
+export const getNewPatchVersion = async(helper: GitHelper, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-patch-version'), async() => helper.getNewPatchVersion(getWorkspace()), context);
 
-export const getNewPatchVersion = async(helper: GitHelper, context: ActionContext): Promise<string> => {
-	if (!context.newPatchVersion) {
-		// eslint-disable-next-line require-atomic-updates
-		context.newPatchVersion = await helper.getNewPatchVersion(getWorkspace());
-	}
-	return context.newPatchVersion;
-};
+export const findPR = async(branchName: string, logger: Logger, octokit: GitHub, context: ActionContext): Promise<PullsListResponseItem | null> => getCache(getCacheKey('pr', {branchName}), async() => getApiHelper(logger).findPullRequest(branchName, octokit, context.actionContext), context);

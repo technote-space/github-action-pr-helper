@@ -10,6 +10,8 @@ import {
 	updatePr,
 	closePR,
 	resolveConflicts,
+	findPR,
+	getDefaultBranch,
 } from './command';
 import {
 	replaceDirectory,
@@ -21,6 +23,7 @@ import {
 	checkDefaultBranch,
 	getPullsArgsForDefaultBranch,
 	getPrBaseRef,
+	getActionContext,
 } from './misc';
 import { getPrBranchName } from './variables';
 import { INTERVAL_MS } from '../constant';
@@ -37,14 +40,14 @@ const getResult = (result: 'succeeded' | 'failed' | 'skipped', detail: string, c
 });
 
 const checkActionPr = async(logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult | true> => {
-	const pr = await getApiHelper(logger).findPullRequest(getPrHeadRef(context), octokit, context.actionContext);
+	const pr = await findPR(getPrHeadRef(context), logger, octokit, context);
 	if (!pr) {
 		return getResult('failed', 'not found', context);
 	}
-	if (pr.base.ref === context.defaultBranch) {
+	if (pr.base.ref === await getDefaultBranch(octokit, context)) {
 		return true;
 	}
-	const basePr = await getApiHelper(logger).findPullRequest(pr.base.ref, octokit, context.actionContext);
+	const basePr = await findPR(pr.base.ref, logger, octokit, context);
 	if (!basePr) {
 		await closePR(getPrHeadRef(context), logger, octokit, context, '');
 		return getResult('succeeded', 'has been closed because base PullRequest does not exist', context);
@@ -58,16 +61,16 @@ const checkActionPr = async(logger: Logger, octokit: GitHub, context: ActionCont
 
 const createCommit = async(addComment: boolean, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
 	const helper     = getHelper(context);
-	const branchName = await getPrBranchName(helper, context);
-	if (!isTargetBranch(branchName, context)) {
+	const branchName = await getPrBranchName(helper, logger, octokit, context);
+	if (!await isTargetBranch(branchName, octokit, context)) {
 		return getResult('skipped', 'This is not target branch', context);
 	}
 
-	const {files, output} = await getChangedFiles(helper, logger, context);
+	const {files, output} = await getChangedFiles(helper, logger, octokit, context);
 	if (!files.length) {
 		logger.info('There is no diff.');
 		if (context.isBatchProcess) {
-			const pr = await getApiHelper(logger).findPullRequest(branchName, octokit, context.actionContext);
+			const pr = await findPR(branchName, logger, octokit, context);
 			if (pr && !(await getRefDiff(getPrBaseRef(context), helper, logger, context)).length) {
 				// Close if there is no diff
 				await closePR(branchName, logger, octokit, context);
@@ -102,7 +105,7 @@ const createCommit = async(addComment: boolean, logger: Logger, octokit: GitHub,
 
 const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: GitHub, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
 	logger.info('There is no diff.');
-	const pr = await getApiHelper(logger).findPullRequest(branchName, octokit, context.actionContext);
+	const pr = await findPR(branchName, logger, octokit, context);
 	if (!pr) {
 		// There is no PR
 		return {
@@ -163,13 +166,13 @@ const createPr = async(makeGroup: boolean, isClose: boolean, logger: Logger, oct
 			return processResult;
 		}
 		return createCommit(true, logger, octokit, context);
-	} else if (!isTargetBranch(getPrHeadRef(context), context)) {
+	} else if (!await isTargetBranch(getPrHeadRef(context), octokit, context)) {
 		return getResult('skipped', 'This is not target branch', context);
 	}
 
 	const helper                        = getHelper(context);
-	const {files, output}               = await getChangedFiles(helper, logger, context);
-	const branchName                    = await getPrBranchName(helper, context);
+	const {files, output}               = await getChangedFiles(helper, logger, octokit, context);
+	const branchName                    = await getPrBranchName(helper, logger, octokit, context);
 	let result: 'succeeded' | 'skipped' = 'succeeded';
 	let detail                          = 'updated';
 	let mergeable                       = false;
@@ -220,28 +223,6 @@ const outputResults = (results: ProcessResult[]): void => {
 	results.forEach(result => outputResult(result));
 };
 
-const getActionContext = (context: ActionContext, pull: PullsParams): ActionContext => ({
-	...context,
-	actionContext: Object.assign({}, context.actionContext, {
-		payload: {
-			'pull_request': {
-				number: pull.number,
-				id: pull.id,
-				head: pull.head,
-				base: pull.base,
-				title: pull.title,
-				'html_url': pull.html_url,
-			},
-		},
-		repo: {
-			owner: pull.base.repo.owner.login,
-			repo: pull.base.repo.name,
-		},
-		ref: `refs/heads/${pull.head.ref}`,
-	}),
-	isBatchProcess: true,
-});
-
 const runCreatePr = async(isClose: boolean, getPulls: (GitHub, ActionContext) => AsyncIterable<PullsParams>, octokit: GitHub, context: ActionContext): Promise<void> => {
 	const logger                   = new Logger(replaceDirectory, true);
 	const results: ProcessResult[] = [];
@@ -266,7 +247,7 @@ async function* pullsForSchedule(octokit: GitHub, context: ActionContext): Async
 
 	yield* await getApiHelper(logger).pullsList({}, octokit, context.actionContext);
 	if (checkDefaultBranch(context)) {
-		yield getPullsArgsForDefaultBranch(context);
+		yield await getPullsArgsForDefaultBranch(octokit, context);
 	}
 }
 

@@ -3,6 +3,7 @@ import { Context } from '@actions/github/lib/context';
 import { GitHub } from '@actions/github';
 import nock from 'nock';
 import { resolve } from 'path';
+import { Logger } from '@technote-space/github-action-helper';
 import {
 	generateContext,
 	testEnv,
@@ -14,18 +15,16 @@ import {
 	setChildProcessParams,
 	testChildProcess,
 } from '@technote-space/github-action-test-helper';
-import { Logger } from '@technote-space/github-action-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
 import { execute } from '../../src';
-import { clearCache } from '../../src/utils/command';
 import * as constants from '../../src/constant';
+import { getCacheKey } from '../../src/utils/misc';
 
 const workDir   = resolve(__dirname, 'test');
 const rootDir   = resolve(__dirname, '..', 'fixtures');
 const setExists = testFs();
 beforeEach(() => {
 	Logger.resetForTesting();
-	clearCache();
 });
 
 const actionDetails: ActionDetails = {
@@ -36,7 +35,9 @@ const actionDetails: ActionDetails = {
 const getActionContext             = (context: Context, _actionDetails?: object, branch?: string): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ? Object.assign({}, actionDetails, _actionDetails) : actionDetails,
-	defaultBranch: branch ?? 'master',
+	cache: {
+		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: branch ?? 'master',
+	},
 });
 
 const context = (action: string, event = 'pull_request', ref = 'heads/test'): Context => generateContext({
@@ -256,7 +257,9 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Atest%2Ftest-1')
-			.reply(200, () => getApiFixture(rootDir, 'pulls.list'));
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
 		await execute(octokit, getActionContext(context('closed'), {
 			prBranchPrefix: 'test/',
@@ -357,7 +360,9 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=change&per_page=100&page=2')
 			.reply(200, () => [])
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
-			.reply(200, () => []);
+			.reply(200, () => [])
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
 		await execute(octokit, getActionContext(context('closed'), {
 			prBranchPrefix: 'test/',
@@ -533,6 +538,8 @@ describe('execute', () => {
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
 			.get('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
 			.post('/repos/octocat/Hello-World/issues/1347/comments')
@@ -661,6 +668,8 @@ describe('execute', () => {
 			.reply(200, () => ([]))
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Ftest-1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
 			.patch('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
 			.get('/repos/octocat/Hello-World/pulls/1347')
@@ -1114,7 +1123,9 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list2'))
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
-			.reply(200, () => ([]));
+			.reply(200, () => ([]))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
 		await execute(octokit, getActionContext(context('', 'schedule'), {
 			executeCommands: ['yarn upgrade'],
@@ -1243,7 +1254,9 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
-			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'));
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
 		await execute(octokit, getActionContext(context('closed'), {
 			executeCommands: ['yarn upgrade'],
