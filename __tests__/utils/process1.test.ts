@@ -13,7 +13,7 @@ import {
 	stdoutCalledWith,
 	getApiFixture,
 	setChildProcessParams,
-	testChildProcess, stdoutContains,
+	testChildProcess,
 } from '@technote-space/github-action-test-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
 import { execute } from '../../src';
@@ -567,7 +567,7 @@ describe('execute', () => {
 			checkDefaultBranch: false,
 		}));
 
-		stdoutContains(mockStdout, [
+		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
 			'::endgroup::',
 			'::group::Total:1  Succeeded:0  Failed:1  Skipped:0',
