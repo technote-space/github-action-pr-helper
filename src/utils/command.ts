@@ -1,4 +1,3 @@
-import { mkdirSync } from 'fs';
 import { PullsListResponseItem } from '@octokit/rest';
 import { Logger, GitHelper, Utils, ContextHelper, ApiHelper } from '@technote-space/github-action-helper';
 import { GitHub } from '@actions/github';
