@@ -13,7 +13,7 @@ import {
 	stdoutCalledWith,
 	getApiFixture,
 	setChildProcessParams,
-	testChildProcess,
+	testChildProcess, stdoutContains,
 } from '@technote-space/github-action-test-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
 import { execute } from '../../src';
@@ -382,12 +382,7 @@ describe('execute', () => {
 			'> Closing PullRequest... [hello-world/new-topic]',
 			'> Deleting reference... [refs/heads/hello-world/new-topic]',
 			'::endgroup::',
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Closing PullRequest... [hello-world/new-topic]',
-			'> Deleting reference... [refs/heads/hello-world/new-topic]',
-			'::endgroup::',
-			'::group::Total:2  Succeeded:2  Failed:0  Skipped:0',
-			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest has been closed',
+			'::group::Total:1  Succeeded:1  Failed:0  Skipped:0',
 			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest has been closed',
 			'::endgroup::',
 		]);
@@ -548,12 +543,7 @@ describe('execute', () => {
 			'> Closing PullRequest... [hello-world/new-topic]',
 			'> Deleting reference... [refs/heads/hello-world/new-topic]',
 			'::endgroup::',
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Closing PullRequest... [hello-world/new-topic]',
-			'> Deleting reference... [refs/heads/hello-world/new-topic]',
-			'::endgroup::',
-			'::group::Total:2  Succeeded:2  Failed:0  Skipped:0',
-			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest does not exist',
+			'::group::Total:1  Succeeded:1  Failed:0  Skipped:0',
 			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest does not exist',
 			'::endgroup::',
 		]);
@@ -577,13 +567,10 @@ describe('execute', () => {
 			checkDefaultBranch: false,
 		}));
 
-		stdoutCalledWith(mockStdout, [
+		stdoutContains(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
 			'::endgroup::',
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'::endgroup::',
-			'::group::Total:2  Succeeded:0  Failed:2  Skipped:0',
-			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic] not found',
+			'::group::Total:1  Succeeded:0  Failed:1  Skipped:0',
 			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic] not found',
 			'::endgroup::',
 		]);
