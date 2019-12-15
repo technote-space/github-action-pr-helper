@@ -355,11 +355,6 @@ describe('getChangedFiles', () => {
 			],
 		});
 		stdoutCalledWith(mockStdout, [
-			'::group::Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'::endgroup::',
 			'::group::Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -442,11 +437,6 @@ describe('getChangedFiles', () => {
 			],
 		});
 		stdoutCalledWith(mockStdout, [
-			'::group::Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'::endgroup::',
 			'::group::Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',

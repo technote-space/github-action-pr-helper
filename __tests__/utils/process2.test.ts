@@ -109,11 +109,6 @@ describe('execute', () => {
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'::endgroup::',
 			'::group::Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -196,11 +191,6 @@ describe('execute', () => {
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'::endgroup::',
 			'::group::Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -277,10 +267,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -306,10 +292,6 @@ describe('execute', () => {
 			'[command]git diff \'HEAD..origin/hello-world/new-topic\' --name-only',
 			'::endgroup::',
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -384,10 +366,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -418,10 +396,6 @@ describe('execute', () => {
 			'[command]git diff \'HEAD..origin/hello-world/new-topic\' --name-only',
 			'::endgroup::',
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -484,11 +458,6 @@ describe('execute', () => {
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'::endgroup::',
 			'::group::Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -572,10 +541,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -609,10 +574,6 @@ describe('execute', () => {
 			'> Creating comment to PullRequest... [hello-world/new-topic] -> [heads/hello-world/new-topic]',
 			'::endgroup::',
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -709,10 +670,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [feature/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -791,12 +748,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'  >> stdout',
-			'[command]git init \'.\'',
-			'  >> stdout',
-			'[command]git remote add origin',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'  >> stdout',
@@ -873,12 +824,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'  >> stdout',
-			'[command]git init \'.\'',
-			'  >> stdout',
-			'[command]git remote add origin',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'  >> stdout',
@@ -967,10 +912,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [master]',
-			'> Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -1054,10 +995,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [feature/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -1133,10 +1070,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -1161,10 +1094,6 @@ describe('execute', () => {
 			'{}',
 			'::endgroup::',
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -1234,11 +1163,6 @@ describe('execute', () => {
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'::endgroup::',
 			'::group::Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -1296,11 +1220,6 @@ describe('execute', () => {
 		}))).rejects.toThrow('remote branch [test/change] not found.');
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'::endgroup::',
 			'::group::Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -1341,11 +1260,6 @@ describe('execute', () => {
 		}))).rejects.toThrow('unexpected error');
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'::endgroup::',
 			'::group::Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
@@ -1406,11 +1320,6 @@ describe('execute', () => {
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Initializing working directory...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'::endgroup::',
 			'::group::Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
