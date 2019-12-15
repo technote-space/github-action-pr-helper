@@ -231,7 +231,6 @@ export const getChangedFiles = async(helper: GitHelper, logger: Logger, octokit:
 	files: string[];
 	output: CommandOutput[];
 }> => {
-	await initDirectory(helper, logger, context);
 	await clone(helper, logger, octokit, context);
 	if (await checkBranch(helper, logger, octokit, context)) {
 		if (!await merge(getPrHeadRef(context), helper, logger, context)) {
