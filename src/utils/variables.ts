@@ -15,7 +15,7 @@ import {
 } from './misc';
 
 const {getRegExp, replaceAll, getBranch} = Utils;
-const {isPush, isCron}                   = ContextHelper;
+const {isPush}                           = ContextHelper;
 
 export const getCommitMessage = (context: ActionContext): string => getActionDetail<string>('commitMessage', context);
 
@@ -221,8 +221,8 @@ const replacePrBodyVariables = async(isComment: boolean, prBody: string, files: 
 export const getPrBody = async(isComment: boolean, files: string[], output: CommandOutput[], helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<string> => replacePrBodyVariables(
 	isComment,
 	(
-		isCron(context.actionContext) ?
-			getActionDetail<string>('prBodyForSchedule', context, () => getActionDetail<string>('prBody', context)) :
+		isComment ?
+			getActionDetail<string>('prBodyForComment', context, () => getActionDetail<string>('prBody', context)) :
 			(
 				await isDefaultBranch(octokit, context) ?
 					getActionDetail<string>('prBodyForDefaultBranch', context, () => getActionDetail<string>('prBody', context)) :
