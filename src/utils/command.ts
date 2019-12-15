@@ -21,8 +21,8 @@ import {
 } from './variables';
 import { ActionContext, CommandOutput } from '../types';
 
-const {getWorkspace, useNpm}  = Utils;
-const {getRepository, isPush} = ContextHelper;
+const {getWorkspace, useNpm, getBranch} = Utils;
+const {getRepository, isPush}           = ContextHelper;
 
 export const getApiHelper = (logger: Logger): ApiHelper => new ApiHelper(logger);
 
@@ -194,15 +194,20 @@ export const isMergeable = async(number: number, octokit: GitHub, context: Actio
 })).data.mergeable, context);
 
 export const updatePr = async(branchName: string, files: string[], output: CommandOutput[], helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<boolean> => {
-	const info = await getApiHelper(logger).pullsCreateOrComment(branchName, {
-		title: await getPrTitle(helper, logger, octokit, context),
-		body: await getPrBody(files, output, helper, logger, octokit, context),
-	}, octokit, context.actionContext);
-
-	if (!info.isPrCreated) {
-		// updated PR
-		return isMergeable(info.number, octokit, context);
+	const apiHelper = getApiHelper(logger);
+	const pr        = await apiHelper.findPullRequest(branchName, octokit, context.actionContext);
+	if (pr) {
+		logger.startProcess('Creating comment to PullRequest... [%s] -> [%s]', getBranch(branchName, false), await apiHelper.getRefForUpdate(false, octokit, context.actionContext));
+		await apiHelper.createCommentToPr(branchName, await getPrBody(true, files, output, helper, logger, octokit, context), octokit, context.actionContext);
+		return isMergeable(pr.number, octokit, context);
+	} else {
+		logger.startProcess('Creating PullRequest... [%s] -> [%s]', getBranch(branchName, false), await apiHelper.getRefForUpdate(false, octokit, context.actionContext));
+		await apiHelper.pullsCreate(branchName, {
+			title: await getPrTitle(helper, logger, octokit, context),
+			body: await getPrBody(false, files, output, helper, logger, octokit, context),
+		}, octokit, context.actionContext);
 	}
+
 	return true;
 };
 
@@ -269,7 +274,7 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
 		await forcePush(branchName, helper, logger, context);
 		await getApiHelper(logger).pullsCreateOrUpdate(branchName, {
 			title: await getPrTitle(helper, logger, octokit, context),
-			body: await getPrBody(files, output, helper, logger, octokit, context),
+			body: await getPrBody(false, files, output, helper, logger, octokit, context),
 		}, octokit, context.actionContext);
 	}
 };
