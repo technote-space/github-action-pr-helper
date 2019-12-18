@@ -96,7 +96,6 @@ describe('clone', () => {
 		}));
 
 		execCalledWith(mockExec, [
-			`rm -rdf ${workDir}`,
 			'git init \'.\'',
 			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
 			'git fetch origin',
@@ -104,8 +103,6 @@ describe('clone', () => {
 		]);
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'  >> stdout',
 			'[command]git init \'.\'',
 			'  >> stdout',
 			'[command]git remote add origin',
@@ -602,7 +599,6 @@ describe('resolveConflicts', () => {
 			'git config \'user.name\' \'GitHub Actions\'',
 			'git config \'user.email\' \'example@example.com\'',
 			'git merge --no-edit origin/change || :',
-			`rm -rdf ${workDir}`,
 			'git init \'.\'',
 			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
 			'git clone \'--branch=change\' \'https://octocat:test-token@github.com/hello/world.git\' \'.\' > /dev/null 2>&1 || :',
@@ -649,7 +645,6 @@ describe('resolveConflicts', () => {
 			'git config \'user.name\' \'GitHub Actions\'',
 			'git config \'user.email\' \'example@example.com\'',
 			'git merge --no-edit origin/change || :',
-			`rm -rdf ${workDir}`,
 			'git init \'.\'',
 			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
 			'git clone \'--branch=change\' \'https://octocat:test-token@github.com/hello/world.git\' \'.\' > /dev/null 2>&1 || :',
