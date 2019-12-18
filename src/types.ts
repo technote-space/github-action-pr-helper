@@ -26,10 +26,10 @@ export type ActionDetails = {
 	prDateFormats?: string[];
 	prCloseMessage?: string;
 	filterGitStatus?: string;
-	filterExtensions?: string[];
-	targetBranchPrefix?: string;
+	filterExtensions?: string | string[];
+	targetBranchPrefix?: string | string[];
 	deletePackage?: boolean;
-	includeLabels?: string[];
+	includeLabels?: string | string[];
 	checkDefaultBranch?: boolean;
 }
 

@@ -19,6 +19,8 @@ export const getActionDetail = <T>(key: string, context: ActionContext, defaultV
 	return context.actionDetail[key] || (typeof defaultValue === 'function' ? defaultValue() : undefined);
 };
 
+const toArray = <T>(item: T | T[]): T[] => Array.isArray(item) ? item : [item];
+
 export const replaceDirectory = (message: string): string => {
 	const workDir = getWorkspace();
 	return replaceAll(replaceAll(message, ` -C ${workDir}`, ''), workDir, '[Working Directory]');
@@ -50,9 +52,9 @@ export const isTargetBranch = async(branchName: string, octokit: GitHub, context
 	if (branchName === await getDefaultBranch(octokit, context)) {
 		return checkDefaultBranch(context);
 	}
-	const prefix = getActionDetail<string>('targetBranchPrefix', context, () => '');
-	if (prefix) {
-		return getPrefixRegExp(prefix).test(branchName);
+	const prefix = toArray<string>(getActionDetail<string | string[]>('targetBranchPrefix', context, () => []));
+	if (prefix.length) {
+		return prefix.some(prefix => getPrefixRegExp(prefix).test(branchName));
 	}
 	return true;
 };
@@ -82,7 +84,7 @@ export const isTargetContext = async(octokit: GitHub, context: ActionContext): P
 		return false;
 	}
 
-	return isTargetLabels(getActionDetail<string[]>('includeLabels', context, () => []), [], context.actionContext);
+	return isTargetLabels(toArray<string>(getActionDetail<string | string[]>('includeLabels', context, () => [])), [], context.actionContext);
 };
 
 export const getGitFilterStatus = (context: ActionContext): string | undefined => context.actionDetail.filterGitStatus;
@@ -101,7 +103,7 @@ export const filterGitStatus = (line: string, context: ActionContext): boolean =
 };
 
 export const filterExtension = (line: string, context: ActionContext): boolean => {
-	const extensions = getActionDetail<string[]>('filterExtensions', context, () => []);
+	const extensions = toArray<string>(getActionDetail<string | string[]>('filterExtensions', context, () => []));
 	if (extensions.length) {
 		const pattern = '(' + extensions.map(item => escapeRegExp('.' + item.replace(/^\./, ''))).join('|') + ')';
 		return (new RegExp(`${pattern}$`)).test(line);
