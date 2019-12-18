@@ -1221,7 +1221,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
