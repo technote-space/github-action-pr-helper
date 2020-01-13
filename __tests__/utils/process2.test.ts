@@ -48,6 +48,7 @@ const context = (action: string, event = 'pull_request', ref = 'heads/test'): Co
 	ref,
 	sha: '7638417db6d59f3c431d3e1f261cc637155684cd',
 }, {
+	actor: 'test-actor',
 	payload: {
 		'pull_request': {
 			number: 11,
@@ -487,6 +488,7 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Pushing to hello/world@test...',
 			'[command]git push origin test:refs/heads/test',
+			'> \x1b[32;40;0m✔\x1b[0m\t[change] updated',
 			'::endgroup::',
 		]);
 	});
@@ -763,10 +765,10 @@ describe('execute', () => {
 			'  >> * hello-world/new-topic',
 			'[command]ls -la',
 			'  >> stdout',
-			'> Configuring git committer to be github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>',
-			'[command]git config \'user.name\' \'github-actions[bot]\'',
+			'> Configuring git committer to be test-actor <test-actor@users.noreply.github.com>',
+			'[command]git config \'user.name\' test-actor',
 			'  >> stdout',
-			'[command]git config \'user.email\' \'41898282+github-actions[bot]@users.noreply.github.com\'',
+			'[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
 			'  >> stdout',
 			'> Merging [hello-world/new-topic] branch...',
 			'[command]git merge --no-edit origin/hello-world/new-topic || :',
@@ -839,10 +841,10 @@ describe('execute', () => {
 			'  >> * hello-world/new-topic',
 			'[command]ls -la',
 			'  >> stdout',
-			'> Configuring git committer to be github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>',
-			'[command]git config \'user.name\' \'github-actions[bot]\'',
+			'> Configuring git committer to be test-actor <test-actor@users.noreply.github.com>',
+			'[command]git config \'user.name\' test-actor',
 			'  >> stdout',
-			'[command]git config \'user.email\' \'41898282+github-actions[bot]@users.noreply.github.com\'',
+			'[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
 			'  >> stdout',
 			'> Merging [hello-world/new-topic] branch...',
 			'[command]git merge --no-edit origin/hello-world/new-topic || :',
@@ -1348,6 +1350,7 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Pushing to hello/world@test/change...',
 			'[command]git push origin test/change:refs/heads/test/change',
+			'> \x1b[32;40;0m✔\x1b[0m\t[change] updated',
 			'::endgroup::',
 		]);
 	});

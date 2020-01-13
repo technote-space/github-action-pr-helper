@@ -19,7 +19,7 @@ import {
 	getPrTitle,
 	getPrBody,
 } from './variables';
-import { ActionContext, CommandOutput } from '../types';
+import { ActionContext, CommandOutput, Null } from '../types';
 
 const {getWorkspace, useNpm, getBranch} = Utils;
 const {getRepository, isPush}           = ContextHelper;
@@ -289,4 +289,4 @@ export const getDefaultBranch = async(octokit: GitHub, context: ActionContext): 
 
 export const getNewPatchVersion = async(helper: GitHelper, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-patch-version'), async() => helper.getNewPatchVersion(getWorkspace()), context);
 
-export const findPR = async(branchName: string, logger: Logger, octokit: GitHub, context: ActionContext): Promise<PullsListResponseItem | null> => getCache(getCacheKey('pr', {branchName}), async() => getApiHelper(logger).findPullRequest(branchName, octokit, context.actionContext), context);
+export const findPR = async(branchName: string, logger: Logger, octokit: GitHub, context: ActionContext): Promise<PullsListResponseItem | Null> => getCache(getCacheKey('pr', {branchName}), async() => getApiHelper(logger).findPullRequest(branchName, octokit, context.actionContext), context);

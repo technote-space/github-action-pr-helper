@@ -25,14 +25,13 @@ import {
 	getPrBody,
 } from '../../src/utils/variables';
 import { ActionContext, ActionDetails } from '../../src/types';
-import { DEFAULT_COMMIT_NAME, DEFAULT_COMMIT_EMAIL } from '../../src/constant';
 
 beforeEach(() => {
 	Logger.resetForTesting();
 });
 const octokit = new GitHub('');
-const logger  = new Logger();
-const helper  = new GitHelper(logger, {depth: -1});
+const logger = new Logger();
+const helper = new GitHelper(logger, {depth: -1});
 const rootDir = resolve(__dirname, '..', 'fixtures');
 testFs(true);
 
@@ -41,14 +40,15 @@ const actionDetails: ActionDetails = {
 	actionOwner: 'octocat',
 	actionRepo: 'hello-world',
 };
-const getActionContext             = (context: Context, _actionDetails?: ActionDetails, defaultBranch?: string, cache?: object): ActionContext => ({
+const getActionContext = (context: Context, _actionDetails?: ActionDetails, defaultBranch?: string, cache?: object, isBatchProcess?: boolean): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ?? actionDetails,
 	cache: Object.assign(cache ?? {}, {
 		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: defaultBranch ?? 'master',
 	}),
+	isBatchProcess,
 });
-const generateActionContext        = (
+const generateActionContext = (
 	settings: {
 		event?: string | undefined;
 		action?: string | undefined;
@@ -61,13 +61,15 @@ const generateActionContext        = (
 	_actionDetails?: object,
 	defaultBranch?: string,
 	cache?: object,
+	isBatchProcess?: boolean,
 ): ActionContext => getActionContext(
 	generateContext(settings, override),
 	_actionDetails ? Object.assign({}, actionDetails, _actionDetails) : undefined,
 	defaultBranch,
 	cache,
+	isBatchProcess,
 );
-const prPayload                    = {
+const prPayload = {
 	'pull_request': {
 		number: 11,
 		id: 21031067,
@@ -102,7 +104,7 @@ describe('getCommitName', () => {
 	});
 
 	it('should get default commit name', () => {
-		expect(getCommitName(generateActionContext({}))).toBe(DEFAULT_COMMIT_NAME);
+		expect(getCommitName(generateActionContext({}, {actor: 'test-actor'}))).toBe('test-actor');
 	});
 });
 
@@ -114,7 +116,7 @@ describe('getCommitEmail', () => {
 	});
 
 	it('should get default commit email', () => {
-		expect(getCommitEmail(generateActionContext({}))).toBe(DEFAULT_COMMIT_EMAIL);
+		expect(getCommitEmail(generateActionContext({}, {actor: 'test-actor'}))).toBe('test-actor@users.noreply.github.com');
 	});
 });
 
@@ -381,10 +383,7 @@ describe('getPrBody', () => {
 	});
 
 	it('should get PR Body 2', async() => {
-		nock('https://api.github.com')
-			.persist()
-			.get('/repos/octocat/hello-world/pulls?head=octocat%3Amaster')
-			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'));
+
 
 		const prBody = `
       ## Base PullRequest
@@ -422,7 +421,7 @@ describe('getPrBody', () => {
 			payload: prPayload,
 		}, {
 			prBody,
-		}))).toBe([
+		}, undefined, undefined, true))).toBe([
 			'## Base PullRequest',
 			'',
 			'default branch (https://github.com/octocat/hello-world/tree/master)',
@@ -633,7 +632,7 @@ describe('getPrBody', () => {
 	});
 
 	it('should get PR Body for default branch 1', async() => {
-		const prBody                 = '${ACTION_OWNER}';
+		const prBody = '${ACTION_OWNER}';
 		const prBodyForDefaultBranch = '${ACTION_REPO}';
 
 		expect(await getPrBody(false, [], [], helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
@@ -773,17 +772,20 @@ describe('getPrBody', () => {
 	});
 
 	it('should get body for comment (default branch)', async() => {
-		expect(await getPrBody(true, [], [], helper, logger, octokit, generateActionContext({}, {
+		expect(await getPrBody(true, [], [], helper, logger, octokit, generateActionContext({
+			owner: actionDetails.actionOwner,
+			repo: actionDetails.actionRepo,
+		}, {
 			payload: prPayload,
 		}, {
 			prBody: '${PR_TITLE}',
-		}))).toBe('default branch');
+		}, undefined, undefined, true))).toBe('default branch');
 	});
 
 	it('should get body for comment (not default branch)', async() => {
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/octocat/hello-world/pulls?head=octocat%3Amaster')
+			.get('/repos/octocat/hello-world/pulls?head=octocat%3Achange')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'));
 
 		expect(await getPrBody(true, [], [], helper, logger, octokit, generateActionContext({

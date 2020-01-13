@@ -48,6 +48,7 @@ const context = (action: string, event = 'pull_request', ref = 'heads/test'): Co
 	ref,
 	sha: '7638417db6d59f3c431d3e1f261cc637155684cd',
 }, {
+	actor: 'test-actor',
 	payload: {
 		'pull_request': {
 			number: 11,
@@ -119,9 +120,9 @@ describe('execute', () => {
 			'[command]git branch -a',
 			'  >> * hello-world/new-topic',
 			'[command]ls -la',
-			'> Configuring git committer to be github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>',
-			'[command]git config \'user.name\' \'github-actions[bot]\'',
-			'[command]git config \'user.email\' \'41898282+github-actions[bot]@users.noreply.github.com\'',
+			'> Configuring git committer to be test-actor <test-actor@users.noreply.github.com>',
+			'[command]git config \'user.name\' test-actor',
+			'[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
 			'> Merging [hello-world/new-topic] branch...',
 			'[command]git merge --no-edit origin/hello-world/new-topic || :',
 			'> Running commands...',
@@ -146,9 +147,9 @@ describe('execute', () => {
 			'[command]git branch -a',
 			'  >> * hello-world/new-topic',
 			'[command]ls -la',
-			'> Configuring git committer to be github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>',
-			'[command]git config \'user.name\' \'github-actions[bot]\'',
-			'[command]git config \'user.email\' \'41898282+github-actions[bot]@users.noreply.github.com\'',
+			'> Configuring git committer to be test-actor <test-actor@users.noreply.github.com>',
+			'[command]git config \'user.name\' test-actor',
+			'[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
 			'> Merging [hello-world/new-topic] branch...',
 			'[command]git merge --no-edit origin/hello-world/new-topic || :',
 			'> Running commands...',
@@ -640,13 +641,16 @@ describe('execute', () => {
 	});
 
 	it('should do nothing (not target branch (push))', async() => {
+		process.env.GITHUB_WORKSPACE   = workDir;
 		const mockStdout = spyOnStdout();
 
 		await execute(octokit, getActionContext(context('', 'push'), {
 			targetBranchPrefix: 'test/',
 		}));
 
-		stdoutCalledWith(mockStdout, []);
+		stdoutCalledWith(mockStdout, [
+			'> \x1b[33;40;0m→\x1b[0m\t[change] This is not target branch',
+		]);
 	});
 
 	it('should do nothing (no diff (push)))', async() => {
@@ -688,6 +692,7 @@ describe('execute', () => {
 			'[command]git add --all',
 			'[command]git status --short -uno',
 			'> There is no diff.',
+			'> \x1b[33;40;0m→\x1b[0m\t[change] There is no diff',
 			'::endgroup::',
 		]);
 	});
@@ -759,6 +764,7 @@ describe('execute', () => {
 			'undefined',
 			'{}',
 			'::warning::Branch [test/change] is protected.',
+			'> \x1b[31;40;0m×\x1b[0m\t[change] Branch is protected',
 			'::endgroup::',
 		]);
 	});

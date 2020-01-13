@@ -227,10 +227,11 @@ const runCreatePr = async(isClose: boolean, getPulls: (GitHub, ActionContext) =>
 	const logger                   = new Logger(replaceDirectory, true);
 	const results: ProcessResult[] = [];
 	for await (const pull of getPulls(octokit, context)) {
+		const actionContext = await getActionContext(pull, octokit, context);
 		try {
-			results.push(await createPr(true, isClose, logger, octokit, getActionContext(context, pull)));
+			results.push(await createPr(true, isClose, logger, octokit, actionContext));
 		} catch (error) {
-			results.push(getResult('failed', error.message, getActionContext(context, pull)));
+			results.push(getResult('failed', error.message, actionContext));
 		}
 		await sleep(INTERVAL_MS);
 	}
@@ -283,7 +284,7 @@ export const execute = async(octokit: GitHub, context: ActionContext): Promise<v
 	if (isClosePR(context)) {
 		await runCreatePrClosed(octokit, context);
 	} else if (isPush(context.actionContext)) {
-		await createCommit(false, commonLogger, octokit, context);
+		await outputResult(await createCommit(false, commonLogger, octokit, context));
 	} else if (isPr(context.actionContext)) {
 		await outputResult(await createPr(false, false, commonLogger, octokit, context), true);
 	} else {
