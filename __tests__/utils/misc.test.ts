@@ -18,6 +18,8 @@ import {
 	filterExtension,
 	checkDefaultBranch,
 	getCacheKey,
+	ensureGetPulls,
+	getPullsArgsForDefaultBranch,
 } from '../../src/utils/misc';
 import { ActionContext, ActionDetails } from '../../src/types';
 
@@ -26,20 +28,20 @@ beforeEach(() => {
 });
 testFs(true);
 
-const octokit                      = new GitHub('');
+const octokit = new GitHub('');
 const actionDetails: ActionDetails = {
 	actionName: 'Test Action',
 	actionOwner: 'octocat',
 	actionRepo: 'hello-world',
 };
-const getActionContext             = (context: Context, _actionDetails?: ActionDetails, defaultBranch?: string): ActionContext => ({
+const getActionContext = (context: Context, _actionDetails?: ActionDetails, defaultBranch?: string): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ?? actionDetails,
 	cache: {
 		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: defaultBranch ?? 'master',
 	},
 });
-const generateActionContext        = (
+const generateActionContext = (
 	settings: {
 		event?: string | undefined;
 		action?: string | undefined;
@@ -293,14 +295,14 @@ describe('replaceDirectory', () => {
 
 	it('should replace working directory 1', () => {
 		process.env.GITHUB_WORKSPACE = resolve('test-dir');
-		const workDir                = resolve('test-dir');
+		const workDir = resolve('test-dir');
 
 		expect(replaceDirectory(`git -C ${workDir} fetch`)).toBe('git fetch');
 	});
 
 	it('should replace working directory 2', () => {
 		process.env.GITHUB_WORKSPACE = resolve('test-dir');
-		const workDir                = resolve('test-dir');
+		const workDir = resolve('test-dir');
 
 		expect(replaceDirectory(`cp -a ${workDir}/test1 ${workDir}/test2`)).toBe('cp -a [Working Directory]/test1 [Working Directory]/test2');
 	});
@@ -510,5 +512,28 @@ describe('checkDefaultBranch', () => {
 		expect(checkDefaultBranch(generateActionContext({}, {}, {
 			checkDefaultBranch: false,
 		}))).toBe(false);
+	});
+});
+
+describe('ensureGetPulls', () => {
+	const context = generateActionContext({});
+
+	it('should return pulls 1', async() => {
+		const pulls = await ensureGetPulls(await getPullsArgsForDefaultBranch(octokit, context), octokit, context);
+		expect(pulls).toHaveProperty('number');
+		expect(pulls).toHaveProperty('id');
+		expect(pulls).toHaveProperty('head');
+		expect(pulls).toHaveProperty('base');
+		expect(pulls).toHaveProperty('title');
+		expect(pulls).toHaveProperty('html_url');
+		expect(pulls.number).toBe(0);
+		expect(pulls.id).toBe(0);
+		expect(pulls.title).toBe('default branch');
+	});
+
+	it('should return pulls 2', async() => {
+		const pulls = await ensureGetPulls(null, octokit, context);
+		expect(pulls).toHaveProperty('number');
+		expect(pulls).toHaveProperty('html_url');
 	});
 });
