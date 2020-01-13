@@ -640,13 +640,16 @@ describe('execute', () => {
 	});
 
 	it('should do nothing (not target branch (push))', async() => {
+		process.env.GITHUB_WORKSPACE   = workDir;
 		const mockStdout = spyOnStdout();
 
 		await execute(octokit, getActionContext(context('', 'push'), {
 			targetBranchPrefix: 'test/',
 		}));
 
-		stdoutCalledWith(mockStdout, []);
+		stdoutCalledWith(mockStdout, [
+			'> \x1b[33;40;0m→\x1b[0m\t[change] This is not target branch',
+		]);
 	});
 
 	it('should do nothing (no diff (push)))', async() => {
@@ -688,6 +691,7 @@ describe('execute', () => {
 			'[command]git add --all',
 			'[command]git status --short -uno',
 			'> There is no diff.',
+			'> \x1b[33;40;0m→\x1b[0m\t[change] There is no diff',
 			'::endgroup::',
 		]);
 	});
@@ -759,6 +763,7 @@ describe('execute', () => {
 			'undefined',
 			'{}',
 			'::warning::Branch [test/change] is protected.',
+			'> \x1b[31;40;0m×\x1b[0m\t[change] Branch is protected',
 			'::endgroup::',
 		]);
 	});
