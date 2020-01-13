@@ -25,7 +25,6 @@ import {
 	getPrBody,
 } from '../../src/utils/variables';
 import { ActionContext, ActionDetails } from '../../src/types';
-import { DEFAULT_COMMIT_NAME, DEFAULT_COMMIT_EMAIL } from '../../src/constant';
 
 beforeEach(() => {
 	Logger.resetForTesting();
@@ -105,7 +104,7 @@ describe('getCommitName', () => {
 	});
 
 	it('should get default commit name', () => {
-		expect(getCommitName(generateActionContext({}))).toBe(DEFAULT_COMMIT_NAME);
+		expect(getCommitName(generateActionContext({}, {actor: 'test-actor'}))).toBe('test-actor');
 	});
 });
 
@@ -117,7 +116,7 @@ describe('getCommitEmail', () => {
 	});
 
 	it('should get default commit email', () => {
-		expect(getCommitEmail(generateActionContext({}))).toBe(DEFAULT_COMMIT_EMAIL);
+		expect(getCommitEmail(generateActionContext({}, {actor: 'test-actor'}))).toBe('test-actor@users.noreply.github.com');
 	});
 });
 
