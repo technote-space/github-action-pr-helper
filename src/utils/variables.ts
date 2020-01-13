@@ -1,7 +1,6 @@
 import { Logger, Utils, ContextHelper, GitHelper } from '@technote-space/github-action-helper';
 import moment from 'moment';
 import { GitHub } from '@actions/github';
-import { DEFAULT_COMMIT_NAME, DEFAULT_COMMIT_EMAIL } from '../constant';
 import { ActionContext, CommandOutput } from '../types';
 import { getNewPatchVersion, findPR, getDefaultBranch } from './command';
 import {
@@ -21,9 +20,9 @@ const {isPush} = ContextHelper;
 
 export const getCommitMessage = (context: ActionContext): string => getActionDetail<string>('commitMessage', context);
 
-export const getCommitName = (context: ActionContext): string => getActionDetail<string>('commitName', context, () => DEFAULT_COMMIT_NAME);
+export const getCommitName = (context: ActionContext): string => getActionDetail<string>('commitName', context, () => context.actionContext.actor);
 
-export const getCommitEmail = (context: ActionContext): string => getActionDetail<string>('commitEmail', context, () => DEFAULT_COMMIT_EMAIL);
+export const getCommitEmail = (context: ActionContext): string => getActionDetail<string>('commitEmail', context, () => `${context.actionContext.actor}@users.noreply.github.com`);
 
 const getVariable = (index: number, context: ActionContext): string => getActionDetail<string[]>('prVariables', context)[index];
 
