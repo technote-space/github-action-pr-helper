@@ -9,13 +9,15 @@ import {
 	getDefaultBranchUrl,
 	getPrHeadRef,
 	isActionPr,
+	getContextBranch,
 	isDefaultBranch,
 	getActionContext,
+	ensureGetPulls,
 	getPullsArgsForDefaultBranch,
 } from './misc';
 
 const {getRegExp, replaceAll, getBranch} = Utils;
-const {isPush}                           = ContextHelper;
+const {isPush} = ContextHelper;
 
 export const getCommitMessage = (context: ActionContext): string => getActionDetail<string>('commitMessage', context);
 
@@ -38,19 +40,12 @@ const getDate = (index: number, context: ActionContext): string => moment().form
  * @return {Promise<{string, Function}[]>} replacer
  */
 const contextVariables = async(isComment: boolean, helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<{ key: string; replace: () => Promise<string> }[]> => {
-	const getContext = async(branch): Promise<ActionContext | null> => {
-		if (await isDefaultBranch(octokit, context)) {
-			return context;
-		}
+	const getContext = async(branch: string): Promise<ActionContext> => {
 		if (isComment) {
 			if (branch === await getDefaultBranch(octokit, context)) {
-				return getActionContext(context, await getPullsArgsForDefaultBranch(octokit, context));
+				return getActionContext(await getPullsArgsForDefaultBranch(octokit, context), octokit, context);
 			}
-			const pr = await findPR(branch, logger, octokit, context);
-			if (!pr) {
-				return null;
-			}
-			return getActionContext(context, pr);
+			return getActionContext(await findPR(branch, logger, octokit, context), octokit, context);
 		}
 		return context;
 	};
@@ -60,11 +55,7 @@ const contextVariables = async(isComment: boolean, helper: GitHelper, logger: Lo
 		if (!context.actionContext.payload.pull_request) {
 			throw new Error('Invalid context.');
 		}
-		const _context = await getContext(context.actionContext.payload.pull_request.base.ref);
-		if (!_context || !_context.actionContext.payload.pull_request) {
-			throw new Error('Invalid context.');
-		}
-		return extractor(_context.actionContext.payload.pull_request);
+		return extractor(await ensureGetPulls((await getContext(getContextBranch(context))).actionContext.payload.pull_request, octokit, context));
 	};
 	return [
 		{key: 'PR_NUMBER', replace: getPrParamFunc(pr => pr.number)},

@@ -54,7 +54,17 @@ export type ProcessResult = {
 	branch: string;
 }
 
-export type PullsParams = {
+export type Null = null | undefined;
+
+export type PayloadPullsParams = {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	[key: string]: any;
+	number: number;
+	'html_url'?: string;
+	body?: string;
+};
+
+export type PullsParams = PayloadPullsParams & {
 	number: number;
 	id: number;
 	head: {
