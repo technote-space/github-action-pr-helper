@@ -204,9 +204,9 @@ const createPr = async(makeGroup: boolean, isClose: boolean, logger: Logger, oct
 
 const outputResult = (result: ProcessResult, endProcess = false): void => {
 	const mark = {
-		'succeeded': commonLogger.c('✔', 'green'),
-		'failed': commonLogger.c('×', 'red'),
-		'skipped': commonLogger.c('→', 'yellow'),
+		'succeeded': commonLogger.c('✔', {color: 'green'}),
+		'failed': commonLogger.c('×', {color: 'red'}),
+		'skipped': commonLogger.c('→', {color: 'yellow'}),
 	};
 	if (endProcess) {
 		commonLogger.endProcess();
