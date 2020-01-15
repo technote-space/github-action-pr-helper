@@ -692,8 +692,8 @@ describe('execute', () => {
 			'[command]git add --all',
 			'[command]git status --short -uno',
 			'> There is no diff.',
-			'> \x1b[33;40;0m→\x1b[0m\t[test/change] There is no diff',
 			'::endgroup::',
+			'> \x1b[33;40;0m→\x1b[0m\t[test/change] There is no diff',
 		]);
 	});
 
@@ -764,8 +764,8 @@ describe('execute', () => {
 			'undefined',
 			'{}',
 			'::warning::Branch [test/change] is protected.',
-			'> \x1b[31;40;0m×\x1b[0m\t[test/change] Branch is protected',
 			'::endgroup::',
+			'> \x1b[31;40;0m×\x1b[0m\t[test/change] Branch is protected',
 		]);
 	});
 });
