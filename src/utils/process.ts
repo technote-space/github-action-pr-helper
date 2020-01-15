@@ -284,7 +284,7 @@ export const execute = async(octokit: GitHub, context: ActionContext): Promise<v
 	if (isClosePR(context)) {
 		await runCreatePrClosed(octokit, context);
 	} else if (isPush(context.actionContext)) {
-		await outputResult(await createCommit(false, commonLogger, octokit, context));
+		await outputResult(await createCommit(false, commonLogger, octokit, context), true);
 	} else if (isPr(context.actionContext)) {
 		await outputResult(await createPr(false, false, commonLogger, octokit, context), true);
 	} else {

@@ -488,8 +488,8 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Pushing to hello/world@test...',
 			'[command]git push origin test:refs/heads/test',
-			'> \x1b[32;40;0m✔\x1b[0m\t[test] updated',
 			'::endgroup::',
+			'> \x1b[32;40;0m✔\x1b[0m\t[test] updated',
 		]);
 	});
 
@@ -1350,8 +1350,8 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Pushing to hello/world@test/change...',
 			'[command]git push origin test/change:refs/heads/test/change',
-			'> \x1b[32;40;0m✔\x1b[0m\t[test/change] updated',
 			'::endgroup::',
+			'> \x1b[32;40;0m✔\x1b[0m\t[test/change] updated',
 		]);
 	});
 });
