@@ -21,8 +21,8 @@ import {
 } from './variables';
 import { ActionContext, CommandOutput, Null } from '../types';
 
-const {getWorkspace, useNpm, getBranch} = Utils;
-const {getRepository, isPush}           = ContextHelper;
+const {getWorkspace, useNpm}  = Utils;
+const {getRepository, isPush} = ContextHelper;
 
 export const getApiHelper = (logger: Logger): ApiHelper => new ApiHelper(logger);
 
@@ -197,11 +197,11 @@ export const updatePr = async(branchName: string, files: string[], output: Comma
 	const apiHelper = getApiHelper(logger);
 	const pr        = await apiHelper.findPullRequest(branchName, octokit, context.actionContext);
 	if (pr) {
-		logger.startProcess('Creating comment to PullRequest... [%s] -> [%s]', getBranch(branchName, false), getPrHeadRef(context));
+		logger.startProcess('Creating comment to PullRequest...');
 		await apiHelper.createCommentToPr(branchName, await getPrBody(true, files, output, helper, logger, octokit, context), octokit, context.actionContext);
 		return isMergeable(pr.number, octokit, context);
 	} else {
-		logger.startProcess('Creating PullRequest... [%s] -> [%s]', getBranch(branchName, false), getPrHeadRef(context));
+		logger.startProcess('Creating PullRequest...');
 		await apiHelper.pullsCreate(branchName, {
 			title: await getPrTitle(helper, logger, octokit, context),
 			body: await getPrBody(false, files, output, helper, logger, octokit, context),

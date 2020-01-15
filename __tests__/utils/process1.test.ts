@@ -38,7 +38,6 @@ const getActionContext             = (context: Context, _actionDetails?: object,
 	cache: {
 		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: branch ?? 'master',
 	},
-	isBatchProcess: 'schedule' === context.eventName,
 });
 
 const context = (action: string, event = 'pull_request', ref = 'heads/test'): Context => generateContext({
