@@ -5,9 +5,9 @@ import { DEFAULT_TARGET_EVENTS } from '../constant';
 import { ActionContext, PullsParams, PayloadPullsParams, Null } from '../types';
 import { getDefaultBranch } from './command';
 
-const {getWorkspace, getPrefixRegExp} = Utils;
+const {getWorkspace, getPrefixRegExp}       = Utils;
 const {escapeRegExp, replaceAll, getBranch} = Utils;
-const {isPr, isCron, isPush} = ContextHelper;
+const {isPr, isCron, isPush}                = ContextHelper;
 
 export const getActionDetail = <T>(key: string, context: ActionContext, defaultValue?: () => T): T => {
 	if (undefined === defaultValue && !(key in context.actionDetail)) {
@@ -158,7 +158,7 @@ export const getActionContext = async(pull: PayloadPullsParams | Null, octokit: 
 			},
 			ref: `refs/heads/${_pull.head.ref}`,
 		}),
-		isBatchProcess: true,
+		isBatchProcess: !!_pull.number,
 	};
 };
 
