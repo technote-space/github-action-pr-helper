@@ -36,7 +36,7 @@ const commonLogger       = new Logger(replaceDirectory);
 const getResult = (result: 'succeeded' | 'failed' | 'skipped', detail: string, context: ActionContext): ProcessResult => ({
 	result,
 	detail,
-	branch: getPrHeadRef(context),
+	branch: getPrHeadRef(context) || getBranch(context.actionContext), // for push
 });
 
 const checkActionPr = async(logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult | true> => {

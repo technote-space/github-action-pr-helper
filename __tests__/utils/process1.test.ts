@@ -49,7 +49,7 @@ const context = (action: string, event = 'pull_request', ref = 'heads/test'): Co
 	sha: '7638417db6d59f3c431d3e1f261cc637155684cd',
 }, {
 	actor: 'test-actor',
-	payload: {
+	payload: 'push' === event ? {} : {
 		'pull_request': {
 			number: 11,
 			id: 21031067,
@@ -649,7 +649,7 @@ describe('execute', () => {
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'> \x1b[33;40;0m→\x1b[0m\t[change] This is not target branch',
+			'> \x1b[33;40;0m→\x1b[0m\t[test] This is not target branch',
 		]);
 	});
 
@@ -692,7 +692,7 @@ describe('execute', () => {
 			'[command]git add --all',
 			'[command]git status --short -uno',
 			'> There is no diff.',
-			'> \x1b[33;40;0m→\x1b[0m\t[change] There is no diff',
+			'> \x1b[33;40;0m→\x1b[0m\t[test/change] There is no diff',
 			'::endgroup::',
 		]);
 	});
@@ -764,7 +764,7 @@ describe('execute', () => {
 			'undefined',
 			'{}',
 			'::warning::Branch [test/change] is protected.',
-			'> \x1b[31;40;0m×\x1b[0m\t[change] Branch is protected',
+			'> \x1b[31;40;0m×\x1b[0m\t[test/change] Branch is protected',
 			'::endgroup::',
 		]);
 	});
