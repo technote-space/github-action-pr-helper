@@ -49,7 +49,7 @@ const context = (action: string, event = 'pull_request', ref = 'heads/test'): Co
 	sha: '7638417db6d59f3c431d3e1f261cc637155684cd',
 }, {
 	actor: 'test-actor',
-	payload: {
+	payload: 'push' === event ? {} : {
 		'pull_request': {
 			number: 11,
 			id: 21031067,
@@ -488,7 +488,7 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Pushing to hello/world@test...',
 			'[command]git push origin test:refs/heads/test',
-			'> \x1b[32;40;0m✔\x1b[0m\t[change] updated',
+			'> \x1b[32;40;0m✔\x1b[0m\t[test] updated',
 			'::endgroup::',
 		]);
 	});
@@ -1350,7 +1350,7 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Pushing to hello/world@test/change...',
 			'[command]git push origin test/change:refs/heads/test/change',
-			'> \x1b[32;40;0m✔\x1b[0m\t[change] updated',
+			'> \x1b[32;40;0m✔\x1b[0m\t[test/change] updated',
 			'::endgroup::',
 		]);
 	});
