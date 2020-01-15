@@ -197,11 +197,11 @@ export const updatePr = async(branchName: string, files: string[], output: Comma
 	const apiHelper = getApiHelper(logger);
 	const pr        = await apiHelper.findPullRequest(branchName, octokit, context.actionContext);
 	if (pr) {
-		logger.startProcess('Creating comment to PullRequest... [%s] -> [%s]', getBranch(branchName, false), await apiHelper.getRefForUpdate(false, octokit, context.actionContext));
+		logger.startProcess('Creating comment to PullRequest... [%s] -> [%s]', getBranch(branchName, false), getPrHeadRef(context));
 		await apiHelper.createCommentToPr(branchName, await getPrBody(true, files, output, helper, logger, octokit, context), octokit, context.actionContext);
 		return isMergeable(pr.number, octokit, context);
 	} else {
-		logger.startProcess('Creating PullRequest... [%s] -> [%s]', getBranch(branchName, false), await apiHelper.getRefForUpdate(false, octokit, context.actionContext));
+		logger.startProcess('Creating PullRequest... [%s] -> [%s]', getBranch(branchName, false), getPrHeadRef(context));
 		await apiHelper.pullsCreate(branchName, {
 			title: await getPrTitle(helper, logger, octokit, context),
 			body: await getPrBody(false, files, output, helper, logger, octokit, context),

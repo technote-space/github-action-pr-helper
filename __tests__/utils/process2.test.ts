@@ -38,6 +38,7 @@ const getActionContext             = (context: Context, _actionDetails?: object,
 	cache: {
 		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: branch ?? 'master',
 	},
+	isBatchProcess: 'schedule' === context.eventName,
 });
 
 const context = (action: string, event = 'pull_request', ref = 'heads/test'): Context => generateContext({
@@ -150,7 +151,7 @@ describe('execute', () => {
 			'::group::Pushing to hello/world@hello-world/test-21031067...',
 			'[command]git push origin hello-world/test-21031067:refs/heads/hello-world/test-21031067',
 			'::endgroup::',
-			'::group::Creating comment to PullRequest... [hello-world/test-21031067] -> [heads/test]',
+			'::group::Creating comment to PullRequest... [hello-world/test-21031067] -> [change]',
 			'::endgroup::',
 			'> \x1b[32;40;0m✔\x1b[0m\t[change] updated',
 		]);
@@ -573,7 +574,7 @@ describe('execute', () => {
 			'[command]git diff \'HEAD..origin/master\' --name-only',
 			'> Pushing to octocat/Hello-World@hello-world/new-topic...',
 			'[command]git push origin hello-world/new-topic:refs/heads/hello-world/new-topic',
-			'> Creating comment to PullRequest... [hello-world/new-topic] -> [heads/hello-world/new-topic]',
+			'> Creating comment to PullRequest... [hello-world/new-topic] -> [hello-world/new-topic]',
 			'::endgroup::',
 			'::group::Target PullRequest Ref [hello-world/new-topic]',
 			'> Fetching...',
@@ -606,7 +607,7 @@ describe('execute', () => {
 			'[command]git diff \'HEAD..origin/master\' --name-only',
 			'> Pushing to octocat/Hello-World@hello-world/new-topic...',
 			'[command]git push origin hello-world/new-topic:refs/heads/hello-world/new-topic',
-			'> Creating comment to PullRequest... [hello-world/new-topic] -> [heads/hello-world/new-topic]',
+			'> Creating comment to PullRequest... [hello-world/new-topic] -> [hello-world/new-topic]',
 			'::endgroup::',
 			'::group::Total:2  Succeeded:2  Failed:0  Skipped:0',
 			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] updated',
@@ -703,7 +704,7 @@ describe('execute', () => {
 			'[command]git diff \'HEAD..origin/feature/new-topic\' --name-only',
 			'> Pushing to octocat/Hello-World@hello-world/test-1...',
 			'[command]git push origin hello-world/test-1:refs/heads/hello-world/test-1',
-			'> Creating comment to PullRequest... [hello-world/test-1] -> [heads/feature/new-topic]',
+			'> Creating comment to PullRequest... [hello-world/test-1] -> [feature/new-topic]',
 			'::endgroup::',
 			'::group::Total:1  Succeeded:1  Failed:0  Skipped:0',
 			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-topic] updated',
@@ -945,7 +946,7 @@ describe('execute', () => {
 			'[command]git diff \'HEAD..origin/master\' --name-only',
 			'> Pushing to hello/world@hello-world/test-0...',
 			'[command]git push origin hello-world/test-0:refs/heads/hello-world/test-0',
-			'> Creating comment to PullRequest... [hello-world/test-0] -> [heads/master]',
+			'> Creating comment to PullRequest... [hello-world/test-0] -> [master]',
 			'::endgroup::',
 			'::group::Total:1  Succeeded:1  Failed:0  Skipped:0',
 			'> \x1b[32;40;0m✔\x1b[0m\t[master] updated',
