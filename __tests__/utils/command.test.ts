@@ -123,7 +123,7 @@ describe('checkBranch', () => {
 	it('should do nothing', async() => {
 		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
-		setChildProcessParams({stdout: '  master\n* hello-world/test-branch'});
+		setChildProcessParams({stdout: 'hello-world/test-branch'});
 		const mockExec = spyOnExec();
 		setExists(true);
 
@@ -132,7 +132,7 @@ describe('checkBranch', () => {
 		}))).toBe(true);
 
 		execCalledWith(mockExec, [
-			'git branch -a',
+			'git rev-parse --abbrev-ref HEAD',
 			'ls -la',
 		]);
 	});
@@ -140,7 +140,7 @@ describe('checkBranch', () => {
 	it('should checkout new branch', async() => {
 		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
-		setChildProcessParams({stdout: '* test-branch2\n  master'});
+		setChildProcessParams({stdout: 'test-branch2'});
 		const mockExec = spyOnExec();
 		setExists(true);
 
@@ -149,7 +149,7 @@ describe('checkBranch', () => {
 		}))).toBe(false);
 
 		execCalledWith(mockExec, [
-			'git branch -a',
+			'git rev-parse --abbrev-ref HEAD',
 			'git checkout -b change origin/change || :',
 			'git checkout -b hello-world/test-branch',
 			'ls -la',
@@ -313,8 +313,8 @@ describe('getChangedFiles', () => {
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
-				if (command.includes(' branch -a')) {
-					return '* hello-world/test-branch';
+				if (command.includes(' rev-parse')) {
+					return 'hello-world/test-branch';
 				}
 				if (command.startsWith('git merge --no-edit')) {
 					return 'Auto-merging merge.txt\nCONFLICT (content): Merge conflict in merge.txt\nAutomatic merge failed; fix conflicts and then commit the result.';
@@ -360,8 +360,8 @@ describe('getChangedFiles', () => {
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
-			'[command]git branch -a',
-			'  >> * hello-world/test-branch',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> hello-world/test-branch',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Configuring git committer to be GitHub Actions <example@example.com>',
@@ -395,8 +395,8 @@ describe('getChangedFiles', () => {
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
-				if (command.includes(' branch -a')) {
-					return '* hello-world/test-branch';
+				if (command.includes(' rev-parse')) {
+					return 'hello-world/test-branch';
 				}
 				if (command.startsWith('git merge')) {
 					return 'Already up to date.';
@@ -442,8 +442,8 @@ describe('getChangedFiles', () => {
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
-			'[command]git branch -a',
-			'  >> * hello-world/test-branch',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> hello-world/test-branch',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Configuring git committer to be GitHub Actions <example@example.com>',

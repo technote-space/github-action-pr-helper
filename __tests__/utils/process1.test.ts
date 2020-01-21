@@ -75,8 +75,8 @@ describe('execute', () => {
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
-				if (command.includes(' branch -a')) {
-					return '* hello-world/new-topic';
+				if (command.includes(' rev-parse')) {
+					return 'hello-world/new-topic';
 				}
 				return '';
 			},
@@ -117,8 +117,8 @@ describe('execute', () => {
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/new-topic]...',
 			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
-			'[command]git branch -a',
-			'  >> * hello-world/new-topic',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> hello-world/new-topic',
 			'[command]ls -la',
 			'> Configuring git committer to be test-actor <test-actor@users.noreply.github.com>',
 			'[command]git config \'user.name\' test-actor',
@@ -144,8 +144,8 @@ describe('execute', () => {
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/new-topic]...',
 			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
-			'[command]git branch -a',
-			'  >> * hello-world/new-topic',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> hello-world/new-topic',
 			'[command]ls -la',
 			'> Configuring git committer to be test-actor <test-actor@users.noreply.github.com>',
 			'[command]git config \'user.name\' test-actor',
@@ -180,8 +180,8 @@ describe('execute', () => {
 				if (command.endsWith('status --short -uno')) {
 					return 'M  __tests__/fixtures/test.md';
 				}
-				if (command.includes(' branch -a')) {
-					return '* test';
+				if (command.includes(' rev-parse')) {
+					return 'test';
 				}
 				return '';
 			},
@@ -223,8 +223,8 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-21031067]...',
 			'[command]git checkout -b hello-world/test-21031067 origin/hello-world/test-21031067',
-			'[command]git branch -a',
-			'  >> * test',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> test',
 			'> remote branch [hello-world/test-21031067] not found.',
 			'> now branch: test',
 			'::endgroup::',
@@ -304,10 +304,10 @@ describe('execute', () => {
 			'::group::Switching branch to [hello-world/test-21031067]...',
 			'[command]git checkout -b hello-world/test-21031067 origin/hello-world/test-21031067',
 			'  >> stdout',
-			'[command]git branch -a',
+			'[command]git rev-parse --abbrev-ref HEAD',
 			'  >> stdout',
 			'> remote branch [hello-world/test-21031067] not found.',
-			'> now branch: ',
+			'> now branch: stdout',
 			'::endgroup::',
 			'::group::Cloning [change] from the remote repo...',
 			'[command]git checkout -b change origin/change',
@@ -387,8 +387,8 @@ describe('execute', () => {
 				if (command.endsWith('status --short -uno')) {
 					return 'M  __tests__/fixtures/test.md';
 				}
-				if (command.includes(' branch -a')) {
-					return '* hello-world/new-topic';
+				if (command.includes(' rev-parse')) {
+					return 'hello-world/new-topic';
 				}
 				return '';
 			},
@@ -434,8 +434,8 @@ describe('execute', () => {
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/new-topic]...',
 			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
-			'[command]git branch -a',
-			'  >> * hello-world/new-topic',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> hello-world/new-topic',
 			'[command]ls -la',
 			'> Configuring git committer to be GitHub Actions <example@example.com>',
 			'[command]git config \'user.name\' \'GitHub Actions\'',
@@ -466,8 +466,8 @@ describe('execute', () => {
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/new-topic]...',
 			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
-			'[command]git branch -a',
-			'  >> * hello-world/new-topic',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> hello-world/new-topic',
 			'[command]ls -la',
 			'> Configuring git committer to be GitHub Actions <example@example.com>',
 			'[command]git config \'user.name\' \'GitHub Actions\'',
@@ -613,10 +613,10 @@ describe('execute', () => {
 			'::group::Switching branch to [hello-world/test-21031067]...',
 			'[command]git checkout -b hello-world/test-21031067 origin/hello-world/test-21031067',
 			'  >> stdout',
-			'[command]git branch -a',
+			'[command]git rev-parse --abbrev-ref HEAD',
 			'  >> stdout',
 			'> remote branch [hello-world/test-21031067] not found.',
-			'> now branch: ',
+			'> now branch: stdout',
 			'::endgroup::',
 			'::group::Cloning [change] from the remote repo...',
 			'[command]git checkout -b change origin/change',
@@ -659,8 +659,8 @@ describe('execute', () => {
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
-				if (command.includes(' branch -a')) {
-					return '* test/change';
+				if (command.includes(' rev-parse')) {
+					return 'test/change';
 				}
 				return '';
 			},
@@ -681,8 +681,8 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Switching branch to [test/change]...',
 			'[command]git checkout -b test/change origin/test/change',
-			'[command]git branch -a',
-			'  >> * test/change',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> test/change',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Running commands...',
@@ -706,8 +706,8 @@ describe('execute', () => {
 				if (command.endsWith('status --short -uno')) {
 					return 'M  __tests__/fixtures/test.md';
 				}
-				if (command.includes(' branch -a')) {
-					return '* test/change';
+				if (command.includes(' rev-parse')) {
+					return 'test/change';
 				}
 				if (command.includes('git push ')) {
 					throw new Error(
@@ -740,8 +740,8 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Switching branch to [test/change]...',
 			'[command]git checkout -b test/change origin/test/change',
-			'[command]git branch -a',
-			'  >> * test/change',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> test/change',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Running commands...',
