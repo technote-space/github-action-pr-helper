@@ -99,7 +99,7 @@ describe('clone', () => {
 		execCalledWith(mockExec, [
 			'git init \'.\'',
 			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
-			'git fetch --no-tags origin || :',
+			'git fetch origin || :',
 			'git checkout -b hello-world/test-branch origin/hello-world/test-branch || :',
 		]);
 		stdoutCalledWith(mockStdout, [
@@ -107,7 +107,7 @@ describe('clone', () => {
 			'[command]git init \'.\'',
 			'  >> stdout',
 			'[command]git remote add origin',
-			'[command]git fetch --no-tags origin',
+			'[command]git fetch origin',
 			'  >> stdout',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
@@ -357,7 +357,7 @@ describe('getChangedFiles', () => {
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch --no-tags origin',
+			'[command]git fetch origin',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
@@ -439,7 +439,7 @@ describe('getChangedFiles', () => {
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch --no-tags origin',
+			'[command]git fetch origin',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
