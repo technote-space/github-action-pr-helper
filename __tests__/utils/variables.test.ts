@@ -74,7 +74,7 @@ const prPayload = {
 		number: 11,
 		id: 21031067,
 		head: {
-			ref: 'change',
+			ref: 'feature/new-feature',
 		},
 		base: {
 			ref: 'master',
@@ -130,7 +130,7 @@ describe('getPrBranchName', () => {
 			payload: prPayload,
 		}, {
 			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${PR_LINK}',
-		}))).toBe('hello-world/11::#11::21031067::change::master::test title::http://example.com::change -> master::v1.2.4::[test title](http://example.com)');
+		}))).toBe('hello-world/11::#11::21031067::feature/new-feature::master::test title::http://example.com::feature/new-feature -> master::v1.2.4::[test title](http://example.com)');
 	});
 
 	it('should get pr branch name for default branch 1', async() => {
@@ -208,7 +208,7 @@ describe('getPrTitle', () => {
 
 		expect(await getPrTitle(helper, logger, octokit, generateActionContext({}, {payload: prPayload}, {
 			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${PR_LINK}',
-		}))).toBe('11::21031067::change::master::change -> master::#11::v1.2.4::[test title](http://example.com)');
+		}))).toBe('11::21031067::feature/new-feature::master::feature/new-feature -> master::#11::v1.2.4::[test title](http://example.com)');
 	});
 
 	it('should get PR title for default branch 1', async() => {
@@ -785,7 +785,7 @@ describe('getPrBody', () => {
 	it('should get body for comment (not default branch)', async() => {
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/octocat/hello-world/pulls?head=octocat%3Achange')
+			.get('/repos/octocat/hello-world/pulls?head=octocat%3Afeature%2Fnew-feature')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'));
 
 		expect(await getPrBody(true, [], [], helper, logger, octokit, generateActionContext({

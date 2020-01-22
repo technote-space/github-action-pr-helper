@@ -17,7 +17,6 @@ import {
 } from '@technote-space/github-action-test-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
 import { execute } from '../../src';
-import * as constants from '../../src/constant';
 import { getCacheKey } from '../../src/utils/misc';
 
 const workDir   = resolve(__dirname, 'test');
@@ -40,7 +39,7 @@ const getActionContext             = (context: Context, _actionDetails?: object,
 	},
 });
 
-const context = (action: string, event = 'pull_request', ref = 'heads/test'): Context => generateContext({
+const context = (action: string, event = 'pull_request', ref = 'pull/55/merge'): Context => generateContext({
 	owner: 'hello',
 	repo: 'world',
 	event,
@@ -50,11 +49,12 @@ const context = (action: string, event = 'pull_request', ref = 'heads/test'): Co
 }, {
 	actor: 'test-actor',
 	payload: 'push' === event ? {} : {
+		number: 11,
 		'pull_request': {
 			number: 11,
 			id: 21031067,
 			head: {
-				ref: 'change',
+				ref: 'feature/new-feature',
 			},
 			base: {
 				ref: 'master',
@@ -85,9 +85,9 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=change&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=feature/new-feature&per_page=100&page=1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=change&per_page=100&page=2')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=feature/new-feature&per_page=100&page=2')
 			.reply(200, () => [])
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
 			.reply(200, () => [])
@@ -123,8 +123,8 @@ describe('execute', () => {
 			'> Configuring git committer to be test-actor <test-actor@users.noreply.github.com>',
 			'[command]git config \'user.name\' test-actor',
 			'[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
-			'> Merging [hello-world/new-topic] branch...',
-			'[command]git merge --no-edit origin/hello-world/new-topic || :',
+			'> Merging [master] branch...',
+			'[command]git merge --no-edit origin/master || :',
 			'> Running commands...',
 			'> Checking diff...',
 			'[command]git add --all',
@@ -150,8 +150,8 @@ describe('execute', () => {
 			'> Configuring git committer to be test-actor <test-actor@users.noreply.github.com>',
 			'[command]git config \'user.name\' test-actor',
 			'[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
-			'> Merging [hello-world/new-topic] branch...',
-			'[command]git merge --no-edit origin/hello-world/new-topic || :',
+			'> Merging [master] branch...',
+			'[command]git merge --no-edit origin/master || :',
 			'> Running commands...',
 			'> Checking diff...',
 			'[command]git add --all',
@@ -187,9 +187,6 @@ describe('execute', () => {
 			},
 		});
 		setExists(true);
-		// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-		// @ts-ignore
-		constants.INTERVAL_MS = 1;
 
 		nock('https://api.github.com')
 			.persist()
@@ -199,6 +196,8 @@ describe('execute', () => {
 			.reply(200, () => ([]))
 			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Ftest-21031067')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/hello/world/pulls/11')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
 			.patch('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
 			.delete('/repos/hello/world/git/refs/heads/hello-world/test-21031067')
@@ -228,8 +227,8 @@ describe('execute', () => {
 			'> remote branch [hello-world/test-21031067] not found.',
 			'> now branch: test',
 			'::endgroup::',
-			'::group::Cloning [change] from the remote repo...',
-			'[command]git checkout -b change origin/change',
+			'::group::Cloning [feature/new-feature] from the remote repo...',
+			'[command]git checkout -b feature/new-feature origin/feature/new-feature',
 			'[command]git checkout -b hello-world/test-21031067',
 			'[command]ls -la',
 			'::endgroup::',
@@ -249,14 +248,14 @@ describe('execute', () => {
 			'[command]git show \'--stat-count=10\' HEAD',
 			'::endgroup::',
 			'::group::Checking references diff...',
-			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/change:refs/remotes/origin/change',
-			'[command]git diff \'HEAD..origin/change\' --name-only',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature',
+			'[command]git diff \'HEAD..origin/feature/new-feature\' --name-only',
 			'::endgroup::',
 			'::group::Closing PullRequest... [hello-world/test-21031067]',
 			'::endgroup::',
 			'::group::Deleting reference... [refs/heads/hello-world/test-21031067]',
 			'::endgroup::',
-			'> \x1b[32;40;0m✔\x1b[0m\t[change] has been closed because there is no reference diff',
+			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] has been closed because there is no reference diff',
 		]);
 	});
 
@@ -279,6 +278,8 @@ describe('execute', () => {
 			.persist()
 			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Ftest-21031067')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/hello/world/pulls/11')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
 			.patch('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
 			.delete('/repos/hello/world/git/refs/heads/hello-world/test-21031067')
@@ -309,8 +310,8 @@ describe('execute', () => {
 			'> remote branch [hello-world/test-21031067] not found.',
 			'> now branch: stdout',
 			'::endgroup::',
-			'::group::Cloning [change] from the remote repo...',
-			'[command]git checkout -b change origin/change',
+			'::group::Cloning [feature/new-feature] from the remote repo...',
+			'[command]git checkout -b feature/new-feature origin/feature/new-feature',
 			'  >> stdout',
 			'[command]git checkout -b hello-world/test-21031067',
 			'  >> stdout',
@@ -328,14 +329,14 @@ describe('execute', () => {
 			'> There is no diff.',
 			'::endgroup::',
 			'::group::Checking references diff...',
-			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/change:refs/remotes/origin/change',
-			'[command]git diff \'HEAD..origin/change\' --name-only',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature',
+			'[command]git diff \'HEAD..origin/feature/new-feature\' --name-only',
 			'::endgroup::',
 			'::group::Closing PullRequest... [hello-world/test-21031067]',
 			'::endgroup::',
 			'::group::Deleting reference... [refs/heads/hello-world/test-21031067]',
 			'::endgroup::',
-			'> \x1b[32;40;0m✔\x1b[0m\t[change] has been closed because there is no reference diff',
+			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] has been closed because there is no reference diff',
 		]);
 	});
 
@@ -397,9 +398,9 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=change&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=feature%2Fnew-feature&per_page=100&page=1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=change&per_page=100&page=2')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=feature%2Fnew-feature&per_page=100&page=2')
 			.reply(200, () => [])
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
 			.reply(200, () => [])
@@ -440,8 +441,8 @@ describe('execute', () => {
 			'> Configuring git committer to be GitHub Actions <example@example.com>',
 			'[command]git config \'user.name\' \'GitHub Actions\'',
 			'[command]git config \'user.email\' \'example@example.com\'',
-			'> Merging [hello-world/new-topic] branch...',
-			'[command]git merge --no-edit origin/hello-world/new-topic || :',
+			'> Merging [master] branch...',
+			'[command]git merge --no-edit origin/master || :',
 			'> Running commands...',
 			'> Checking diff...',
 			'[command]git add --all',
@@ -472,8 +473,8 @@ describe('execute', () => {
 			'> Configuring git committer to be GitHub Actions <example@example.com>',
 			'[command]git config \'user.name\' \'GitHub Actions\'',
 			'[command]git config \'user.email\' \'example@example.com\'',
-			'> Merging [hello-world/new-topic] branch...',
-			'[command]git merge --no-edit origin/hello-world/new-topic || :',
+			'> Merging [master] branch...',
+			'[command]git merge --no-edit origin/master || :',
 			'> Running commands...',
 			'> Checking diff...',
 			'[command]git add --all',
@@ -578,7 +579,7 @@ describe('execute', () => {
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'> \x1b[33;40;0m→\x1b[0m\t[change] This is not target branch',
+			'> \x1b[33;40;0m→\x1b[0m\t[feature/new-feature] This is not target branch',
 		]);
 	});
 
@@ -618,8 +619,8 @@ describe('execute', () => {
 			'> remote branch [hello-world/test-21031067] not found.',
 			'> now branch: stdout',
 			'::endgroup::',
-			'::group::Cloning [change] from the remote repo...',
-			'[command]git checkout -b change origin/change',
+			'::group::Cloning [feature/new-feature] from the remote repo...',
+			'[command]git checkout -b feature/new-feature origin/feature/new-feature',
 			'  >> stdout',
 			'[command]git checkout -b hello-world/test-21031067',
 			'  >> stdout',
@@ -636,7 +637,7 @@ describe('execute', () => {
 			'[command]git status --short -uno',
 			'> There is no diff.',
 			'::endgroup::',
-			'> \x1b[33;40;0m→\x1b[0m\t[change] There is no diff',
+			'> \x1b[33;40;0m→\x1b[0m\t[feature/new-feature] There is no diff',
 		]);
 	});
 

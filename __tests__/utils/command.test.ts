@@ -44,14 +44,15 @@ const context                      = (pr: object): Context => generateContext({
 	owner: 'hello',
 	repo: 'world',
 	event: 'pull_request',
-	ref: 'heads/feature/change',
+	ref: 'pull/55/merge',
 }, {
 	payload: {
+		number: 11,
 		'pull_request': Object.assign({
 			number: 11,
 			id: 21031067,
 			head: {
-				ref: 'change',
+				ref: 'feature/new-feature',
 			},
 			base: {
 				ref: 'master',
@@ -150,7 +151,7 @@ describe('checkBranch', () => {
 
 		execCalledWith(mockExec, [
 			'git rev-parse --abbrev-ref HEAD || :',
-			'git checkout -b change origin/change || :',
+			'git checkout -b feature/new-feature origin/feature/new-feature || :',
 			'git checkout -b hello-world/test-branch',
 			'ls -la',
 		]);
@@ -512,6 +513,8 @@ describe('updatePr', () => {
 			.persist()
 			.get('/repos/hello/world/pulls?head=hello%3Atest')
 			.reply(200, () => [])
+			.get('/repos/hello/world/pulls/11')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
 			.post('/repos/hello/world/pulls')
 			.reply(201, () => getApiFixture(rootDir, 'pulls.create'));
 
@@ -566,7 +569,7 @@ describe('resolveConflicts', () => {
 		execCalledWith(mockExec, [
 			'git config \'user.name\' \'GitHub Actions\'',
 			'git config \'user.email\' \'example@example.com\'',
-			'git merge --no-edit origin/change || :',
+			'git merge --no-edit origin/feature/new-feature || :',
 			'git push \'https://octocat:test-token@github.com/hello/world.git\' \'test:refs/heads/test\' > /dev/null 2>&1',
 		]);
 	});
@@ -598,10 +601,10 @@ describe('resolveConflicts', () => {
 		execCalledWith(mockExec, [
 			'git config \'user.name\' \'GitHub Actions\'',
 			'git config \'user.email\' \'example@example.com\'',
-			'git merge --no-edit origin/change || :',
+			'git merge --no-edit origin/feature/new-feature || :',
 			'git init \'.\'',
 			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
-			'git clone \'--branch=change\' \'https://octocat:test-token@github.com/hello/world.git\' \'.\' > /dev/null 2>&1 || :',
+			'git clone \'--branch=feature/new-feature\' \'https://octocat:test-token@github.com/hello/world.git\' \'.\' > /dev/null 2>&1 || :',
 			'git checkout -b hello-world/test-branch',
 			'yarn upgrade',
 			'git add --all',
@@ -628,6 +631,8 @@ describe('resolveConflicts', () => {
 			.persist()
 			.get('/repos/hello/world/pulls?head=hello%3Atest')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/hello/world/pulls/11')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
 			.patch('/repos/hello/world/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'));
 
@@ -644,10 +649,10 @@ describe('resolveConflicts', () => {
 		execCalledWith(mockExec, [
 			'git config \'user.name\' \'GitHub Actions\'',
 			'git config \'user.email\' \'example@example.com\'',
-			'git merge --no-edit origin/change || :',
+			'git merge --no-edit origin/feature/new-feature || :',
 			'git init \'.\'',
 			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
-			'git clone \'--branch=change\' \'https://octocat:test-token@github.com/hello/world.git\' \'.\' > /dev/null 2>&1 || :',
+			'git clone \'--branch=feature/new-feature\' \'https://octocat:test-token@github.com/hello/world.git\' \'.\' > /dev/null 2>&1 || :',
 			'git checkout -b hello-world/test-branch',
 			'yarn upgrade',
 			'git add --all',
