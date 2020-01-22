@@ -8,5 +8,6 @@ export const DEFAULT_TARGET_EVENTS = {
 		'closed',
 	],
 	'schedule': '*',
+	'repository_dispatch': '*',
 };
 export const INTERVAL_MS           = 1000;

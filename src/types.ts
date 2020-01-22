@@ -31,6 +31,7 @@ export type ActionDetails = {
 	deletePackage?: boolean;
 	includeLabels?: string | string[];
 	checkDefaultBranch?: boolean;
+	checkOnlyDefaultBranch?: boolean;
 }
 
 export type MainArguments = ActionDetails & {
