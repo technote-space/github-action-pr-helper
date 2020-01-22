@@ -635,9 +635,6 @@ describe('execute', () => {
 			},
 		});
 		setExists(true);
-		// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-		// @ts-ignore
-		constants.INTERVAL_MS = 1;
 
 		nock('https://api.github.com')
 			.persist()
@@ -885,9 +882,6 @@ describe('execute', () => {
 			},
 		});
 		setExists(true);
-		// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-		// @ts-ignore
-		constants.INTERVAL_MS = 1;
 
 		nock('https://api.github.com')
 			.persist()
@@ -970,9 +964,6 @@ describe('execute', () => {
 			},
 		});
 		setExists(true);
-		// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-		// @ts-ignore
-		constants.INTERVAL_MS = 1;
 
 		nock('https://api.github.com')
 			.persist()
@@ -1043,9 +1034,6 @@ describe('execute', () => {
 			},
 		});
 		setExists(true);
-		// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-		// @ts-ignore
-		constants.INTERVAL_MS = 1;
 
 		nock('https://api.github.com')
 			.persist()
