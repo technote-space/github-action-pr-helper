@@ -7,6 +7,7 @@ import {
 	isDisabledDeletePackage,
 	filterExtension,
 	getPrHeadRef,
+	getContextBranch,
 	getGitFilterStatus,
 	getCacheKey,
 	getCache,
@@ -238,7 +239,7 @@ export const getChangedFiles = async(helper: GitHelper, logger: Logger, octokit:
 }> => {
 	await clone(helper, logger, octokit, context);
 	if (await checkBranch(helper, logger, octokit, context)) {
-		if (!await merge(getPrHeadRef(context), helper, logger, context)) {
+		if (!await merge(getContextBranch(context), helper, logger, context)) {
 			await abortMerge(helper, logger);
 		}
 	}
@@ -260,7 +261,7 @@ export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger,
 export const closePR = async(branchName: string, logger: Logger, octokit: GitHub, context: ActionContext, message?: string): Promise<void> => getApiHelper(logger).closePR(branchName, octokit, context.actionContext, message ?? context.actionDetail.prCloseMessage);
 
 export const resolveConflicts = async(branchName: string, helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<void> => {
-	if (await merge(getPrHeadRef(context), helper, logger, context)) {
+	if (await merge(getContextBranch(context), helper, logger, context)) {
 		// succeeded to merge
 		await push(branchName, helper, logger, context);
 	} else {
