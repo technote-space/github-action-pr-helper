@@ -7,7 +7,7 @@ import { getDefaultBranch } from './command';
 
 const {getWorkspace, getPrefixRegExp}       = Utils;
 const {escapeRegExp, replaceAll, getBranch} = Utils;
-const {isPr, isCron, isPush}                = ContextHelper;
+const {isPr, isCron, isPush, isCustomEvent} = ContextHelper;
 
 export const getActionDetail = <T>(key: string, context: ActionContext, defaultValue?: () => T): T => {
 	if (undefined === defaultValue && !(key in context.actionDetail)) {
@@ -64,7 +64,7 @@ export const isTargetContext = async(octokit: GitHub, context: ActionContext): P
 		return false;
 	}
 
-	if (isCron(context.actionContext)) {
+	if (isCron(context.actionContext) || isCustomEvent(context.actionContext)) {
 		return true;
 	}
 
