@@ -17,6 +17,7 @@ import {
 	filterGitStatus,
 	filterExtension,
 	checkDefaultBranch,
+	checkOnlyDefaultBranch,
 	getCacheKey,
 	ensureGetPulls,
 	getPullsArgsForDefaultBranch,
@@ -169,12 +170,18 @@ describe('isTargetContext', () => {
 
 	it('should return true 7', async() => {
 		expect(await isTargetContext(octokit, generateActionContext({
+			event: 'repository_dispatch',
+		}))).toBe(true);
+	});
+
+	it('should return true 8', async() => {
+		expect(await isTargetContext(octokit, generateActionContext({
 			ref: 'heads/test/change',
 			event: 'push',
 		}, {}, {targetBranchPrefix: 'test/', targetEvents: {push: '*'}}))).toBe(true);
 	});
 
-	it('should return true 8', async() => {
+	it('should return true 9', async() => {
 		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'synchronize',
@@ -192,7 +199,7 @@ describe('isTargetContext', () => {
 		}))).toBe(true);
 	});
 
-	it('should return true 9', async() => {
+	it('should return true 10', async() => {
 		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'synchronize',
@@ -207,7 +214,7 @@ describe('isTargetContext', () => {
 		}))).toBe(true);
 	});
 
-	it('should return true 10', async() => {
+	it('should return true 11', async() => {
 		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'synchronize',
@@ -224,7 +231,7 @@ describe('isTargetContext', () => {
 		}))).toBe(true);
 	});
 
-	it('should return true 11', async() => {
+	it('should return true 12', async() => {
 		expect(await isTargetContext(octokit, generateActionContext({
 			event: 'pull_request',
 			action: 'closed',
@@ -511,6 +518,26 @@ describe('checkDefaultBranch', () => {
 	it('should return false', () => {
 		expect(checkDefaultBranch(generateActionContext({}, {}, {
 			checkDefaultBranch: false,
+		}))).toBe(false);
+	});
+});
+
+describe('checkOnlyDefaultBranch', () => {
+	testEnv();
+
+	it('should return false if not set', () => {
+		expect(checkOnlyDefaultBranch(generateActionContext({}))).toBe(false);
+	});
+
+	it('should return true', () => {
+		expect(checkOnlyDefaultBranch(generateActionContext({}, {}, {
+			checkOnlyDefaultBranch: true,
+		}))).toBe(true);
+	});
+
+	it('should return false', () => {
+		expect(checkOnlyDefaultBranch(generateActionContext({}, {}, {
+			checkOnlyDefaultBranch: false,
 		}))).toBe(false);
 	});
 });

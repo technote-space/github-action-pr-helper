@@ -44,6 +44,8 @@ export const isDefaultBranch = async(octokit: GitHub, context: ActionContext): P
 
 export const checkDefaultBranch = (context: ActionContext): boolean => context.actionDetail.checkDefaultBranch ?? true;
 
+export const checkOnlyDefaultBranch = (context: ActionContext): boolean => context.actionDetail.checkOnlyDefaultBranch ?? false;
+
 export const isDisabledDeletePackage = (context: ActionContext): boolean => !(context.actionDetail.deletePackage ?? false);
 
 export const isClosePR = (context: ActionContext): boolean => isPr(context.actionContext) && context.actionContext.payload.action === 'closed';
@@ -52,11 +54,13 @@ export const isTargetBranch = async(branchName: string, octokit: GitHub, context
 	if (branchName === await getDefaultBranch(octokit, context)) {
 		return checkDefaultBranch(context);
 	}
+
 	const prefix = toArray<string>(getActionDetail<string | string[]>('targetBranchPrefix', context, () => []));
 	if (prefix.length) {
 		return prefix.some(prefix => getPrefixRegExp(prefix).test(branchName));
 	}
-	return true;
+
+	return !checkOnlyDefaultBranch(context);
 };
 
 export const isTargetContext = async(octokit: GitHub, context: ActionContext): Promise<boolean> => {
