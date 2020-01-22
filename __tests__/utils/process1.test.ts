@@ -640,19 +640,6 @@ describe('execute', () => {
 		]);
 	});
 
-	it('should do nothing (not target branch (push))', async() => {
-		process.env.GITHUB_WORKSPACE = workDir;
-		const mockStdout             = spyOnStdout();
-
-		await execute(octokit, getActionContext(context('', 'push'), {
-			targetBranchPrefix: 'test/',
-		}));
-
-		stdoutCalledWith(mockStdout, [
-			'> \x1b[33;40;0m→\x1b[0m\t[test] This is not target branch',
-		]);
-	});
-
 	it('should do nothing (no diff (push)))', async() => {
 		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
