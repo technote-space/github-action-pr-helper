@@ -62,9 +62,6 @@ const checkActionPr = async(logger: Logger, octokit: GitHub, context: ActionCont
 const createCommit = async(addComment: boolean, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
 	const helper     = getHelper(context);
 	const branchName = await getPrBranchName(helper, logger, octokit, context);
-	if (!await isTargetBranch(branchName, octokit, context)) {
-		return getResult('skipped', 'This is not target branch', context);
-	}
 
 	const {files, output} = await getChangedFiles(helper, logger, octokit, context);
 	if (!files.length) {

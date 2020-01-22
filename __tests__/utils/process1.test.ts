@@ -114,7 +114,7 @@ describe('execute', () => {
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin',
 			'> Switching branch to [hello-world/new-topic]...',
 			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
 			'[command]git rev-parse --abbrev-ref HEAD',
@@ -141,7 +141,7 @@ describe('execute', () => {
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin',
 			'> Switching branch to [hello-world/new-topic]...',
 			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
 			'[command]git rev-parse --abbrev-ref HEAD',
@@ -219,7 +219,7 @@ describe('execute', () => {
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-21031067]...',
 			'[command]git checkout -b hello-world/test-21031067 origin/hello-world/test-21031067',
@@ -298,7 +298,7 @@ describe('execute', () => {
 			'[command]git init \'.\'',
 			'  >> stdout',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin',
 			'  >> stdout',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-21031067]...',
@@ -431,7 +431,7 @@ describe('execute', () => {
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin',
 			'> Switching branch to [hello-world/new-topic]...',
 			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
 			'[command]git rev-parse --abbrev-ref HEAD',
@@ -463,7 +463,7 @@ describe('execute', () => {
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin',
 			'> Switching branch to [hello-world/new-topic]...',
 			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
 			'[command]git rev-parse --abbrev-ref HEAD',
@@ -607,7 +607,7 @@ describe('execute', () => {
 			'[command]git init \'.\'',
 			'  >> stdout',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin',
 			'  >> stdout',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-21031067]...',
@@ -640,19 +640,6 @@ describe('execute', () => {
 		]);
 	});
 
-	it('should do nothing (not target branch (push))', async() => {
-		process.env.GITHUB_WORKSPACE = workDir;
-		const mockStdout             = spyOnStdout();
-
-		await execute(octokit, getActionContext(context('', 'push'), {
-			targetBranchPrefix: 'test/',
-		}));
-
-		stdoutCalledWith(mockStdout, [
-			'> \x1b[33;40;0m→\x1b[0m\t[test] This is not target branch',
-		]);
-	});
-
 	it('should do nothing (no diff (push)))', async() => {
 		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
@@ -677,7 +664,7 @@ describe('execute', () => {
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin',
 			'::endgroup::',
 			'::group::Switching branch to [test/change]...',
 			'[command]git checkout -b test/change origin/test/change',
@@ -736,7 +723,7 @@ describe('execute', () => {
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin',
 			'::endgroup::',
 			'::group::Switching branch to [test/change]...',
 			'[command]git checkout -b test/change origin/test/change',

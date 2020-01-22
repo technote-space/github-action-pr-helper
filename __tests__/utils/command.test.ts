@@ -98,7 +98,7 @@ describe('clone', () => {
 		execCalledWith(mockExec, [
 			'git init \'.\'',
 			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
-			'git fetch origin || :',
+			'git fetch --no-tags origin || :',
 			'git checkout -b hello-world/test-branch origin/hello-world/test-branch || :',
 		]);
 		stdoutCalledWith(mockStdout, [
@@ -106,7 +106,7 @@ describe('clone', () => {
 			'[command]git init \'.\'',
 			'  >> stdout',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin',
 			'  >> stdout',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
@@ -132,7 +132,7 @@ describe('checkBranch', () => {
 		}))).toBe(true);
 
 		execCalledWith(mockExec, [
-			'git rev-parse --abbrev-ref HEAD',
+			'git rev-parse --abbrev-ref HEAD || :',
 			'ls -la',
 		]);
 	});
@@ -149,7 +149,7 @@ describe('checkBranch', () => {
 		}))).toBe(false);
 
 		execCalledWith(mockExec, [
-			'git rev-parse --abbrev-ref HEAD',
+			'git rev-parse --abbrev-ref HEAD || :',
 			'git checkout -b change origin/change || :',
 			'git checkout -b hello-world/test-branch',
 			'ls -la',
@@ -356,7 +356,7 @@ describe('getChangedFiles', () => {
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
@@ -438,7 +438,7 @@ describe('getChangedFiles', () => {
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
