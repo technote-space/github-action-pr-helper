@@ -427,10 +427,10 @@
   dependencies:
     "@actions/github" "^2.0.1"
 
-"@technote-space/github-action-helper@^0.7.6":
-  version "0.7.6"
-  resolved "https://registry.yarnpkg.com/@technote-space/github-action-helper/-/github-action-helper-0.7.6.tgz#a59bb87328ad6a8365652f4825a166974afab99d"
-  integrity sha512-HWj8tM3HL+uQ4itjebtoG1II9DJV29siPL4YQ7k55AK2D8wgZIMEL4K8MMJV8bYJhScJqULEFlncDPIAmREMpw==
+"@technote-space/github-action-helper@^0.7.7":
+  version "0.7.7"
+  resolved "https://registry.yarnpkg.com/@technote-space/github-action-helper/-/github-action-helper-0.7.7.tgz#5c3c1eb8a32bfae05147b4e9c1f147f8f7ad45bb"
+  integrity sha512-cQauMB8vK2HMlBSuqqjORTRrGgUC+8G4Ti0g9ffKi9I00K9hYIBfId5XbBWxzMSB2EedwyQ1ArpZEg0Z5AqYNg==
   dependencies:
     "@actions/core" "^1.2.1"
     "@actions/github" "^2.0.1"
