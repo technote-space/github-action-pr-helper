@@ -132,7 +132,7 @@ describe('checkBranch', () => {
 		}))).toBe(true);
 
 		execCalledWith(mockExec, [
-			'git rev-parse --abbrev-ref HEAD',
+			'git rev-parse --abbrev-ref HEAD || :',
 			'ls -la',
 		]);
 	});
@@ -149,7 +149,7 @@ describe('checkBranch', () => {
 		}))).toBe(false);
 
 		execCalledWith(mockExec, [
-			'git rev-parse --abbrev-ref HEAD',
+			'git rev-parse --abbrev-ref HEAD || :',
 			'git checkout -b change origin/change || :',
 			'git checkout -b hello-world/test-branch',
 			'ls -la',
