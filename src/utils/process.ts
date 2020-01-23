@@ -44,18 +44,22 @@ const checkActionPr = async(logger: Logger, octokit: GitHub, context: ActionCont
 	if (!pr) {
 		return getResult('failed', 'not found', context);
 	}
+
 	if (pr.base.ref === await getDefaultBranch(octokit, context)) {
 		return true;
 	}
+
 	const basePr = await findPR(pr.base.ref, logger, octokit, context);
 	if (!basePr) {
 		await closePR(getPrHeadRef(context), logger, octokit, context, '');
 		return getResult('succeeded', 'has been closed because base PullRequest does not exist', context);
 	}
+
 	if (basePr.state === 'closed') {
 		await closePR(getPrHeadRef(context), logger, octokit, context, '');
 		return getResult('succeeded', 'has been closed because base PullRequest has been closed', context);
 	}
+
 	return true;
 };
 
@@ -74,6 +78,7 @@ const createCommit = async(addComment: boolean, logger: Logger, octokit: GitHub,
 				return getResult('succeeded', 'has been closed because there is no reference diff', context);
 			}
 		}
+
 		return getResult('skipped', 'There is no diff', context);
 	}
 
@@ -85,6 +90,7 @@ const createCommit = async(addComment: boolean, logger: Logger, octokit: GitHub,
 			return getResult('succeeded', 'has been closed because there is no reference diff', context);
 		}
 	}
+
 	try {
 		await push(branchName, helper, logger, context);
 	} catch (error) {
@@ -94,9 +100,11 @@ const createCommit = async(addComment: boolean, logger: Logger, octokit: GitHub,
 		}
 		throw error;
 	}
+
 	if (addComment) {
 		await updatePr(branchName, files, output, helper, logger, octokit, context);
 	}
+
 	return getResult('succeeded', 'updated', context);
 };
 
@@ -110,6 +118,7 @@ const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger
 			result: getResult('skipped', 'There is no diff', context),
 		};
 	}
+
 	if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
 		// Close if there is no diff
 		await closePR(branchName, logger, octokit, context);
@@ -118,12 +127,14 @@ const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger
 			result: getResult('succeeded', 'has been closed because there is no reference diff', context),
 		};
 	}
+
 	if (isClose) {
 		return {
 			mergeable: false,
 			result: getResult('skipped', 'This is close event', context),
 		};
 	}
+
 	return {
 		mergeable: await isMergeable(pr.number, octokit, context),
 	};
@@ -140,12 +151,14 @@ const diffProcess = async(files: string[], output: CommandOutput[], branchName: 
 			result: getResult('succeeded', 'has been closed because there is no reference diff', context),
 		};
 	}
+
 	if (isClose) {
 		return {
 			mergeable: false,
 			result: getResult('skipped', 'This is close event', context),
 		};
 	}
+
 	await push(branchName, helper, logger, context);
 	return {
 		mergeable: await updatePr(branchName, files, output, helper, logger, octokit, context),
@@ -162,6 +175,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
 		if (processResult !== true) {
 			return processResult;
 		}
+
 		return createCommit(true, logger, octokit, context);
 	} else if (!await isTargetBranch(getPrHeadRef(context), octokit, context)) {
 		return getResult('skipped', 'This is not target branch', context);
@@ -177,6 +191,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
 		if (processResult.result) {
 			return processResult.result;
 		}
+
 		mergeable = processResult.mergeable;
 		if (mergeable) {
 			result = 'skipped';
@@ -187,6 +202,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
 		if (processResult.result) {
 			return processResult.result;
 		}
+
 		mergeable = processResult.mergeable;
 	}
 
@@ -207,6 +223,7 @@ const outputResult = (result: ProcessResult, endProcess = false): void => {
 	if (endProcess) {
 		commonLogger.endProcess();
 	}
+
 	commonLogger.info(mark[result.result] + '\t[%s] %s', result.branch, result.detail);
 };
 
@@ -238,6 +255,7 @@ const runCreatePr = async(isClose: boolean, getPulls: (GitHub, ActionContext) =>
 		} catch (error) {
 			results.push(getResult('failed', error.message, actionContext));
 		}
+
 		processed[target] = true;
 		await sleep(INTERVAL_MS);
 	}
@@ -289,5 +307,6 @@ export const execute = async(octokit: GitHub, context: ActionContext): Promise<v
 	} else {
 		await runCreatePrAll(octokit, context);
 	}
+
 	commonLogger.endProcess();
 };
