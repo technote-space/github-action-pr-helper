@@ -1,7 +1,7 @@
+import { getInput } from '@actions/core' ;
+import { GitHub } from '@actions/github';
 import { PullsListResponseItem } from '@octokit/rest';
 import { Logger, GitHelper, Utils, ContextHelper, ApiHelper } from '@technote-space/github-action-helper';
-import { GitHub } from '@actions/github';
-import { getInput } from '@actions/core' ;
 import {
 	getActionDetail,
 	isDisabledDeletePackage,
