@@ -76,7 +76,7 @@ describe('execute', () => {
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.includes(' rev-parse')) {
-					return 'hello-world/new-topic';
+					return 'hello-world/new-topic1';
 				}
 				return '';
 			},
@@ -91,15 +91,17 @@ describe('execute', () => {
 			.reply(200, () => [])
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
 			.reply(200, () => [])
-			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic2')
+			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
 			.post('/repos/octocat/Hello-World/issues/1347/comments')
 			.reply(201)
 			.patch('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic')
+			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic1')
 			.reply(204);
 
 		await execute(octokit, getActionContext(context('closed'), {
@@ -109,16 +111,16 @@ describe('execute', () => {
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
+			'::group::Target PullRequest Ref [hello-world/new-topic1]',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
-			'> Switching branch to [hello-world/new-topic]...',
-			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
+			'> Switching branch to [hello-world/new-topic1]...',
+			'[command]git checkout -b hello-world/new-topic1 origin/hello-world/new-topic1',
 			'[command]git rev-parse --abbrev-ref HEAD',
-			'  >> hello-world/new-topic',
+			'  >> hello-world/new-topic1',
 			'[command]ls -la',
 			'> Configuring git committer to be test-actor <test-actor@users.noreply.github.com>',
 			'[command]git config \'user.name\' test-actor',
@@ -133,39 +135,14 @@ describe('execute', () => {
 			'> Checking references diff...',
 			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
 			'[command]git diff \'HEAD..origin/master\' --name-only',
-			'> Closing PullRequest... [hello-world/new-topic]',
-			'> Deleting reference... [refs/heads/hello-world/new-topic]',
+			'> Closing PullRequest... [hello-world/new-topic1]',
+			'> Deleting reference... [refs/heads/hello-world/new-topic1]',
 			'::endgroup::',
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'[command]git fetch origin',
-			'> Switching branch to [hello-world/new-topic]...',
-			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
-			'[command]git rev-parse --abbrev-ref HEAD',
-			'  >> hello-world/new-topic',
-			'[command]ls -la',
-			'> Configuring git committer to be test-actor <test-actor@users.noreply.github.com>',
-			'[command]git config \'user.name\' test-actor',
-			'[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
-			'> Merging [master] branch...',
-			'[command]git merge --no-edit origin/master || :',
-			'> Running commands...',
-			'> Checking diff...',
-			'[command]git add --all',
-			'[command]git status --short -uno',
-			'> There is no diff.',
-			'> Checking references diff...',
-			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
-			'[command]git diff \'HEAD..origin/master\' --name-only',
-			'> Closing PullRequest... [hello-world/new-topic]',
-			'> Deleting reference... [refs/heads/hello-world/new-topic]',
+			'::group::Target PullRequest Ref [hello-world/new-topic2]',
 			'::endgroup::',
-			'::group::Total:2  Succeeded:2  Failed:0  Skipped:0',
-			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because there is no reference diff',
-			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because there is no reference diff',
+			'::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
+			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic1] has been closed because there is no reference diff',
+			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic2] not found',
 			'::endgroup::',
 		]);
 	});
@@ -353,13 +330,15 @@ describe('execute', () => {
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
 			.reply(200, () => ([]))
-			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic2')
+			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Amaster')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.close'))
 			.patch('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic')
+			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic1')
 			.reply(204);
 
 		await execute(octokit, getActionContext(context('', 'schedule'), {
@@ -369,12 +348,15 @@ describe('execute', () => {
 		}, 'develop'));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Closing PullRequest... [hello-world/new-topic]',
-			'> Deleting reference... [refs/heads/hello-world/new-topic]',
+			'::group::Target PullRequest Ref [hello-world/new-topic1]',
+			'> Closing PullRequest... [hello-world/new-topic1]',
+			'> Deleting reference... [refs/heads/hello-world/new-topic1]',
 			'::endgroup::',
-			'::group::Total:1  Succeeded:1  Failed:0  Skipped:0',
-			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest has been closed',
+			'::group::Target PullRequest Ref [hello-world/new-topic2]',
+			'::endgroup::',
+			'::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
+			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic1] has been closed because base PullRequest has been closed',
+			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic2] not found',
 			'::endgroup::',
 		]);
 	});
@@ -389,7 +371,7 @@ describe('execute', () => {
 					return 'M  __tests__/fixtures/test.md';
 				}
 				if (command.includes(' rev-parse')) {
-					return 'hello-world/new-topic';
+					return 'hello-world/new-topic1';
 				}
 				return '';
 			},
@@ -404,15 +386,17 @@ describe('execute', () => {
 			.reply(200, () => [])
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
 			.reply(200, () => [])
-			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic2')
+			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
 			.post('/repos/octocat/Hello-World/issues/1347/comments')
 			.reply(201)
 			.patch('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic')
+			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic1')
 			.reply(204);
 
 		await execute(octokit, getActionContext(context('closed'), {
@@ -427,16 +411,16 @@ describe('execute', () => {
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
+			'::group::Target PullRequest Ref [hello-world/new-topic1]',
 			'> Fetching...',
 			'[command]rm -rdf [Working Directory]',
 			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
-			'> Switching branch to [hello-world/new-topic]...',
-			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
+			'> Switching branch to [hello-world/new-topic1]...',
+			'[command]git checkout -b hello-world/new-topic1 origin/hello-world/new-topic1',
 			'[command]git rev-parse --abbrev-ref HEAD',
-			'  >> hello-world/new-topic',
+			'  >> hello-world/new-topic1',
 			'[command]ls -la',
 			'> Configuring git committer to be GitHub Actions <example@example.com>',
 			'[command]git config \'user.name\' \'GitHub Actions\'',
@@ -456,44 +440,14 @@ describe('execute', () => {
 			'> Checking references diff...',
 			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
 			'[command]git diff \'HEAD..origin/master\' --name-only',
-			'> Closing PullRequest... [hello-world/new-topic]',
-			'> Deleting reference... [refs/heads/hello-world/new-topic]',
+			'> Closing PullRequest... [hello-world/new-topic1]',
+			'> Deleting reference... [refs/heads/hello-world/new-topic1]',
 			'::endgroup::',
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
-			'[command]git remote add origin',
-			'[command]git fetch origin',
-			'> Switching branch to [hello-world/new-topic]...',
-			'[command]git checkout -b hello-world/new-topic origin/hello-world/new-topic',
-			'[command]git rev-parse --abbrev-ref HEAD',
-			'  >> hello-world/new-topic',
-			'[command]ls -la',
-			'> Configuring git committer to be GitHub Actions <example@example.com>',
-			'[command]git config \'user.name\' \'GitHub Actions\'',
-			'[command]git config \'user.email\' \'example@example.com\'',
-			'> Merging [master] branch...',
-			'[command]git merge --no-edit origin/master || :',
-			'> Running commands...',
-			'> Checking diff...',
-			'[command]git add --all',
-			'[command]git status --short -uno',
-			'> Configuring git committer to be GitHub Actions <example@example.com>',
-			'[command]git config \'user.name\' \'GitHub Actions\'',
-			'[command]git config \'user.email\' \'example@example.com\'',
-			'> Committing...',
-			'[command]git commit -qm \'test: create pull request\'',
-			'[command]git show \'--stat-count=10\' HEAD',
-			'> Checking references diff...',
-			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
-			'[command]git diff \'HEAD..origin/master\' --name-only',
-			'> Closing PullRequest... [hello-world/new-topic]',
-			'> Deleting reference... [refs/heads/hello-world/new-topic]',
+			'::group::Target PullRequest Ref [hello-world/new-topic2]',
 			'::endgroup::',
-			'::group::Total:2  Succeeded:2  Failed:0  Skipped:0',
-			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because there is no reference diff',
-			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because there is no reference diff',
+			'::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
+			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic1] has been closed because there is no reference diff',
+			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic2] not found',
 			'::endgroup::',
 		]);
 	});
@@ -511,13 +465,15 @@ describe('execute', () => {
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
 			.reply(200, () => ([]))
-			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic2')
+			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Amaster')
 			.reply(200, () => [])
 			.patch('/repos/octocat/Hello-World/pulls/1347')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic')
+			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic1')
 			.reply(204);
 
 		await execute(octokit, getActionContext(context('', 'schedule'), {
@@ -526,12 +482,15 @@ describe('execute', () => {
 		}, 'develop'));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
-			'> Closing PullRequest... [hello-world/new-topic]',
-			'> Deleting reference... [refs/heads/hello-world/new-topic]',
+			'::group::Target PullRequest Ref [hello-world/new-topic1]',
+			'> Closing PullRequest... [hello-world/new-topic1]',
+			'> Deleting reference... [refs/heads/hello-world/new-topic1]',
 			'::endgroup::',
-			'::group::Total:1  Succeeded:1  Failed:0  Skipped:0',
-			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic] has been closed because base PullRequest does not exist',
+			'::group::Target PullRequest Ref [hello-world/new-topic2]',
+			'::endgroup::',
+			'::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
+			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic1] has been closed because base PullRequest does not exist',
+			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic2] not found',
 			'::endgroup::',
 		]);
 	});
@@ -546,7 +505,9 @@ describe('execute', () => {
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
 			.reply(200, () => ([]))
-			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic')
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic1')
+			.reply(200, () => [])
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic2')
 			.reply(200, () => []);
 
 		await execute(octokit, getActionContext(context('', 'schedule'), {
@@ -555,10 +516,13 @@ describe('execute', () => {
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'::group::Target PullRequest Ref [hello-world/new-topic]',
+			'::group::Target PullRequest Ref [hello-world/new-topic1]',
 			'::endgroup::',
-			'::group::Total:1  Succeeded:0  Failed:1  Skipped:0',
-			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic] not found',
+			'::group::Target PullRequest Ref [hello-world/new-topic2]',
+			'::endgroup::',
+			'::group::Total:2  Succeeded:0  Failed:2  Skipped:0',
+			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic1] not found',
+			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic2] not found',
 			'::endgroup::',
 		]);
 	});
