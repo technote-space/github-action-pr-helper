@@ -152,7 +152,7 @@ const diffProcess = async(files: string[], output: CommandOutput[], branchName: 
 	};
 };
 
-const createPr = async(makeGroup: boolean, isClose: boolean, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
+const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
 	if (makeGroup) {
 		commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
 	}
@@ -167,7 +167,6 @@ const createPr = async(makeGroup: boolean, isClose: boolean, logger: Logger, oct
 		return getResult('skipped', 'This is not target branch', context);
 	}
 
-	const helper                        = getHelper(context);
 	const {files, output}               = await getChangedFiles(helper, logger, octokit, context);
 	const branchName                    = await getPrBranchName(helper, logger, octokit, context);
 	let result: 'succeeded' | 'skipped' = 'succeeded';
@@ -223,13 +222,23 @@ const outputResults = (results: ProcessResult[]): void => {
 const runCreatePr = async(isClose: boolean, getPulls: (GitHub, ActionContext) => AsyncIterable<PullsParams>, octokit: GitHub, context: ActionContext): Promise<void> => {
 	const logger                   = new Logger(replaceDirectory, true);
 	const results: ProcessResult[] = [];
+	const processed                = {};
+
 	for await (const pull of getPulls(octokit, context)) {
 		const actionContext = await getActionContext(pull, octokit, context);
+		const helper        = getHelper(actionContext);
+		const target        = await getPrBranchName(helper, logger, octokit, context);
+		if (target in processed && !isActionPr(actionContext)) {
+			results.push(getResult('skipped', `duplicated (${target})`, actionContext));
+			continue;
+		}
+
 		try {
-			results.push(await createPr(true, isClose, logger, octokit, actionContext));
+			results.push(await createPr(true, isClose, helper, logger, octokit, actionContext));
 		} catch (error) {
 			results.push(getResult('failed', error.message, actionContext));
 		}
+		processed[target] = true;
 		await sleep(INTERVAL_MS);
 	}
 	await outputResults(results);
@@ -276,7 +285,7 @@ export const execute = async(octokit: GitHub, context: ActionContext): Promise<v
 	} else if (isPush(context.actionContext)) {
 		await outputResult(await createCommit(false, commonLogger, octokit, context), true);
 	} else if (isPr(context.actionContext)) {
-		await outputResult(await createPr(false, false, commonLogger, octokit, context), true);
+		await outputResult(await createPr(false, false, getHelper(context), commonLogger, octokit, context), true);
 	} else {
 		await runCreatePrAll(octokit, context);
 	}
