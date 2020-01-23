@@ -244,7 +244,7 @@ async function* pullsForSchedule(octokit: GitHub, context: ActionContext): Async
 	const logger    = new Logger(replaceDirectory, true);
 	const processed = {};
 
-	for await (const pull of getApiHelper(logger).pullsList({}, octokit, context.actionContext)) {
+	for await (const pull of getApiHelper(octokit, context, logger).pullsList({})) {
 		if (pull.base.ref in processed) {
 			continue;
 		}
@@ -266,13 +266,13 @@ const runCreatePrAll = async(octokit: GitHub, context: ActionContext): Promise<v
 async function* pullsForClosed(octokit: GitHub, context: ActionContext): AsyncIterable<PullsParams> {
 	const logger = new Logger(replaceDirectory, true);
 
-	yield* await getApiHelper(logger).pullsList({
+	yield* await getApiHelper(octokit, context, logger).pullsList({
 		base: getBranch(getPrHeadRef(context), false),
-	}, octokit, context.actionContext);
+	});
 
-	yield* await getApiHelper(logger).pullsList({
+	yield* await getApiHelper(octokit, context, logger).pullsList({
 		head: `${context.actionContext.repo.owner}:${getBranch(getPrBaseRef(context), false)}`,
-	}, octokit, context.actionContext);
+	});
 }
 
 const runCreatePrClosed = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(true, pullsForClosed, octokit, context);

@@ -1,3 +1,4 @@
+import { getInput } from '@actions/core';
 import { Utils, ContextHelper, GitHelper, Logger } from '@technote-space/github-action-helper';
 import { isTargetEvent, isTargetLabels } from '@technote-space/filter-github-action';
 import { GitHub } from '@actions/github';
@@ -5,9 +6,9 @@ import { DEFAULT_TARGET_EVENTS } from '../constant';
 import { ActionContext, PullsParams, PayloadPullsParams, Null } from '../types';
 import { getDefaultBranch } from './command';
 
-const {getWorkspace, getPrefixRegExp}       = Utils;
-const {escapeRegExp, replaceAll, getBranch} = Utils;
-const {isPr, isCron, isPush, isCustomEvent} = ContextHelper;
+const {getWorkspace, getPrefixRegExp, getAccessToken} = Utils;
+const {escapeRegExp, replaceAll, getBranch}           = Utils;
+const {isPr, isCron, isPush, isCustomEvent}           = ContextHelper;
 
 export const getActionDetail = <T>(key: string, context: ActionContext, defaultValue?: () => T): T => {
 	if (undefined === defaultValue && !(key in context.actionDetail)) {
@@ -177,3 +178,5 @@ export const getCache = async <T>(key: string, generator: () => (T | Promise<T>)
 };
 
 export const isCached = (key: string, context: ActionContext): boolean => key in context.cache;
+
+export const getApiToken = (): string => getInput('API_TOKEN') || getAccessToken(true);

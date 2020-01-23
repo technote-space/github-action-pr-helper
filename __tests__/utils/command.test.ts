@@ -493,6 +493,7 @@ describe('updatePr', () => {
 	testEnv();
 
 	it('should return true 1', async() => {
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world/pulls?head=hello%3Atest')
@@ -509,6 +510,7 @@ describe('updatePr', () => {
 	});
 
 	it('should return true 2', async() => {
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world/pulls?head=hello%3Atest')
@@ -525,6 +527,7 @@ describe('updatePr', () => {
 	});
 
 	it('should return false', async() => {
+		process.env.INPUT_API_TOKEN = 'test-token';
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world/pulls?head=hello%3Atest')
