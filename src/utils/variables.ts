@@ -13,6 +13,8 @@ import {
 	getActionContext,
 	ensureGetPulls,
 	getPullsArgsForDefaultBranch,
+	getPrBranchPrefix,
+	getPrBranchPrefixForDefaultBranch,
 } from './misc';
 
 const {getRegExp, replaceAll, getBranch} = Utils;
@@ -102,10 +104,6 @@ const replaceVariables = async(string: string, variables: { key: string; replace
  * @return {Promise<string>} replaced
  */
 const replaceContextVariables = async(string: string, helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<string> => replaceVariables(string, await contextVariables(false, helper, logger, octokit, context));
-
-const getPrBranchPrefix = (context: ActionContext): string => context.actionDetail.prBranchPrefix || `${context.actionDetail.actionRepo}/`;
-
-const getPrBranchPrefixForDefaultBranch = (context: ActionContext): string => context.actionDetail.prBranchPrefixForDefaultBranch || getPrBranchPrefix(context);
 
 export const getPrBranchName = async(helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<string> =>
 	isPush(context.actionContext) ?
