@@ -241,17 +241,10 @@ const runCreatePr = async(isClose: boolean, getPulls: (GitHub, ActionContext) =>
  * @return {AsyncIterable} pull
  */
 async function* pullsForSchedule(octokit: GitHub, context: ActionContext): AsyncIterable<PullsParams> {
-	const logger    = new Logger(replaceDirectory, true);
-	const processed = {};
+	const logger = new Logger(replaceDirectory, true);
 
-	for await (const pull of getApiHelper(octokit, context, logger).pullsList({})) {
-		if (pull.base.ref in processed) {
-			continue;
-		}
-		processed[pull.base.ref] = true;
-		yield pull;
-	}
-	if (checkDefaultBranch(context) && !(await getDefaultBranch(octokit, context) in processed)) {
+	yield* await getApiHelper(octokit, context, logger).pullsList({});
+	if (checkDefaultBranch(context)) {
 		yield await getPullsArgsForDefaultBranch(octokit, context);
 	}
 }
