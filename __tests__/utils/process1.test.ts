@@ -497,8 +497,9 @@ describe('execute', () => {
 	});
 
 	it('should do nothing (action pull request not found)', async() => {
-		process.env.GITHUB_WORKSPACE = workDir;
-		const mockStdout             = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = workDir;
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 
 		nock('https://api.github.com')
 			.persist()
@@ -530,8 +531,9 @@ describe('execute', () => {
 	});
 
 	it('should do nothing (not target branch)', async() => {
-		process.env.GITHUB_WORKSPACE = workDir;
-		const mockStdout             = spyOnStdout();
+		process.env.GITHUB_WORKSPACE   = workDir;
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
 
 		nock('https://api.github.com')
 			.persist()

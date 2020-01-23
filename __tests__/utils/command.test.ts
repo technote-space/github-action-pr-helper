@@ -36,7 +36,7 @@ beforeEach(() => {
 });
 const workDir                      = resolve(__dirname, 'test-dir');
 const logger                       = new Logger(string => Utils.replaceAll(string, workDir, '[Working Directory]'));
-const helper                       = new GitHelper(logger, {depth: -1});
+const helper                       = new GitHelper(logger, {depth: -1, token: 'test-token'});
 const setExists                    = testFs();
 const rootDir                      = resolve(__dirname, '..', 'fixtures');
 const octokit                      = new GitHub('');
@@ -80,10 +80,9 @@ describe('clone', () => {
 	testChildProcess();
 
 	it('should run clone command', async() => {
-		process.env.GITHUB_WORKSPACE   = workDir;
-		process.env.INPUT_GITHUB_TOKEN = 'test-token';
-		const mockExec                 = spyOnExec();
-		const mockStdout               = spyOnStdout();
+		process.env.GITHUB_WORKSPACE = workDir;
+		const mockExec               = spyOnExec();
+		const mockStdout             = spyOnStdout();
 
 		await clone(helper, logger, octokit, getActionContext(context({
 			head: {
@@ -122,8 +121,7 @@ describe('checkBranch', () => {
 	testChildProcess();
 
 	it('should do nothing', async() => {
-		process.env.GITHUB_WORKSPACE   = workDir;
-		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		process.env.GITHUB_WORKSPACE = workDir;
 		setChildProcessParams({stdout: 'hello-world/test-branch'});
 		const mockExec = spyOnExec();
 		setExists(true);
@@ -139,8 +137,7 @@ describe('checkBranch', () => {
 	});
 
 	it('should checkout new branch', async() => {
-		process.env.GITHUB_WORKSPACE   = workDir;
-		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		process.env.GITHUB_WORKSPACE = workDir;
 		setChildProcessParams({stdout: 'test-branch2'});
 		const mockExec = spyOnExec();
 		setExists(true);
@@ -188,8 +185,7 @@ describe('getChangedFiles', () => {
 	});
 
 	it('should get changed files 1', async() => {
-		process.env.GITHUB_WORKSPACE   = workDir;
-		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		process.env.GITHUB_WORKSPACE = workDir;
 		setChildProcessParams({stdout: 'M  file1\nA  file2\nD  file3\n   file4\n\nB  file5\n'});
 
 		expect(await getChangedFiles(helper, logger, octokit, getActionContext(_context, {
@@ -213,7 +209,6 @@ describe('getChangedFiles', () => {
 
 	it('should get changed files 2', async() => {
 		process.env.GITHUB_WORKSPACE      = workDir;
-		process.env.INPUT_GITHUB_TOKEN    = 'test-token';
 		process.env.INPUT_PACKAGE_MANAGER = 'yarn';
 		setChildProcessParams({stdout: 'M  file1\nA  file2\nD  file3\n   file4\n\nB  file5\n'});
 
@@ -255,8 +250,7 @@ describe('getChangedFiles', () => {
 	});
 
 	it('should return empty 1', async() => {
-		process.env.GITHUB_WORKSPACE   = workDir;
-		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		process.env.GITHUB_WORKSPACE = workDir;
 		setChildProcessParams({stdout: 'test'});
 
 		expect(await getChangedFiles(helper, logger, octokit, getActionContext(_context, {
@@ -309,9 +303,8 @@ describe('getChangedFiles', () => {
 	});
 
 	it('should return empty 2', async() => {
-		process.env.GITHUB_WORKSPACE   = workDir;
-		process.env.INPUT_GITHUB_TOKEN = 'test-token';
-		const mockStdout               = spyOnStdout();
+		process.env.GITHUB_WORKSPACE = workDir;
+		const mockStdout             = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.includes(' rev-parse')) {
@@ -390,10 +383,9 @@ describe('getChangedFiles', () => {
 	});
 
 	it('should return empty 3', async() => {
-		process.env.GITHUB_WORKSPACE   = workDir;
-		process.env.GITHUB_REPOSITORY  = 'hello/world';
-		process.env.INPUT_GITHUB_TOKEN = 'test-token';
-		const mockStdout               = spyOnStdout();
+		process.env.GITHUB_WORKSPACE  = workDir;
+		process.env.GITHUB_REPOSITORY = 'hello/world';
+		const mockStdout              = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.includes(' rev-parse')) {
@@ -550,8 +542,7 @@ describe('resolveConflicts', () => {
 	testChildProcess();
 
 	it('should merge', async() => {
-		process.env.GITHUB_WORKSPACE   = workDir;
-		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		process.env.GITHUB_WORKSPACE = workDir;
 		setChildProcessParams({
 			stdout: (command: string): string => {
 				if (command.startsWith('git merge')) {

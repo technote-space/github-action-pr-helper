@@ -46,8 +46,10 @@ const contextVariables = async(isComment: boolean, helper: GitHelper, logger: Lo
 			if (branch === await getDefaultBranch(octokit, context)) {
 				return getActionContext(await getPullsArgsForDefaultBranch(octokit, context), octokit, context);
 			}
+
 			return getActionContext(await findPR(branch, logger, octokit, context), octokit, context);
 		}
+
 		return context;
 	};
 
@@ -56,8 +58,10 @@ const contextVariables = async(isComment: boolean, helper: GitHelper, logger: Lo
 		if (!context.actionContext.payload.pull_request) {
 			throw new Error('Invalid context.');
 		}
+
 		return extractor(await ensureGetPulls((await getContext(getContextBranch(context))).actionContext.payload.pull_request, octokit, context));
 	};
+
 	return [
 		{key: 'PR_NUMBER', replace: getPrParamFunc(pr => pr.number)},
 		{key: 'PR_NUMBER_REF', replace: getPrParamFunc(async(pr) => pr.number ? `#${pr.number}` : await getDefaultBranchUrl(octokit, context))},
@@ -92,6 +96,7 @@ const replaceVariables = async(string: string, variables: { key: string; replace
 			replaced = replaceAll(replaced, `\${${variable.key}}`, await variable.replace());
 		}
 	}
+
 	return replaced;
 };
 

@@ -14,9 +14,11 @@ export const getActionDetail = <T>(key: string, context: ActionContext, defaultV
 	if (undefined === defaultValue && !(key in context.actionDetail)) {
 		throw new Error(`parameter [${key}] is required.`);
 	}
+
 	if (undefined === defaultValue && typeof context.actionDetail[key] === 'string' && context.actionDetail[key].trim() === '') {
 		throw new Error(`parameter [${key}] is required.`);
 	}
+
 	return context.actionDetail[key] || (typeof defaultValue === 'function' ? defaultValue() : undefined);
 };
 
@@ -104,6 +106,7 @@ export const filterGitStatus = (line: string, context: ActionContext): boolean =
 		// language=JSRegexp
 		return (new RegExp(`^[${targets}]\\s+`)).test(line);
 	}
+
 	return true;
 };
 
@@ -113,12 +116,14 @@ export const filterExtension = (line: string, context: ActionContext): boolean =
 		const pattern = '(' + extensions.map(item => escapeRegExp('.' + item.replace(/^\./, ''))).join('|') + ')';
 		return (new RegExp(`${pattern}$`)).test(line);
 	}
+
 	return true;
 };
 
 export const getHelper = (context: ActionContext): GitHelper => new GitHelper(new Logger(replaceDirectory), {
 	depth: -1,
 	filter: (line: string): boolean => filterGitStatus(line, context) && filterExtension(line, context),
+
 });
 
 export const getPullsArgsForDefaultBranch = async(octokit: GitHub, context: ActionContext): Promise<PullsParams> => ({
@@ -174,6 +179,7 @@ export const getCache = async <T>(key: string, generator: () => (T | Promise<T>)
 		// eslint-disable-next-line require-atomic-updates
 		context.cache[key] = await generator();
 	}
+
 	return context.cache[key];
 };
 

@@ -62,6 +62,7 @@ const getClearPackageCommands = (context: ActionContext): string[] => {
 	if (isDisabledDeletePackage(context)) {
 		return [];
 	}
+
 	return [
 		'rm -f package.json',
 		'rm -f package-lock.json',
@@ -82,6 +83,7 @@ const getGlobalInstallPackagesCommands = (context: ActionContext): string[] => {
 			];
 		}
 	}
+
 	return [];
 };
 
@@ -98,6 +100,7 @@ const getDevInstallPackagesCommands = (context: ActionContext): string[] => {
 			];
 		}
 	}
+
 	return [];
 };
 
@@ -114,6 +117,7 @@ const getInstallPackagesCommands = (context: ActionContext): string[] => {
 			];
 		}
 	}
+
 	return [];
 };
 
