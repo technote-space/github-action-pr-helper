@@ -30,8 +30,8 @@ beforeEach(() => {
 	Logger.resetForTesting();
 });
 const octokit = new GitHub('');
-const logger = new Logger();
-const helper = new GitHelper(logger, {depth: -1});
+const logger  = new Logger();
+const helper  = new GitHelper(logger, {depth: -1, token: 'test-token'});
 const rootDir = resolve(__dirname, '..', 'fixtures');
 testFs(true);
 
@@ -40,7 +40,7 @@ const actionDetails: ActionDetails = {
 	actionOwner: 'octocat',
 	actionRepo: 'hello-world',
 };
-const getActionContext = (context: Context, _actionDetails?: ActionDetails, defaultBranch?: string, cache?: object, isBatchProcess?: boolean): ActionContext => ({
+const getActionContext             = (context: Context, _actionDetails?: ActionDetails, defaultBranch?: string, cache?: object, isBatchProcess?: boolean): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ?? actionDetails,
 	cache: Object.assign(cache ?? {}, {
@@ -48,7 +48,7 @@ const getActionContext = (context: Context, _actionDetails?: ActionDetails, defa
 	}),
 	isBatchProcess,
 });
-const generateActionContext = (
+const generateActionContext        = (
 	settings: {
 		event?: string | undefined;
 		action?: string | undefined;
@@ -69,7 +69,7 @@ const generateActionContext = (
 	cache,
 	isBatchProcess,
 );
-const prPayload = {
+const prPayload                    = {
 	'pull_request': {
 		number: 11,
 		id: 21031067,
@@ -632,7 +632,7 @@ describe('getPrBody', () => {
 	});
 
 	it('should get PR Body for default branch 1', async() => {
-		const prBody = '${ACTION_OWNER}';
+		const prBody                 = '${ACTION_OWNER}';
 		const prBodyForDefaultBranch = '${ACTION_REPO}';
 
 		expect(await getPrBody(false, [], [], helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
