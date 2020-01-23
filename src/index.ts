@@ -1,6 +1,5 @@
-import { getInput, setFailed } from '@actions/core';
-import { context } from '@actions/github';
-import { GitHub } from '@actions/github';
+import { setFailed } from '@actions/core';
+import { context, GitHub } from '@actions/github';
 import { Context } from '@actions/github/lib/context';
 import { Logger, ContextHelper, Command, ApiHelper, GitHelper, Utils } from '@technote-space/github-action-helper';
 import { isTargetContext } from './utils/misc';
@@ -35,7 +34,7 @@ export async function main(option: MainArguments): Promise<void> {
 		showActionInfo(option.rootDir, getLogger(option.logger), getContext(option));
 	}
 
-	const octokit = new GitHub(getInput('GITHUB_TOKEN', {required: true}));
+	const octokit = new GitHub(Utils.getAccessToken(true));
 	if (!await isTargetContext(octokit, await getActionContext(option))) {
 		getLogger(option.logger).info(option.notTargetEventMessage ?? 'This is not target event.');
 		return;
