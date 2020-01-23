@@ -478,6 +478,7 @@ describe('execute', () => {
 
 		await execute(octokit, getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
+			prBranchName: 'test-${PR_ID}',
 			checkDefaultBranch: false,
 		}, 'develop'));
 
@@ -512,6 +513,7 @@ describe('execute', () => {
 
 		await execute(octokit, getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
+			prBranchName: 'test-${PR_ID}',
 			checkDefaultBranch: false,
 		}));
 
