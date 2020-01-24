@@ -62,7 +62,7 @@ const context = (action: string, event = 'pull_request', ref = 'pull/55/merge'):
 		},
 	},
 });
-const octokit = new GitHub('');
+const octokit = new GitHub('test-token');
 
 describe('execute', () => {
 	disableNetConnect(nock);
@@ -222,7 +222,7 @@ describe('execute', () => {
 			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature',
 			'[command]git diff \'HEAD..origin/feature/new-feature\' --name-only',
 			'::endgroup::',
-			'> \x1b[33;40;0m→\x1b[0m\t[feature/new-feature] There is no diff',
+			'> \x1b[33;40;0m✔\x1b[0m\t[feature/new-feature] There is no diff',
 		]);
 	});
 
@@ -295,7 +295,7 @@ describe('execute', () => {
 			'[command]git diff \'HEAD..origin/hello-world/new-topic1\' --name-only',
 			'::endgroup::',
 			'::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
-			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic1] This is close event',
+			'> \x1b[33;40;0m✔\x1b[0m\t[hello-world/new-topic1] This is close event',
 			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic2] duplicated (test/test-21031067)',
 			'::endgroup::',
 		]);
@@ -374,7 +374,7 @@ describe('execute', () => {
 			'[command]git diff \'HEAD..origin/hello-world/new-topic1\' --name-only',
 			'::endgroup::',
 			'::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
-			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic1] This is close event',
+			'> \x1b[33;40;0m✔\x1b[0m\t[hello-world/new-topic1] This is close event',
 			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic2] duplicated (test/test-21031067)',
 			'::endgroup::',
 		]);
@@ -706,7 +706,7 @@ describe('execute', () => {
 			'::group::Target PullRequest Ref [hello-world/new-topic2]',
 			'::endgroup::',
 			'::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
-			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic1] There is no diff',
+			'> \x1b[33;40;0m✔\x1b[0m\t[hello-world/new-topic1] There is no diff',
 			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic2] not found',
 			'::endgroup::',
 		]);
@@ -787,7 +787,7 @@ describe('execute', () => {
 			'::group::Target PullRequest Ref [hello-world/new-topic2]',
 			'::endgroup::',
 			'::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
-			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic1] There is no diff',
+			'> \x1b[33;40;0m✔\x1b[0m\t[hello-world/new-topic1] There is no diff',
 			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic2] not found',
 			'::endgroup::',
 		]);
@@ -1253,6 +1253,76 @@ describe('execute', () => {
 			'[command]git push origin test/change:refs/heads/test/change',
 			'::endgroup::',
 			'> \x1b[32;40;0m✔\x1b[0m\t[test/change] updated',
+		]);
+	});
+
+	it('should create pr (no diff, ref diff exists)', async() => {
+		process.env.GITHUB_WORKSPACE   = workDir;
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+		setExists(true);
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Ftest-21031067')
+			.reply(200, () => [])
+			.get('/repos/hello/world/pulls/11')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
+			.post('/repos/hello/world/pulls')
+			.reply(201, () => getApiFixture(rootDir, 'pulls.create'));
+
+		await execute(octokit, getActionContext(context('synchronize'), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			prBranchName: 'test-${PR_ID}',
+			prTitle: 'test: create pull request (${PR_NUMBER})',
+			prBody: 'pull request body',
+		}));
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'  >> stdout',
+			'[command]git init \'.\'',
+			'  >> stdout',
+			'[command]git remote add origin',
+			'[command]git fetch origin',
+			'  >> stdout',
+			'::endgroup::',
+			'::group::Switching branch to [hello-world/test-21031067]...',
+			'[command]git checkout -b hello-world/test-21031067 origin/hello-world/test-21031067',
+			'  >> stdout',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> stdout',
+			'> remote branch [hello-world/test-21031067] not found.',
+			'> now branch: stdout',
+			'::endgroup::',
+			'::group::Cloning [feature/new-feature] from the remote repo...',
+			'[command]git checkout -b feature/new-feature origin/feature/new-feature',
+			'  >> stdout',
+			'[command]git checkout -b hello-world/test-21031067',
+			'  >> stdout',
+			'[command]ls -la',
+			'  >> stdout',
+			'::endgroup::',
+			'::group::Running commands...',
+			'[command]yarn upgrade',
+			'  >> stdout',
+			'::endgroup::',
+			'::group::Checking diff...',
+			'[command]git add --all',
+			'  >> stdout',
+			'[command]git status --short -uno',
+			'> There is no diff.',
+			'::endgroup::',
+			'::group::Checking references diff...',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature',
+			'[command]git diff \'HEAD..origin/feature/new-feature\' --name-only',
+			'::endgroup::',
+			'::group::Creating PullRequest...',
+			'::endgroup::',
+			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] PullRequest created',
 		]);
 	});
 });

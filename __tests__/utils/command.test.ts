@@ -39,7 +39,7 @@ const logger                       = new Logger(string => Utils.replaceAll(strin
 const helper                       = new GitHelper(logger, {depth: -1, token: 'test-token'});
 const setExists                    = testFs();
 const rootDir                      = resolve(__dirname, '..', 'fixtures');
-const octokit                      = new GitHub('');
+const octokit                      = new GitHub('test-token');
 const context                      = (pr: object): Context => generateContext({
 	owner: 'hello',
 	repo: 'world',

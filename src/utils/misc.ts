@@ -153,6 +153,7 @@ export const getActionContext = async(pull: PayloadPullsParams | Null, octokit: 
 		...context,
 		actionContext: Object.assign({}, context.actionContext, {
 			payload: {
+				number: _pull.number,
 				'pull_request': {
 					number: _pull.number,
 					id: _pull.id,

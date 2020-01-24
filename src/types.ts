@@ -50,7 +50,7 @@ export type ActionContext = {
 }
 
 export type ProcessResult = {
-	result: 'succeeded' | 'failed' | 'skipped';
+	result: 'succeeded' | 'failed' | 'skipped' | 'not changed';
 	detail: string;
 	branch: string;
 }
