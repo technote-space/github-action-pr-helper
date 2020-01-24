@@ -32,6 +32,7 @@ export type ActionDetails = {
 	includeLabels?: string | string[];
 	checkDefaultBranch?: boolean;
 	checkOnlyDefaultBranch?: boolean;
+	triggerWorkflowMessage?: string;
 }
 
 export type MainArguments = ActionDetails & {

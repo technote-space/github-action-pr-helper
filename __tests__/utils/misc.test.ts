@@ -21,28 +21,31 @@ import {
 	getCacheKey,
 	ensureGetPulls,
 	getPullsArgsForDefaultBranch,
+	isActiveTriggerWorkflow,
+	getTriggerWorkflowMessage,
 } from '../../src/utils/misc';
 import { ActionContext, ActionDetails } from '../../src/types';
+import { DEFAULT_TRIGGER_WORKFLOW_MESSAGE } from '../../src/constant';
 
 beforeEach(() => {
 	Logger.resetForTesting();
 });
 testFs(true);
 
-const octokit = new GitHub('test-token');
+const octokit                      = new GitHub('test-token');
 const actionDetails: ActionDetails = {
 	actionName: 'Test Action',
 	actionOwner: 'octocat',
 	actionRepo: 'hello-world',
 };
-const getActionContext = (context: Context, _actionDetails?: ActionDetails, defaultBranch?: string): ActionContext => ({
+const getActionContext             = (context: Context, _actionDetails?: ActionDetails, defaultBranch?: string): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ?? actionDetails,
 	cache: {
 		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: defaultBranch ?? 'master',
 	},
 });
-const generateActionContext = (
+const generateActionContext        = (
 	settings: {
 		event?: string | undefined;
 		action?: string | undefined;
@@ -302,14 +305,14 @@ describe('replaceDirectory', () => {
 
 	it('should replace working directory 1', () => {
 		process.env.GITHUB_WORKSPACE = resolve('test-dir');
-		const workDir = resolve('test-dir');
+		const workDir                = resolve('test-dir');
 
 		expect(replaceDirectory(`git -C ${workDir} fetch`)).toBe('git fetch');
 	});
 
 	it('should replace working directory 2', () => {
 		process.env.GITHUB_WORKSPACE = resolve('test-dir');
-		const workDir = resolve('test-dir');
+		const workDir                = resolve('test-dir');
 
 		expect(replaceDirectory(`cp -a ${workDir}/test1 ${workDir}/test2`)).toBe('cp -a [Working Directory]/test1 [Working Directory]/test2');
 	});
@@ -562,5 +565,38 @@ describe('ensureGetPulls', () => {
 		const pulls = await ensureGetPulls(null, octokit, context);
 		expect(pulls).toHaveProperty('number');
 		expect(pulls).toHaveProperty('html_url');
+	});
+});
+
+describe('isActiveTriggerWorkflow', () => {
+	testEnv();
+
+	it('should return true 1', () => {
+		process.env.INPUT_API_TOKEN = 'test-token';
+		expect(isActiveTriggerWorkflow(generateActionContext({}))).toBe(true);
+	});
+
+	it('should return true 2', () => {
+		process.env.INPUT_API_TOKEN = 'test-token';
+		expect(isActiveTriggerWorkflow(generateActionContext({}, undefined, {triggerWorkflowMessage: 'test'}))).toBe(true);
+	});
+
+	it('should return false 1', () => {
+		expect(isActiveTriggerWorkflow(generateActionContext({}))).toBe(false);
+	});
+
+	it('should return false 2', () => {
+		process.env.INPUT_API_TOKEN = 'test-token';
+		expect(isActiveTriggerWorkflow(generateActionContext({}, undefined, {triggerWorkflowMessage: ''}))).toBe(false);
+	});
+});
+
+describe('getTriggerWorkflowMessage', () => {
+	it('should get message', () => {
+		expect(getTriggerWorkflowMessage(generateActionContext({}, undefined, {triggerWorkflowMessage: 'test'}))).toBe('test');
+	});
+
+	it('should get default message', () => {
+		expect(getTriggerWorkflowMessage(generateActionContext({}))).toBe(DEFAULT_TRIGGER_WORKFLOW_MESSAGE);
 	});
 });

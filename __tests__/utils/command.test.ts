@@ -534,6 +534,33 @@ describe('updatePr', () => {
 			prBody: 'test body',
 		}))).toBe(false);
 	});
+
+	it('should run push to trigger workflow', async() => {
+		process.env.INPUT_API_TOKEN = 'test-token';
+		const mockStdout            = spyOnStdout();
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls?head=hello%3Atest')
+			.reply(200, () => [])
+			.get('/repos/hello/world/pulls/11')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
+			.post('/repos/hello/world/pulls')
+			.reply(201, () => getApiFixture(rootDir, 'pulls.create'));
+
+		expect(await updatePr('test', [], [], helper, logger, octokit, getActionContext(context({}), {
+			prTitle: 'test title',
+			prBody: 'test body',
+		}))).toBe(true);
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Creating PullRequest...',
+			'[command]git commit --allow-empty -qm \'chore: trigger workflow\'',
+			'  >> stdout',
+			'::endgroup::',
+			'::group::Pushing to hello/world@test...',
+			'[command]git push origin test:refs/heads/test',
+		]);
+	});
 });
 
 describe('resolveConflicts', () => {
