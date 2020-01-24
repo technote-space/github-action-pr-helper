@@ -30,10 +30,10 @@ beforeEach(() => {
 	Logger.resetForTesting();
 });
 const octokit   = new GitHub('test-token');
-const logger  = new Logger();
-const helper  = new GitHelper(logger, {depth: -1, token: 'test-token'});
-const rootDir = resolve(__dirname, '..', 'fixtures');
-testFs(true);
+const logger    = new Logger();
+const helper    = new GitHelper(logger, {depth: -1, token: 'test-token'});
+const rootDir   = resolve(__dirname, '..', 'fixtures');
+const setExists = testFs(true);
 
 const actionDetails: ActionDetails = {
 	actionName: 'Test Action',
@@ -160,6 +160,7 @@ describe('getPrBranchName', () => {
 
 	it('should get pr branch name for default branch 2', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
+		setExists(false);
 		expect(await getPrBranchName(helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
@@ -177,7 +178,7 @@ describe('getPrBranchName', () => {
 			},
 		}, {
 			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${PR_LINK}',
-		}))).toBe('hello-world/0::https://github.com/owner/repo/tree/master::21031067::master::master::test title::http://example.com::master::v1.2.4::[test title](http://example.com)');
+		}))).toBe('hello-world/0::https://github.com/owner/repo/tree/master::21031067::master::master::test title::http://example.com::master::::PATCH_VERSION::::[test title](http://example.com)');
 	});
 
 	it('should get push branch name', async() => {
