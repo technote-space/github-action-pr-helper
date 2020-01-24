@@ -222,7 +222,7 @@ describe('execute', () => {
 			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature',
 			'[command]git diff \'HEAD..origin/feature/new-feature\' --name-only',
 			'::endgroup::',
-			'> \x1b[33;40;0m→\x1b[0m\t[feature/new-feature] There is no diff',
+			'> \x1b[33;40;0m✔\x1b[0m\t[feature/new-feature] There is no diff',
 		]);
 	});
 
@@ -295,7 +295,7 @@ describe('execute', () => {
 			'[command]git diff \'HEAD..origin/hello-world/new-topic1\' --name-only',
 			'::endgroup::',
 			'::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
-			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic1] This is close event',
+			'> \x1b[33;40;0m✔\x1b[0m\t[hello-world/new-topic1] This is close event',
 			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic2] duplicated (test/test-21031067)',
 			'::endgroup::',
 		]);
@@ -374,7 +374,7 @@ describe('execute', () => {
 			'[command]git diff \'HEAD..origin/hello-world/new-topic1\' --name-only',
 			'::endgroup::',
 			'::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
-			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic1] This is close event',
+			'> \x1b[33;40;0m✔\x1b[0m\t[hello-world/new-topic1] This is close event',
 			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic2] duplicated (test/test-21031067)',
 			'::endgroup::',
 		]);
@@ -706,7 +706,7 @@ describe('execute', () => {
 			'::group::Target PullRequest Ref [hello-world/new-topic2]',
 			'::endgroup::',
 			'::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
-			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic1] There is no diff',
+			'> \x1b[33;40;0m✔\x1b[0m\t[hello-world/new-topic1] There is no diff',
 			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic2] not found',
 			'::endgroup::',
 		]);
@@ -787,7 +787,7 @@ describe('execute', () => {
 			'::group::Target PullRequest Ref [hello-world/new-topic2]',
 			'::endgroup::',
 			'::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
-			'> \x1b[33;40;0m→\x1b[0m\t[hello-world/new-topic1] There is no diff',
+			'> \x1b[33;40;0m✔\x1b[0m\t[hello-world/new-topic1] There is no diff',
 			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic2] not found',
 			'::endgroup::',
 		]);

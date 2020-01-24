@@ -540,14 +540,32 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list2'))
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
-			.reply(200, () => ([]));
+			.reply(200, () => ([]))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
-		await execute(octokit, getActionContext(context('synchronize'), {
+		await execute(octokit, getActionContext(context('', 'schedule'), {
 			targetBranchPrefix: 'test/',
 		}));
 
 		stdoutCalledWith(mockStdout, [
-			'> \x1b[33;40;0m→\x1b[0m\t[feature/new-feature] This is not target branch',
+			'::group::Target PullRequest Ref [feature/new-topic1]',
+			'::endgroup::',
+			'::group::Target PullRequest Ref [feature/new-topic2]',
+			'::endgroup::',
+			'::group::Target PullRequest Ref [master]',
+			'> Fetching...',
+			'[command]git init \'.\'',
+			'  >> stdout',
+			'[command]git remote add origin',
+			'[command]git fetch origin',
+			'  >> stdout',
+			'::endgroup::',
+			'::group::Total:3  Succeeded:0  Failed:1  Skipped:2',
+			'> \x1b[33;40;0m→\x1b[0m\t[feature/new-topic1] This is not target branch',
+			'> \x1b[33;40;0m→\x1b[0m\t[feature/new-topic2] This is not target branch',
+			'> \x1b[31;40;0m×\x1b[0m\t[master] parameter [prBranchName] is required.',
+			'::endgroup::',
 		]);
 	});
 
@@ -605,7 +623,7 @@ describe('execute', () => {
 			'[command]git status --short -uno',
 			'> There is no diff.',
 			'::endgroup::',
-			'> \x1b[33;40;0m→\x1b[0m\t[feature/new-feature] There is no diff',
+			'> \x1b[33;40;0m✔\x1b[0m\t[feature/new-feature] There is no diff',
 		]);
 	});
 
@@ -649,7 +667,7 @@ describe('execute', () => {
 			'[command]git status --short -uno',
 			'> There is no diff.',
 			'::endgroup::',
-			'> \x1b[33;40;0m→\x1b[0m\t[test/change] There is no diff',
+			'> \x1b[33;40;0m✔\x1b[0m\t[test/change] There is no diff',
 		]);
 	});
 

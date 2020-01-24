@@ -33,7 +33,7 @@ const {sleep, getBranch} = Utils;
 const {isPr, isPush}     = ContextHelper;
 const commonLogger       = new Logger(replaceDirectory);
 
-const getResult = (result: 'succeeded' | 'failed' | 'skipped', detail: string, context: ActionContext): ProcessResult => ({
+const getResult = (result: 'succeeded' | 'failed' | 'skipped' | 'not changed', detail: string, context: ActionContext): ProcessResult => ({
 	result,
 	detail,
 	branch: getPrHeadRef(context) || getBranch(context.actionContext), // for push
@@ -79,7 +79,7 @@ const createCommit = async(addComment: boolean, logger: Logger, octokit: GitHub,
 			}
 		}
 
-		return getResult('skipped', 'There is no diff', context);
+		return getResult('not changed', 'There is no diff', context);
 	}
 
 	await commit(helper, logger, context);
@@ -115,7 +115,7 @@ const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger
 		// There is no PR
 		return {
 			mergeable: false,
-			result: getResult('skipped', 'There is no diff', context),
+			result: getResult('not changed', 'There is no diff', context),
 		};
 	}
 
@@ -131,7 +131,7 @@ const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger
 	if (isClose) {
 		return {
 			mergeable: false,
-			result: getResult('skipped', 'This is close event', context),
+			result: getResult('not changed', 'This is close event', context),
 		};
 	}
 
@@ -155,7 +155,7 @@ const diffProcess = async(files: string[], output: CommandOutput[], branchName: 
 	if (isClose) {
 		return {
 			mergeable: false,
-			result: getResult('skipped', 'This is close event', context),
+			result: getResult('not changed', 'This is close event', context),
 		};
 	}
 
@@ -181,11 +181,11 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
 		return getResult('skipped', 'This is not target branch', context);
 	}
 
-	const {files, output}               = await getChangedFiles(helper, logger, octokit, context);
-	const branchName                    = await getPrBranchName(helper, logger, octokit, context);
-	let result: 'succeeded' | 'skipped' = 'succeeded';
-	let detail                          = 'updated';
-	let mergeable                       = false;
+	const {files, output}                   = await getChangedFiles(helper, logger, octokit, context);
+	const branchName                        = await getPrBranchName(helper, logger, octokit, context);
+	let result: 'succeeded' | 'not changed' = 'succeeded';
+	let detail                              = 'updated';
+	let mergeable                           = false;
 	if (!files.length) {
 		const processResult = await noDiffProcess(branchName, isClose, logger, helper, octokit, context);
 		if (processResult.result) {
@@ -194,7 +194,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
 
 		mergeable = processResult.mergeable;
 		if (mergeable) {
-			result = 'skipped';
+			result = 'not changed';
 			detail = 'There is no diff';
 		}
 	} else {
@@ -219,6 +219,7 @@ const outputResult = (result: ProcessResult, endProcess = false): void => {
 		'succeeded': commonLogger.c('✔', {color: 'green'}),
 		'failed': commonLogger.c('×', {color: 'red'}),
 		'skipped': commonLogger.c('→', {color: 'yellow'}),
+		'not changed': commonLogger.c('✔', {color: 'yellow'}),
 	};
 	if (endProcess) {
 		commonLogger.endProcess();
@@ -244,7 +245,7 @@ const runCreatePr = async(isClose: boolean, getPulls: (GitHub, ActionContext) =>
 	for await (const pull of getPulls(octokit, context)) {
 		const actionContext = await getActionContext(pull, octokit, context);
 		const helper        = getHelper(actionContext);
-		const target        = await getPrBranchName(helper, logger, octokit, context);
+		const target        = context.actionDetail.prBranchName ? await getPrBranchName(helper, logger, octokit, context) : actionContext.actionContext.payload.number;
 		if (target in processed && !isActionPr(actionContext)) {
 			results.push(getResult('skipped', `duplicated (${target})`, actionContext));
 			continue;
