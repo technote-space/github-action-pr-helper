@@ -29,7 +29,7 @@ beforeEach(() => {
 });
 testFs(true);
 
-const octokit = new GitHub('');
+const octokit = new GitHub('test-token');
 const actionDetails: ActionDetails = {
 	actionName: 'Test Action',
 	actionOwner: 'octocat',

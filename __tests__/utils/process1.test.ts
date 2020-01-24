@@ -62,7 +62,7 @@ const context = (action: string, event = 'pull_request', ref = 'pull/55/merge'):
 		},
 	},
 });
-const octokit = new GitHub('');
+const octokit = new GitHub('test-token');
 
 describe('execute', () => {
 	disableNetConnect(nock);

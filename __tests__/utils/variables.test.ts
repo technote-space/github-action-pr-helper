@@ -29,7 +29,7 @@ import { ActionContext, ActionDetails } from '../../src/types';
 beforeEach(() => {
 	Logger.resetForTesting();
 });
-const octokit = new GitHub('');
+const octokit   = new GitHub('test-token');
 const logger  = new Logger();
 const helper  = new GitHelper(logger, {depth: -1, token: 'test-token'});
 const rootDir = resolve(__dirname, '..', 'fixtures');
