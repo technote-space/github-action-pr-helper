@@ -251,12 +251,17 @@ const runCreatePr = async(isClose: boolean, getPulls: (GitHub, ActionContext) =>
 		}
 
 		try {
-			results.push(await createPr(true, isClose, helper, logger, octokit, actionContext));
+			const result = await createPr(true, isClose, helper, logger, octokit, actionContext);
+			if ('skipped' !== result.result) {
+				processed[target] = true;
+			}
+
+			results.push(result);
 		} catch (error) {
+			processed[target] = true;
 			results.push(getResult('failed', error.message, actionContext));
 		}
 
-		processed[target] = true;
 		await sleep(INTERVAL_MS);
 	}
 	await outputResults(results);
