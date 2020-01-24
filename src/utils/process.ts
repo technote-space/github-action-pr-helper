@@ -283,7 +283,7 @@ const runCreatePr = async(isClose: boolean, getPulls: (GitHub, ActionContext) =>
  * @param {Context} context context
  * @return {AsyncIterable} pull
  */
-async function* pullsForSchedule(octokit: GitHub, context: ActionContext): AsyncIterable<PullsParams> {
+async function* getPulls(octokit: GitHub, context: ActionContext): AsyncIterable<PullsParams> {
 	const logger = new Logger(replaceDirectory, true);
 
 	yield* await getApiHelper(octokit, context, logger).pullsList({});
@@ -292,26 +292,9 @@ async function* pullsForSchedule(octokit: GitHub, context: ActionContext): Async
 	}
 }
 
-const runCreatePrAll = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(false, pullsForSchedule, octokit, context);
+const runCreatePrAll = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(false, getPulls, octokit, context);
 
-/**
- * @param {GitHub} octokit octokit
- * @param {Context} context context
- * @return {AsyncIterable} pull
- */
-async function* pullsForClosed(octokit: GitHub, context: ActionContext): AsyncIterable<PullsParams> {
-	const logger = new Logger(replaceDirectory, true);
-
-	yield* await getApiHelper(octokit, context, logger).pullsList({
-		base: getBranch(getPrHeadRef(context), false),
-	});
-
-	yield* await getApiHelper(octokit, context, logger).pullsList({
-		head: `${context.actionContext.repo.owner}:${getBranch(getPrBaseRef(context), false)}`,
-	});
-}
-
-const runCreatePrClosed = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(true, pullsForClosed, octokit, context);
+const runCreatePrClosed = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(true, getPulls, octokit, context);
 
 export const execute = async(octokit: GitHub, context: ActionContext): Promise<void> => {
 	if (isClosePR(context)) {

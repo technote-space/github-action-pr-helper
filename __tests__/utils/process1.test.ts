@@ -85,9 +85,9 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=feature/new-feature&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=feature/new-feature&per_page=100&page=2')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
 			.reply(200, () => [])
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
 			.reply(200, () => [])
@@ -380,9 +380,9 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=feature%2Fnew-feature&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&base=feature%2Fnew-feature&per_page=100&page=2')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
 			.reply(200, () => [])
 			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
 			.reply(200, () => [])
