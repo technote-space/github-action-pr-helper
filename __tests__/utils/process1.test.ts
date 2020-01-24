@@ -573,6 +573,14 @@ describe('execute', () => {
 		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
 		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.includes(' diff ')) {
+					return '';
+				}
+				return 'stdout';
+			},
+		});
 		setExists(true);
 
 		nock('https://api.github.com')
@@ -622,6 +630,10 @@ describe('execute', () => {
 			'  >> stdout',
 			'[command]git status --short -uno',
 			'> There is no diff.',
+			'::endgroup::',
+			'::group::Checking references diff...',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature',
+			'[command]git diff \'HEAD..origin/feature/new-feature\' --name-only',
 			'::endgroup::',
 			'> \x1b[33;40;0m✔\x1b[0m\t[feature/new-feature] There is no diff',
 		]);

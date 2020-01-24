@@ -110,17 +110,27 @@ const createCommit = async(addComment: boolean, logger: Logger, octokit: GitHub,
 
 const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: GitHub, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
 	logger.info('There is no diff.');
-	const pr = await findPR(branchName, logger, octokit, context);
+	const refDiffExists = !!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length;
+	const pr            = await findPR(branchName, logger, octokit, context);
+
 	if (!pr) {
 		// There is no PR
+		if (refDiffExists) {
+			await updatePr(branchName, [], [], helper, logger, octokit, context);
+			return {
+				mergeable: false,
+				result: getResult('succeeded', 'PullRequest created', context),
+			};
+		}
+
 		return {
 			mergeable: false,
 			result: getResult('not changed', 'There is no diff', context),
 		};
 	}
 
-	if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
-		// Close if there is no diff
+	if (!refDiffExists) {
+		// Close if there is no ref diff
 		await closePR(branchName, logger, octokit, context);
 		return {
 			mergeable: false,
