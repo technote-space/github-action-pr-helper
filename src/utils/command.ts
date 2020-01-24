@@ -12,6 +12,8 @@ import {
 	getCacheKey,
 	getCache,
 	getApiToken,
+	isActiveTriggerWorkflow,
+	getTriggerWorkflowMessage,
 } from './misc';
 import {
 	getPrBranchName,
@@ -213,6 +215,19 @@ export const updatePr = async(branchName: string, files: string[], output: Comma
 		title: await getPrTitle(helper, logger, octokit, context),
 		body: await getPrBody(false, files, output, helper, logger, octokit, context),
 	});
+
+	if (isActiveTriggerWorkflow(context)) {
+		// add empty commit to trigger pr event
+		await helper.runCommand(getWorkspace(), {
+			command: 'git commit',
+			args: [
+				'--allow-empty',
+				'-qm',
+				getTriggerWorkflowMessage(context),
+			],
+		});
+		await push(branchName, helper, logger, context);
+	}
 
 	return true;
 };

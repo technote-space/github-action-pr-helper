@@ -2,9 +2,9 @@ import { getInput } from '@actions/core';
 import { Utils, ContextHelper, GitHelper, Logger } from '@technote-space/github-action-helper';
 import { isTargetEvent, isTargetLabels } from '@technote-space/filter-github-action';
 import { GitHub } from '@actions/github';
-import { DEFAULT_TARGET_EVENTS } from '../constant';
 import { ActionContext, PullsParams, PayloadPullsParams, Null } from '../types';
 import { getDefaultBranch } from './command';
+import { DEFAULT_TARGET_EVENTS, DEFAULT_TRIGGER_WORKFLOW_MESSAGE } from '../constant';
 
 const {getWorkspace, getPrefixRegExp, getAccessToken} = Utils;
 const {escapeRegExp, replaceAll, getBranch}           = Utils;
@@ -186,4 +186,10 @@ export const getCache = async <T>(key: string, generator: () => (T | Promise<T>)
 
 export const isCached = (key: string, context: ActionContext): boolean => key in context.cache;
 
+export const isSetApiToken = (): boolean => !!getInput('API_TOKEN');
+
 export const getApiToken = (): string => getInput('API_TOKEN') || getAccessToken(true);
+
+export const isActiveTriggerWorkflow = (context: ActionContext): boolean => isSetApiToken() && '' !== context.actionDetail.triggerWorkflowMessage;
+
+export const getTriggerWorkflowMessage = (context: ActionContext): string => context.actionDetail.triggerWorkflowMessage ?? DEFAULT_TRIGGER_WORKFLOW_MESSAGE;

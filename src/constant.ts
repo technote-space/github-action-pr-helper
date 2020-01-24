@@ -1,4 +1,5 @@
-export const DEFAULT_TARGET_EVENTS = {
+export const DEFAULT_TRIGGER_WORKFLOW_MESSAGE = 'chore: trigger workflow';
+export const DEFAULT_TARGET_EVENTS            = {
 	'pull_request': [
 		'opened',
 		'reopened',
@@ -10,4 +11,4 @@ export const DEFAULT_TARGET_EVENTS = {
 	'schedule': '*',
 	'repository_dispatch': '*',
 };
-export const INTERVAL_MS           = 1000;
+export const INTERVAL_MS                      = 1000;
