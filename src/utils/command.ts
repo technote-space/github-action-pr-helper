@@ -123,9 +123,7 @@ const getInstallPackagesCommands = (context: ActionContext): string[] => {
 	return [];
 };
 
-const normalizeCommand = (command: string): string => command.trim().replace(/\s{2,}/g, ' ');
-
-const getExecuteCommands = (context: ActionContext): string[] => getActionDetail<string[]>('executeCommands', context, () => []).map(normalizeCommand);
+const getExecuteCommands = (context: ActionContext): string[] => getActionDetail<string[]>('executeCommands', context, () => []);
 
 export const getDiff = async(helper: GitHelper, logger: Logger): Promise<string[]> => {
 	logger.startProcess('Checking diff...');
