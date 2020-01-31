@@ -1,15 +1,13 @@
 import { setFailed } from '@actions/core';
 import { context, GitHub } from '@actions/github';
 import { Context } from '@actions/github/lib/context';
-import { Logger, ContextHelper, Command, ApiHelper, GitHelper, Utils } from '@technote-space/github-action-helper';
+import { Logger, ContextHelper, Utils } from '@technote-space/github-action-helper';
 import { isTargetContext } from './utils/misc';
 import { execute } from './utils/process';
 import { ActionContext, MainArguments } from './types';
 
-export const {showActionInfo} = ContextHelper;
-export const getLogger        = (logger?: Logger): Logger => logger ?? new Logger();
-export { isTargetContext, execute };
-export { Logger, ContextHelper, Command, ApiHelper, GitHelper, Utils };
+const {showActionInfo} = ContextHelper;
+const getLogger        = (logger?: Logger): Logger => logger ?? new Logger();
 
 /* istanbul ignore next */
 const getContext = (option: MainArguments): Context => option.context ?? context;
