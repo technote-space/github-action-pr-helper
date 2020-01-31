@@ -16,7 +16,7 @@ import {
 	testChildProcess,
 } from '@technote-space/github-action-test-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
-import { execute } from '../../src';
+import { execute } from '../../src/utils/process';
 import { getCacheKey } from '../../src/utils/misc';
 
 const workDir   = resolve(__dirname, 'test');
