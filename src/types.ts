@@ -1,5 +1,7 @@
 import { Context } from '@actions/github/lib/context';
-import { Logger } from '@technote-space/github-action-helper';
+import { GitHelper, Logger } from '@technote-space/github-action-helper';
+
+export type ExecuteTask = (context: ActionContext, helper: GitHelper, logger: Logger) => Promise<CommandOutput>;
 
 export type ActionDetails = {
 	actionName: string;
@@ -9,7 +11,7 @@ export type ActionDetails = {
 	installPackages?: string[];
 	devInstallPackages?: string[];
 	globalInstallPackages?: string[];
-	executeCommands?: string[];
+	executeCommands?: (string | ExecuteTask)[];
 	commitMessage?: string;
 	commitName?: string;
 	commitEmail?: string;

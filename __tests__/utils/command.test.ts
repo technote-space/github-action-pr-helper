@@ -17,7 +17,7 @@ import {
 	disableNetConnect,
 	getApiFixture,
 } from '@technote-space/github-action-test-helper';
-import { ActionContext, ActionDetails } from '../../src/types';
+import { ActionContext, ActionDetails, CommandOutput } from '../../src/types';
 import {
 	clone,
 	checkBranch,
@@ -451,6 +451,107 @@ describe('getChangedFiles', () => {
 			'[command]sudo npm install -g npm-check-updates',
 			'[command]npm install --save test1 test2',
 			'[command]npm update',
+			'::endgroup::',
+			'::group::Checking diff...',
+			'[command]git add --all',
+			'[command]git status --short -uno',
+		]);
+	});
+
+	it('should run task', async() => {
+		process.env.GITHUB_WORKSPACE  = workDir;
+		process.env.GITHUB_REPOSITORY = 'hello/world';
+		const mockStdout              = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.includes(' rev-parse')) {
+					return 'hello-world/test-branch';
+				}
+				if (command.startsWith('git merge')) {
+					return 'Already up to date.';
+				}
+				return '';
+			},
+		});
+		setExists(true);
+
+		expect(await getChangedFiles(helper, logger, octokit, getActionContext(_context, {
+			executeCommands: [
+				'string command1',
+				(): CommandOutput => {
+					logger.debug('test task1');
+					logger.debug('test task2');
+					return {
+						command: 'test task',
+						stdout: ['stdout'],
+						stderr: ['stderr'],
+					};
+				},
+				'string command2',
+			],
+			globalInstallPackages: ['npm-check-updates'],
+			installPackages: ['test1', 'test2'],
+			prBranchName: 'test-branch',
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+		}))).toEqual({
+			files: [],
+			output: [
+				{
+					command: 'sudo npm install -g npm-check-updates',
+					stdout: [],
+					stderr: [],
+				},
+				{
+					command: 'npm install --save test1 test2',
+					stdout: [],
+					stderr: [],
+				},
+				{
+					command: 'string command1',
+					stdout: [],
+					stderr: [],
+				},
+				{
+					command: 'test task',
+					stdout: ['stdout'],
+					stderr: ['stderr'],
+				},
+				{
+					command: 'string command2',
+					stdout: [],
+					stderr: [],
+				},
+			],
+		});
+		stdoutCalledWith(mockStdout, [
+			'::group::Fetching...',
+			'[command]rm -rdf [Working Directory]',
+			'[command]git init \'.\'',
+			'[command]git remote add origin',
+			'[command]git fetch origin',
+			'::endgroup::',
+			'::group::Switching branch to [hello-world/test-branch]...',
+			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> hello-world/test-branch',
+			'[command]ls -la',
+			'::endgroup::',
+			'::group::Configuring git committer to be GitHub Actions <example@example.com>',
+			'[command]git config \'user.name\' \'GitHub Actions\'',
+			'[command]git config \'user.email\' \'example@example.com\'',
+			'::endgroup::',
+			'::group::Merging [hello-world/test-branch] branch...',
+			'[command]git merge --no-edit origin/hello-world/test-branch || :',
+			'  >> Already up to date.',
+			'::endgroup::',
+			'::group::Running commands...',
+			'[command]sudo npm install -g npm-check-updates',
+			'[command]npm install --save test1 test2',
+			'[command]string command1',
+			'::debug::test task1',
+			'::debug::test task2',
+			'[command]string command2',
 			'::endgroup::',
 			'::group::Checking diff...',
 			'[command]git add --all',

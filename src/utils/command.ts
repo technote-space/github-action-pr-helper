@@ -23,7 +23,7 @@ import {
 	getPrTitle,
 	getPrBody,
 } from './variables';
-import { ActionContext, CommandOutput, Null } from '../types';
+import { ActionContext, CommandOutput, ExecuteTask, Null } from '../types';
 
 const {getWorkspace, useNpm}  = Utils;
 const {getRepository, isPush} = ContextHelper;
@@ -123,7 +123,7 @@ const getInstallPackagesCommands = (context: ActionContext): string[] => {
 	return [];
 };
 
-const getExecuteCommands = (context: ActionContext): string[] => getActionDetail<string[]>('executeCommands', context, () => []);
+const getExecuteCommands = (context: ActionContext): (string | ExecuteTask)[] => getActionDetail<(string | ExecuteTask)[]>('executeCommands', context, () => []);
 
 export const getDiff = async(helper: GitHelper, logger: Logger): Promise<string[]> => {
 	logger.startProcess('Checking diff...');
@@ -230,11 +230,23 @@ export const updatePr = async(branchName: string, files: string[], output: Comma
 	return true;
 };
 
+const runCommand = async(command: string | ExecuteTask, helper: GitHelper, logger: Logger, context: ActionContext): Promise<{
+	command: string;
+	stdout: string[];
+	stderr: string[];
+}> => {
+	if ('string' === typeof command) {
+		return (await helper.runCommand(getWorkspace(), command))[0];
+	}
+
+	return await command(context, helper, logger);
+};
+
 const runCommands = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<{
 	files: string[];
-	output: CommandOutput[];
+	output: Array<CommandOutput>;
 }> => {
-	const commands: string[] = ([] as string[]).concat.apply([], [
+	const commands: (string | ExecuteTask)[] = ([] as (string | ExecuteTask)[]).concat.apply([], [
 		getClearPackageCommands(context),
 		getGlobalInstallPackagesCommands(context),
 		getDevInstallPackagesCommands(context),
@@ -243,7 +255,10 @@ const runCommands = async(helper: GitHelper, logger: Logger, context: ActionCont
 	]);
 
 	logger.startProcess('Running commands...');
-	const output = await helper.runCommand(getWorkspace(), commands);
+	const output = await commands.reduce(async(prev, command) => {
+		const acc = await prev;
+		return acc.concat(await runCommand(command, helper, logger, context));
+	}, Promise.resolve([] as Array<CommandOutput>));
 
 	return {
 		files: await getDiff(helper, logger),
