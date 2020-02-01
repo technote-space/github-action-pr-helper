@@ -239,7 +239,16 @@ const runCommand = async(command: string | ExecuteTask, helper: GitHelper, logge
 		return (await helper.runCommand(getWorkspace(), command))[0];
 	}
 
-	return await command(context, helper, logger);
+	const result = await command(context, helper, logger);
+	logger.displayCommand(result.command);
+	if (result.stdout.length) {
+		logger.displayStdout(result.stdout);
+	}
+	if (result.stderr.length) {
+		logger.displayStderr(result.stderr);
+	}
+
+	return result;
 };
 
 const runCommands = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<{

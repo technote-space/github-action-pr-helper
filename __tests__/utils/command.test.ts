@@ -479,15 +479,24 @@ describe('getChangedFiles', () => {
 			executeCommands: [
 				'string command1',
 				(): CommandOutput => {
-					logger.debug('test task1');
-					logger.debug('test task2');
+					logger.debug('test task1-1');
+					logger.debug('test task1-2');
 					return {
-						command: 'test task',
-						stdout: ['stdout'],
-						stderr: ['stderr'],
+						command: 'test task1',
+						stdout: ['stdout1', 'stdout2'],
+						stderr: ['stderr1', 'stderr2'],
 					};
 				},
 				'string command2',
+				(): CommandOutput => {
+					logger.debug('test task2-1');
+					logger.debug('test task2-2');
+					return {
+						command: 'test task2',
+						stdout: [],
+						stderr: [],
+					};
+				},
 			],
 			globalInstallPackages: ['npm-check-updates'],
 			installPackages: ['test1', 'test2'],
@@ -513,12 +522,17 @@ describe('getChangedFiles', () => {
 					stderr: [],
 				},
 				{
-					command: 'test task',
-					stdout: ['stdout'],
-					stderr: ['stderr'],
+					command: 'test task1',
+					stdout: ['stdout1', 'stdout2'],
+					stderr: ['stderr1', 'stderr2'],
 				},
 				{
 					command: 'string command2',
+					stdout: [],
+					stderr: [],
+				},
+				{
+					command: 'test task2',
 					stdout: [],
 					stderr: [],
 				},
@@ -549,9 +563,17 @@ describe('getChangedFiles', () => {
 			'[command]sudo npm install -g npm-check-updates',
 			'[command]npm install --save test1 test2',
 			'[command]string command1',
-			'::debug::test task1',
-			'::debug::test task2',
+			'::debug::test task1-1',
+			'::debug::test task1-2',
+			'[command]test task1',
+			'  >> stdout1',
+			'  >> stdout2',
+			'::warning::  >> stderr1',
+			'::warning::  >> stderr2',
 			'[command]string command2',
+			'::debug::test task2-1',
+			'::debug::test task2-2',
+			'[command]test task2',
 			'::endgroup::',
 			'::group::Checking diff...',
 			'[command]git add --all',
