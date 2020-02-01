@@ -483,8 +483,8 @@ describe('getChangedFiles', () => {
 					logger.debug('test task1-2');
 					return {
 						command: 'test task1',
-						stdout: ['stdout'],
-						stderr: ['stderr'],
+						stdout: ['stdout1', 'stdout2'],
+						stderr: ['stderr1', 'stderr2'],
 					};
 				},
 				'string command2',
@@ -523,8 +523,8 @@ describe('getChangedFiles', () => {
 				},
 				{
 					command: 'test task1',
-					stdout: ['stdout'],
-					stderr: ['stderr'],
+					stdout: ['stdout1', 'stdout2'],
+					stderr: ['stderr1', 'stderr2'],
 				},
 				{
 					command: 'string command2',
@@ -566,8 +566,10 @@ describe('getChangedFiles', () => {
 			'::debug::test task1-1',
 			'::debug::test task1-2',
 			'[command]test task1',
-			'  >> stdout',
-			'::warning::  >> stderr',
+			'  >> stdout1',
+			'  >> stdout2',
+			'::warning::  >> stderr1',
+			'::warning::  >> stderr2',
 			'[command]string command2',
 			'::debug::test task2-1',
 			'::debug::test task2-2',
