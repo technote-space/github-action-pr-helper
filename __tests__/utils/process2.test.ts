@@ -1,6 +1,6 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
-import { GitHub } from '@actions/github';
+import { Octokit } from '@octokit/rest';
 import nock from 'nock';
 import { resolve } from 'path';
 import { Logger } from '@technote-space/github-action-helper';
@@ -62,7 +62,7 @@ const context = (action: string, event = 'pull_request', ref = 'pull/55/merge'):
 		},
 	},
 });
-const octokit = new GitHub('test-token');
+const octokit = new Octokit({auth: 'token test-token', log: {warn: jest.fn}});
 
 describe('execute', () => {
 	disableNetConnect(nock);

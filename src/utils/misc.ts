@@ -1,6 +1,7 @@
 import { getInput } from '@actions/core';
 import { Utils, ContextHelper, GitHelper, Logger } from '@technote-space/github-action-helper';
 import { isTargetEvent, isTargetLabels } from '@technote-space/filter-github-action';
+import { Octokit } from '@octokit/rest';
 import { GitHub } from '@actions/github';
 import { ActionContext, PullsParams, PayloadPullsParams, Null } from '../types';
 import { getDefaultBranch } from './command';
@@ -29,7 +30,7 @@ export const replaceDirectory = (message: string): string => {
 	return replaceAll(replaceAll(message, ` -C ${workDir}`, ''), workDir, '[Working Directory]');
 };
 
-export const getDefaultBranchUrl = async(octokit: GitHub, context: ActionContext): Promise<string> => `https://github.com/${context.actionContext.repo.owner}/${context.actionContext.repo.repo}/tree/${await getDefaultBranch(octokit, context)}`;
+export const getDefaultBranchUrl = async(octokit: Octokit, context: ActionContext): Promise<string> => `https://github.com/${context.actionContext.repo.owner}/${context.actionContext.repo.repo}/tree/${await getDefaultBranch(octokit, context)}`;
 
 export const getPrHeadRef = (context: ActionContext): string => context.actionContext.payload.pull_request?.head.ref ?? '';
 
@@ -43,7 +44,7 @@ export const isActionPr = (context: ActionContext): boolean => getPrefixRegExp(g
 
 export const getContextBranch = (context: ActionContext): string => context.isBatchProcess ? getPrBaseRef(context) : (getBranch(context.actionContext) || getPrHeadRef(context));
 
-export const isDefaultBranch = async(octokit: GitHub, context: ActionContext): Promise<boolean> => await getDefaultBranch(octokit, context) === getContextBranch(context);
+export const isDefaultBranch = async(octokit: Octokit, context: ActionContext): Promise<boolean> => await getDefaultBranch(octokit, context) === getContextBranch(context);
 
 export const checkDefaultBranch = (context: ActionContext): boolean => context.actionDetail.checkDefaultBranch ?? true;
 
@@ -53,7 +54,7 @@ export const isDisabledDeletePackage = (context: ActionContext): boolean => !(co
 
 export const isClosePR = (context: ActionContext): boolean => isPr(context.actionContext) && context.actionContext.payload.action === 'closed';
 
-export const isTargetBranch = async(branchName: string, octokit: GitHub, context: ActionContext): Promise<boolean> => {
+export const isTargetBranch = async(branchName: string, octokit: Octokit, context: ActionContext): Promise<boolean> => {
 	if (branchName === await getDefaultBranch(octokit, context)) {
 		return checkDefaultBranch(context);
 	}
@@ -66,7 +67,7 @@ export const isTargetBranch = async(branchName: string, octokit: GitHub, context
 	return !checkOnlyDefaultBranch(context);
 };
 
-export const isTargetContext = async(octokit: GitHub, context: ActionContext): Promise<boolean> => {
+export const isTargetContext = async(octokit: Octokit, context: ActionContext): Promise<boolean> => {
 	if (!isTargetEvent(context.actionDetail.targetEvents ?? DEFAULT_TARGET_EVENTS, context.actionContext)) {
 		return false;
 	}
@@ -126,7 +127,7 @@ export const getHelper = (context: ActionContext): GitHelper => new GitHelper(ne
 
 });
 
-export const getPullsArgsForDefaultBranch = async(octokit: GitHub, context: ActionContext): Promise<PullsParams> => ({
+export const getPullsArgsForDefaultBranch = async(octokit: Octokit, context: ActionContext): Promise<PullsParams> => ({
 	number: 0,
 	id: 0,
 	head: {
@@ -145,9 +146,9 @@ export const getPullsArgsForDefaultBranch = async(octokit: GitHub, context: Acti
 	'html_url': await getDefaultBranchUrl(octokit, context),
 });
 
-export const ensureGetPulls = async(pull: PayloadPullsParams | Null, octokit: GitHub, context: ActionContext): Promise<PayloadPullsParams> => pull ?? await getPullsArgsForDefaultBranch(octokit, context);
+export const ensureGetPulls = async(pull: PayloadPullsParams | Null, octokit: Octokit, context: ActionContext): Promise<PayloadPullsParams> => pull ?? await getPullsArgsForDefaultBranch(octokit, context);
 
-export const getActionContext = async(pull: PayloadPullsParams | Null, octokit: GitHub, context: ActionContext): Promise<ActionContext> => {
+export const getActionContext = async(pull: PayloadPullsParams | Null, octokit: Octokit, context: ActionContext): Promise<ActionContext> => {
 	const _pull = await ensureGetPulls(pull, octokit, context);
 	return {
 		...context,
@@ -193,3 +194,13 @@ export const getApiToken = (): string => getInput('API_TOKEN') || getAccessToken
 export const isActiveTriggerWorkflow = (context: ActionContext): boolean => isSetApiToken() && '' !== context.actionDetail.triggerWorkflowMessage;
 
 export const getTriggerWorkflowMessage = (context: ActionContext): string => context.actionDetail.triggerWorkflowMessage ?? DEFAULT_TRIGGER_WORKFLOW_MESSAGE;
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+// @ts-ignore
+export const getOctokit = (): Octokit => new GitHub(getApiToken(), {
+	log: {
+		// eslint-disable-next-line @typescript-eslint/no-empty-function
+		warn: function(): void {
+		},
+	},
+});

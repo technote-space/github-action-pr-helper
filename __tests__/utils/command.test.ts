@@ -1,6 +1,6 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
-import { GitHub } from '@actions/github';
+import { Octokit } from '@octokit/rest';
 import nock from 'nock';
 import { resolve } from 'path';
 import { Logger, GitHelper, Utils } from '@technote-space/github-action-helper';
@@ -39,7 +39,7 @@ const logger                       = new Logger(string => Utils.replaceAll(strin
 const helper                       = new GitHelper(logger, {depth: -1, token: 'test-token'});
 const setExists                    = testFs();
 const rootDir                      = resolve(__dirname, '..', 'fixtures');
-const octokit                      = new GitHub('test-token');
+const octokit                      = new Octokit({auth: 'token test-token', log: {warn: jest.fn}});
 const context                      = (pr: object): Context => generateContext({
 	owner: 'hello',
 	repo: 'world',

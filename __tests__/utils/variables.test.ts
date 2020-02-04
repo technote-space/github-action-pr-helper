@@ -1,6 +1,6 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
-import { GitHub } from '@actions/github';
+import { Octokit } from '@octokit/rest';
 import moment from 'moment';
 import nock from 'nock';
 import { resolve } from 'path';
@@ -29,7 +29,7 @@ import { ActionContext, ActionDetails } from '../../src/types';
 beforeEach(() => {
 	Logger.resetForTesting();
 });
-const octokit   = new GitHub('test-token');
+const octokit   = new Octokit({auth: 'token test-token', log: {warn: jest.fn}});
 const logger    = new Logger();
 const helper    = new GitHelper(logger, {depth: -1, token: 'test-token'});
 const rootDir   = resolve(__dirname, '..', 'fixtures');

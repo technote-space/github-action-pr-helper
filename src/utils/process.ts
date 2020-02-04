@@ -1,4 +1,4 @@
-import { GitHub } from '@actions/github';
+import { Octokit } from '@octokit/rest';
 import { Logger, Utils, ContextHelper, GitHelper } from '@technote-space/github-action-helper';
 import {
 	getApiHelper,
@@ -39,7 +39,7 @@ const getResult = (result: 'succeeded' | 'failed' | 'skipped' | 'not changed', d
 	branch: getPrHeadRef(context) || getBranch(context.actionContext), // for push
 });
 
-const checkActionPr = async(logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult | true> => {
+const checkActionPr = async(logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult | true> => {
 	const pr = await findPR(getPrHeadRef(context), logger, octokit, context);
 	if (!pr) {
 		return getResult('failed', 'not found', context);
@@ -63,7 +63,7 @@ const checkActionPr = async(logger: Logger, octokit: GitHub, context: ActionCont
 	return true;
 };
 
-const createCommit = async(addComment: boolean, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
+const createCommit = async(addComment: boolean, logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult> => {
 	const helper     = getHelper(context);
 	const branchName = await getPrBranchName(helper, logger, octokit, context);
 
@@ -108,7 +108,7 @@ const createCommit = async(addComment: boolean, logger: Logger, octokit: GitHub,
 	return getResult('succeeded', 'updated', context);
 };
 
-const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: GitHub, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
+const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
 	logger.info('There is no diff.');
 	const refDiffExists = !!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length;
 	const pr            = await findPR(branchName, logger, octokit, context);
@@ -150,7 +150,7 @@ const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger
 	};
 };
 
-const diffProcess = async(files: string[], output: CommandOutput[], branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: GitHub, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
+const diffProcess = async(files: string[], output: CommandOutput[], branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
 	// Commit local diffs
 	await commit(helper, logger, context);
 	if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
@@ -175,7 +175,7 @@ const diffProcess = async(files: string[], output: CommandOutput[], branchName: 
 	};
 };
 
-const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, logger: Logger, octokit: GitHub, context: ActionContext): Promise<ProcessResult> => {
+const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult> => {
 	if (makeGroup) {
 		commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
 	}
@@ -247,7 +247,7 @@ const outputResults = (results: ProcessResult[]): void => {
 	results.forEach(result => outputResult(result));
 };
 
-const runCreatePr = async(isClose: boolean, getPulls: (GitHub, ActionContext) => AsyncIterable<PullsParams>, octokit: GitHub, context: ActionContext): Promise<void> => {
+const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) => AsyncIterable<PullsParams>, octokit: Octokit, context: ActionContext): Promise<void> => {
 	const logger                   = new Logger(replaceDirectory, true);
 	const results: ProcessResult[] = [];
 	const processed                = {};
@@ -279,11 +279,11 @@ const runCreatePr = async(isClose: boolean, getPulls: (GitHub, ActionContext) =>
 };
 
 /**
- * @param {GitHub} octokit octokit
+ * @param {Octokit} octokit octokit
  * @param {Context} context context
  * @return {AsyncIterable} pull
  */
-async function* getPulls(octokit: GitHub, context: ActionContext): AsyncIterable<PullsParams> {
+async function* getPulls(octokit: Octokit, context: ActionContext): AsyncIterable<PullsParams> {
 	const logger = new Logger(replaceDirectory, true);
 
 	yield* await getApiHelper(octokit, context, logger).pullsList({});
@@ -292,11 +292,11 @@ async function* getPulls(octokit: GitHub, context: ActionContext): AsyncIterable
 	}
 }
 
-const runCreatePrAll = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(false, getPulls, octokit, context);
+const runCreatePrAll = async(octokit: Octokit, context: ActionContext): Promise<void> => runCreatePr(false, getPulls, octokit, context);
 
-const runCreatePrClosed = async(octokit: GitHub, context: ActionContext): Promise<void> => runCreatePr(true, getPulls, octokit, context);
+const runCreatePrClosed = async(octokit: Octokit, context: ActionContext): Promise<void> => runCreatePr(true, getPulls, octokit, context);
 
-export const execute = async(octokit: GitHub, context: ActionContext): Promise<void> => {
+export const execute = async(octokit: Octokit, context: ActionContext): Promise<void> => {
 	if (isClosePR(context)) {
 		await runCreatePrClosed(octokit, context);
 	} else if (isPush(context.actionContext)) {
