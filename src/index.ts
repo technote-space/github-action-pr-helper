@@ -32,7 +32,13 @@ export async function main(option: MainArguments): Promise<void> {
 		showActionInfo(option.rootDir, getLogger(option.logger), getContext(option));
 	}
 
-	const octokit = new GitHub(Utils.getAccessToken(true));
+	const octokit = new GitHub(Utils.getAccessToken(true), {
+		log: {
+			// eslint-disable-next-line @typescript-eslint/no-empty-function
+			warn: function(): void {
+			},
+		},
+	});
 	if (!await isTargetContext(octokit, await getActionContext(option))) {
 		getLogger(option.logger).info(option.notTargetEventMessage ?? 'This is not target event.');
 		return;
