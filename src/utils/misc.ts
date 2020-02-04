@@ -195,6 +195,8 @@ export const isActiveTriggerWorkflow = (context: ActionContext): boolean => isSe
 
 export const getTriggerWorkflowMessage = (context: ActionContext): string => context.actionDetail.triggerWorkflowMessage ?? DEFAULT_TRIGGER_WORKFLOW_MESSAGE;
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+// @ts-ignore
 export const getOctokit = (): Octokit => new GitHub(getApiToken(), {
 	log: {
 		// eslint-disable-next-line @typescript-eslint/no-empty-function

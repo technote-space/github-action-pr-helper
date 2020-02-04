@@ -1,4 +1,5 @@
 import { setFailed } from '@actions/core';
+import { Octokit } from '@octokit/rest';
 import { context, GitHub } from '@actions/github';
 import { Context } from '@actions/github/lib/context';
 import { Logger, ContextHelper, Utils } from '@technote-space/github-action-helper';
@@ -32,7 +33,9 @@ export async function main(option: MainArguments): Promise<void> {
 		showActionInfo(option.rootDir, getLogger(option.logger), getContext(option));
 	}
 
-	const octokit = new GitHub(Utils.getAccessToken(true), {
+	// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+	// @ts-ignore
+	const octokit: Octokit = new GitHub(Utils.getAccessToken(true), {
 		log: {
 			// eslint-disable-next-line @typescript-eslint/no-empty-function
 			warn: function(): void {
