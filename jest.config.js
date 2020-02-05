@@ -10,9 +10,4 @@ module.exports = {
 	},
 	verbose: true,
 	coverageDirectory: '<rootDir>/coverage',
-	globals: {
-		'ts-jest': {
-			diagnostics: false,
-		},
-	},
 };
