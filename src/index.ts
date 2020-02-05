@@ -1,6 +1,4 @@
 import { setFailed } from '@actions/core';
-import { Octokit } from '@octokit/rest';
-import { context, GitHub } from '@actions/github';
 import { Context } from '@actions/github/lib/context';
 import { Logger, ContextHelper, Utils } from '@technote-space/github-action-helper';
 import { isTargetContext } from './utils/misc';
@@ -11,7 +9,7 @@ const {showActionInfo} = ContextHelper;
 const getLogger        = (logger?: Logger): Logger => logger ?? new Logger();
 
 /* istanbul ignore next */
-const getContext = (option: MainArguments): Context => option.context ?? context;
+const getContext = (option: MainArguments): Context => option.context ?? new Context();
 
 const getActionContext = async(option: MainArguments): Promise<ActionContext> => ({
 	actionContext: getContext(option),
@@ -33,15 +31,7 @@ export async function main(option: MainArguments): Promise<void> {
 		showActionInfo(option.rootDir, getLogger(option.logger), getContext(option));
 	}
 
-	// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-	// @ts-ignore
-	const octokit: Octokit = new GitHub(Utils.getAccessToken(true), {
-		log: {
-			// eslint-disable-next-line @typescript-eslint/no-empty-function
-			warn: function(): void {
-			},
-		},
-	});
+	const octokit = Utils.getOctokit();
 	if (!await isTargetContext(octokit, await getActionContext(option))) {
 		getLogger(option.logger).info(option.notTargetEventMessage ?? 'This is not target event.');
 		return;

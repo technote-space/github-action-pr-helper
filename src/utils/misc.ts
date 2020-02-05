@@ -2,7 +2,6 @@ import { getInput } from '@actions/core';
 import { Utils, ContextHelper, GitHelper, Logger } from '@technote-space/github-action-helper';
 import { isTargetEvent, isTargetLabels } from '@technote-space/filter-github-action';
 import { Octokit } from '@octokit/rest';
-import { GitHub } from '@actions/github';
 import { ActionContext, PullsParams, PayloadPullsParams, Null } from '../types';
 import { getDefaultBranch } from './command';
 import { DEFAULT_TARGET_EVENTS, DEFAULT_TRIGGER_WORKFLOW_MESSAGE } from '../constant';
@@ -194,13 +193,3 @@ export const getApiToken = (): string => getInput('API_TOKEN') || getAccessToken
 export const isActiveTriggerWorkflow = (context: ActionContext): boolean => isSetApiToken() && '' !== context.actionDetail.triggerWorkflowMessage;
 
 export const getTriggerWorkflowMessage = (context: ActionContext): string => context.actionDetail.triggerWorkflowMessage ?? DEFAULT_TRIGGER_WORKFLOW_MESSAGE;
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-// @ts-ignore
-export const getOctokit = (): Octokit => new GitHub(getApiToken(), {
-	log: {
-		// eslint-disable-next-line @typescript-eslint/no-empty-function
-		warn: function(): void {
-		},
-	},
-});
