@@ -1,6 +1,5 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
-import { Octokit } from '@octokit/rest';
 import nock from 'nock';
 import { resolve } from 'path';
 import { Logger, GitHelper, Utils } from '@technote-space/github-action-helper';
@@ -16,6 +15,7 @@ import {
 	testFs,
 	disableNetConnect,
 	getApiFixture,
+	getOctokit,
 } from '@technote-space/github-action-test-helper';
 import { ActionContext, ActionDetails, CommandOutput } from '../../src/types';
 import {
@@ -39,7 +39,7 @@ const logger                       = new Logger(string => Utils.replaceAll(strin
 const helper                       = new GitHelper(logger, {depth: -1, token: 'test-token'});
 const setExists                    = testFs();
 const rootDir                      = resolve(__dirname, '..', 'fixtures');
-const octokit                      = new Octokit({auth: 'token test-token', log: {warn: jest.fn}});
+const octokit                      = getOctokit();
 const context                      = (pr: object): Context => generateContext({
 	owner: 'hello',
 	repo: 'world',

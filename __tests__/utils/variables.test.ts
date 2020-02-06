@@ -1,6 +1,5 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
-import { Octokit } from '@octokit/rest';
 import moment from 'moment';
 import nock from 'nock';
 import { resolve } from 'path';
@@ -13,6 +12,7 @@ import {
 	testFs,
 	getApiFixture,
 	disableNetConnect,
+	getOctokit,
 } from '@technote-space/github-action-test-helper';
 import { getCacheKey } from '../../src/utils/misc';
 import {
@@ -29,7 +29,7 @@ import { ActionContext, ActionDetails } from '../../src/types';
 beforeEach(() => {
 	Logger.resetForTesting();
 });
-const octokit   = new Octokit({auth: 'token test-token', log: {warn: jest.fn}});
+const octokit   = getOctokit();
 const logger    = new Logger();
 const helper    = new GitHelper(logger, {depth: -1, token: 'test-token'});
 const rootDir   = resolve(__dirname, '..', 'fixtures');

@@ -1,6 +1,5 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
-import { Octokit } from '@octokit/rest';
 import nock from 'nock';
 import { resolve } from 'path';
 import { Logger } from '@technote-space/github-action-helper';
@@ -14,6 +13,7 @@ import {
 	getApiFixture,
 	setChildProcessParams,
 	testChildProcess,
+	getOctokit,
 } from '@technote-space/github-action-test-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
 import { execute } from '../../src/utils/process';
@@ -62,7 +62,7 @@ const context = (action: string, event = 'pull_request', ref = 'pull/55/merge'):
 		},
 	},
 });
-const octokit = new Octokit({auth: 'token test-token', log: {warn: jest.fn}});
+const octokit = getOctokit();
 
 describe('execute', () => {
 	disableNetConnect(nock);
