@@ -40,7 +40,7 @@ const getResult = (result: 'succeeded' | 'failed' | 'skipped' | 'not changed', d
 });
 
 const checkActionPr = async(logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult | true> => {
-	const pr = await findPR(getPrHeadRef(context), logger, octokit, context);
+	const pr = await findPR(getPrHeadRef(context), octokit, context);
 	if (!pr) {
 		return getResult('failed', 'not found', context);
 	}
@@ -49,7 +49,7 @@ const checkActionPr = async(logger: Logger, octokit: Octokit, context: ActionCon
 		return true;
 	}
 
-	const basePr = await findPR(pr.base.ref, logger, octokit, context);
+	const basePr = await findPR(pr.base.ref, octokit, context);
 	if (!basePr) {
 		await closePR(getPrHeadRef(context), logger, octokit, context, '');
 		return getResult('succeeded', 'has been closed because base PullRequest does not exist', context);
@@ -65,13 +65,13 @@ const checkActionPr = async(logger: Logger, octokit: Octokit, context: ActionCon
 
 const createCommit = async(addComment: boolean, logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult> => {
 	const helper     = getHelper(context);
-	const branchName = await getPrBranchName(helper, logger, octokit, context);
+	const branchName = await getPrBranchName(helper, octokit, context);
 
 	const {files, output} = await getChangedFiles(helper, logger, octokit, context);
 	if (!files.length) {
 		logger.info('There is no diff.');
 		if (context.isBatchProcess) {
-			const pr = await findPR(branchName, logger, octokit, context);
+			const pr = await findPR(branchName, octokit, context);
 			if (pr && !(await getRefDiff(getPrBaseRef(context), helper, logger, context)).length) {
 				// Close if there is no diff
 				await closePR(branchName, logger, octokit, context);
@@ -111,7 +111,7 @@ const createCommit = async(addComment: boolean, logger: Logger, octokit: Octokit
 const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
 	logger.info('There is no diff.');
 	const refDiffExists = !!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length;
-	const pr            = await findPR(branchName, logger, octokit, context);
+	const pr            = await findPR(branchName, octokit, context);
 
 	if (!pr) {
 		// There is no PR
@@ -192,7 +192,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
 	}
 
 	const {files, output}                   = await getChangedFiles(helper, logger, octokit, context);
-	const branchName                        = await getPrBranchName(helper, logger, octokit, context);
+	const branchName                        = await getPrBranchName(helper, octokit, context);
 	let result: 'succeeded' | 'not changed' = 'succeeded';
 	let detail                              = 'updated';
 	let mergeable                           = false;
@@ -255,7 +255,7 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
 	for await (const pull of getPulls(octokit, context)) {
 		const actionContext = await getActionContext(pull, octokit, context);
 		const helper        = getHelper(actionContext);
-		const target        = context.actionDetail.prBranchName ? await getPrBranchName(helper, logger, octokit, context) : actionContext.actionContext.payload.number;
+		const target        = context.actionDetail.prBranchName ? await getPrBranchName(helper, octokit, context) : actionContext.actionContext.payload.number;
 		if (target in processed && !isActionPr(actionContext)) {
 			results.push(getResult('skipped', `duplicated (${target})`, actionContext));
 			continue;

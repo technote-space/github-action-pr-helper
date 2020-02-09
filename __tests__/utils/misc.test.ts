@@ -1,8 +1,8 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
 import { resolve } from 'path';
-import { Logger, Utils } from '@technote-space/github-action-helper';
-import { testEnv, generateContext, testFs } from '@technote-space/github-action-test-helper';
+import { Logger } from '@technote-space/github-action-helper';
+import { testEnv, generateContext, testFs, getOctokit } from '@technote-space/github-action-test-helper';
 import {
 	getActionDetail,
 	replaceDirectory,
@@ -31,7 +31,7 @@ beforeEach(() => {
 });
 testFs(true);
 
-const octokit                      = Utils.getOctokit('test-token');
+const octokit                      = getOctokit();
 const actionDetails: ActionDetails = {
 	actionName: 'Test Action',
 	actionOwner: 'octocat',
