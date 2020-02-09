@@ -126,7 +126,7 @@ describe('getPrBranchName', () => {
 
 	it('should get pr branch name', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
-		expect(await getPrBranchName(helper, logger, octokit, generateActionContext({event: 'pull_request'}, {
+		expect(await getPrBranchName(helper, octokit, generateActionContext({event: 'pull_request'}, {
 			payload: prPayload,
 		}, {
 			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${PR_LINK}',
@@ -135,7 +135,7 @@ describe('getPrBranchName', () => {
 
 	it('should get pr branch name for default branch 1', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
-		expect(await getPrBranchName(helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+		expect(await getPrBranchName(helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
 					number: 0,
@@ -161,7 +161,7 @@ describe('getPrBranchName', () => {
 	it('should get pr branch name for default branch 2', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
 		setExists(false);
-		expect(await getPrBranchName(helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+		expect(await getPrBranchName(helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
 					number: 0,
@@ -182,18 +182,18 @@ describe('getPrBranchName', () => {
 	});
 
 	it('should get push branch name', async() => {
-		expect(await getPrBranchName(helper, logger, octokit, generateActionContext({event: 'push'}, {ref: 'heads/test-ref'}, {
+		expect(await getPrBranchName(helper, octokit, generateActionContext({event: 'push'}, {ref: 'heads/test-ref'}, {
 			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${PR_LINK}',
 		}))).toBe('test-ref');
 	});
 
 	it('should throw error', async() => {
-		await expect(getPrBranchName(helper, logger, octokit, generateActionContext({}))).rejects.toThrow();
-		await expect(getPrBranchName(helper, logger, octokit, generateActionContext({}, {}, {prBranchName: ''}))).rejects.toThrow();
+		await expect(getPrBranchName(helper, octokit, generateActionContext({}))).rejects.toThrow();
+		await expect(getPrBranchName(helper, octokit, generateActionContext({}, {}, {prBranchName: ''}))).rejects.toThrow();
 	});
 
 	it('should throw error', async() => {
-		await expect(getPrBranchName(helper, logger, octokit, generateActionContext({event: 'pull_request'}, {}, {
+		await expect(getPrBranchName(helper, octokit, generateActionContext({event: 'pull_request'}, {}, {
 			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${PR_LINK}',
 		}))).rejects.toThrow();
 	});
@@ -207,7 +207,7 @@ describe('getPrTitle', () => {
 	it('should get PR title', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
 
-		expect(await getPrTitle(helper, logger, octokit, generateActionContext({}, {payload: prPayload}, {
+		expect(await getPrTitle(helper, octokit, generateActionContext({}, {payload: prPayload}, {
 			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${PR_LINK}',
 		}))).toBe('11::21031067::feature/new-feature::master::feature/new-feature -> master::#11::v1.2.4::[test title](http://example.com)');
 	});
@@ -215,7 +215,7 @@ describe('getPrTitle', () => {
 	it('should get PR title for default branch 1', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
 
-		expect(await getPrTitle(helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+		expect(await getPrTitle(helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
 					number: 0,
@@ -239,7 +239,7 @@ describe('getPrTitle', () => {
 	it('should get PR title for default branch 2', async() => {
 		setChildProcessParams({stdout: '1.2.3'});
 
-		expect(await getPrTitle(helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+		expect(await getPrTitle(helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
 					number: 0,
@@ -260,11 +260,11 @@ describe('getPrTitle', () => {
 	});
 
 	it('should throw error', async() => {
-		await expect(getPrTitle(helper, logger, octokit, generateActionContext({}))).rejects.toThrow();
+		await expect(getPrTitle(helper, octokit, generateActionContext({}))).rejects.toThrow();
 	});
 
 	it('should throw error', async() => {
-		await expect(getPrTitle(helper, logger, octokit, generateActionContext({}, {}, {
+		await expect(getPrTitle(helper, octokit, generateActionContext({}, {}, {
 			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_BASE_REF}::${PATCH_VERSION}::${PR_LINK}',
 		}))).rejects.toThrow();
 	});
@@ -323,7 +323,7 @@ describe('getPrBody', () => {
 		expect(await getPrBody(false, ['README.md', 'CHANGELOG.md'], [
 			{command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: []},
 			{command: 'test2', stdout: ['test2-1', 'test2-2'], stderr: ['test2-3']},
-		], helper, logger, octokit, generateActionContext({
+		], helper, octokit, generateActionContext({
 			owner: actionDetails.actionOwner,
 			repo: actionDetails.actionRepo,
 		}, {
@@ -415,7 +415,7 @@ describe('getPrBody', () => {
 		expect(await getPrBody(true, ['README.md', 'CHANGELOG.md'], [
 			{command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: []},
 			{command: 'test2', stdout: ['test2-1', 'test2-2'], stderr: ['test2-3']},
-		], helper, logger, octokit, generateActionContext({
+		], helper, octokit, generateActionContext({
 			owner: actionDetails.actionOwner,
 			repo: actionDetails.actionRepo,
 		}, {
@@ -515,7 +515,7 @@ describe('getPrBody', () => {
 		expect(await getPrBody(false, ['README.md'], [
 			{command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: ['test1-3', 'test1-4']},
 			{command: 'test2', stdout: [], stderr: []},
-		], helper, logger, octokit, generateActionContext({}, {
+		], helper, octokit, generateActionContext({}, {
 			payload: prPayload,
 		}, {
 			prBody,
@@ -636,7 +636,7 @@ describe('getPrBody', () => {
 		const prBody                 = '${ACTION_OWNER}';
 		const prBodyForDefaultBranch = '${ACTION_REPO}';
 
-		expect(await getPrBody(false, [], [], helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+		expect(await getPrBody(false, [], [], helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
 					number: 0,
@@ -662,7 +662,7 @@ describe('getPrBody', () => {
 	it('should get PR Body for default branch 2', async() => {
 		const prBody = '${ACTION_OWNER}';
 
-		expect(await getPrBody(false, [], [], helper, logger, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
+		expect(await getPrBody(false, [], [], helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'heads/master'}, {
 			payload: {
 				'pull_request': {
 					number: 0,
@@ -721,7 +721,7 @@ describe('getPrBody', () => {
 		\${VARIABLE2}
 `;
 
-		expect(await getPrBody(false, [], [], helper, logger, octokit, generateActionContext({}, {
+		expect(await getPrBody(false, [], [], helper, octokit, generateActionContext({}, {
 			payload: prPayload,
 		}, {
 			prBody,
@@ -765,7 +765,7 @@ describe('getPrBody', () => {
 	});
 
 	it('should not be code', async() => {
-		expect(await getPrBody(false, [], [], helper, logger, octokit, generateActionContext({}, {
+		expect(await getPrBody(false, [], [], helper, octokit, generateActionContext({}, {
 			payload: prPayload,
 		}, {
 			prBody: '${COMMANDS}',
@@ -773,7 +773,7 @@ describe('getPrBody', () => {
 	});
 
 	it('should get body for comment (default branch)', async() => {
-		expect(await getPrBody(true, [], [], helper, logger, octokit, generateActionContext({
+		expect(await getPrBody(true, [], [], helper, octokit, generateActionContext({
 			owner: actionDetails.actionOwner,
 			repo: actionDetails.actionRepo,
 		}, {
@@ -789,7 +789,7 @@ describe('getPrBody', () => {
 			.get('/repos/octocat/hello-world/pulls?head=octocat%3Afeature%2Fnew-feature')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'));
 
-		expect(await getPrBody(true, [], [], helper, logger, octokit, generateActionContext({
+		expect(await getPrBody(true, [], [], helper, octokit, generateActionContext({
 			owner: actionDetails.actionOwner,
 			repo: actionDetails.actionRepo,
 		}, {
@@ -800,11 +800,11 @@ describe('getPrBody', () => {
 	});
 
 	it('should throw error 1', async() => {
-		await expect(getPrBody(false, [], [], helper, logger, octokit, generateActionContext({}))).rejects.toThrow();
+		await expect(getPrBody(false, [], [], helper, octokit, generateActionContext({}))).rejects.toThrow();
 	});
 
 	it('should throw error 2', async() => {
-		await expect(getPrBody(true, [], [], helper, logger, octokit, generateActionContext({}, {
+		await expect(getPrBody(true, [], [], helper, octokit, generateActionContext({}, {
 			payload: prPayload,
 		}, {
 			prBody: '${PR_TITLE}',

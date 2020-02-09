@@ -31,6 +31,7 @@ import {
 } from '../../src/utils/command';
 import { getCacheKey, isCached } from '../../src/utils/misc';
 
+disableNetConnect(nock);
 beforeEach(() => {
 	Logger.resetForTesting();
 });
@@ -583,8 +584,6 @@ describe('getChangedFiles', () => {
 });
 
 describe('isMergeable', () => {
-	disableNetConnect(nock);
-
 	it('should use cache', async() => {
 		const fn            = jest.fn();
 		const actionContext = getActionContext(context({}));
@@ -604,7 +603,6 @@ describe('isMergeable', () => {
 });
 
 describe('updatePr', () => {
-	disableNetConnect(nock);
 	testEnv();
 
 	it('should return true 1', async() => {
@@ -687,7 +685,6 @@ describe('updatePr', () => {
 });
 
 describe('resolveConflicts', () => {
-	disableNetConnect(nock);
 	testEnv();
 	testChildProcess();
 
@@ -714,7 +711,7 @@ describe('resolveConflicts', () => {
 			'git config \'user.name\' \'GitHub Actions\'',
 			'git config \'user.email\' \'example@example.com\'',
 			'git merge --no-edit origin/feature/new-feature || :',
-			'git push \'https://octocat:test-token@github.com/hello/world.git\' \'test:refs/heads/test\' > /dev/null 2>&1',
+			'git push \'https://octocat:test-token@github.com/hello/world.git\' \'test:refs/heads/test\' > /dev/null 2>&1 || :',
 		]);
 	});
 
@@ -805,19 +802,43 @@ describe('resolveConflicts', () => {
 			'git config \'user.email\' \'example@example.com\'',
 			'git commit -qm \'commit message\'',
 			'git show \'--stat-count=10\' HEAD',
-			'git push --force \'https://octocat:test-token@github.com/hello/world.git\' \'test:refs/heads/test\' > /dev/null 2>&1',
+			'git push --force \'https://octocat:test-token@github.com/hello/world.git\' \'test:refs/heads/test\' > /dev/null 2>&1 || :',
 		]);
 	});
 });
 
 describe('getDefaultBranch', () => {
+	it('should get cached default branch', async() => {
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
+		const actionContext = getActionContext(context({}), undefined, 'test');
+
+		expect(await getDefaultBranch(octokit, actionContext)).toBe('test');
+	});
+
 	it('should get default branch', async() => {
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
+		const actionContext = getActionContext(context({}));
+		actionContext.cache = {};
 
-		expect(await getDefaultBranch(octokit, getActionContext(context({})))).toBe('master');
+		expect(await getDefaultBranch(octokit, actionContext)).toBe('master');
+	});
+
+	it('should get repository default branch', async() => {
+		const actionContext = getActionContext(Object.assign(context({}), {
+			payload: {
+				repository: {
+					'default_branch': 'test',
+				},
+			},
+		}));
+		actionContext.cache = {};
+		expect(await getDefaultBranch(octokit, actionContext)).toBe('test');
 	});
 });
 

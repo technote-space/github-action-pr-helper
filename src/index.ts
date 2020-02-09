@@ -49,5 +49,8 @@ export async function main(option: MainArguments): Promise<void> {
  */
 export function run(option: MainArguments): void {
 	/* istanbul ignore next */
-	main(option).catch(error => setFailed(error.message));
+	main(option).catch(error => {
+		console.log(error);
+		setFailed(error.message);
+	});
 }
