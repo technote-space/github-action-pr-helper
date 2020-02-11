@@ -31,7 +31,6 @@ import {
 } from '../../src/utils/command';
 import { getCacheKey, isCached } from '../../src/utils/misc';
 
-disableNetConnect(nock);
 beforeEach(() => {
 	Logger.resetForTesting();
 });
@@ -45,7 +44,7 @@ const context                      = (pr: object): Context => generateContext({
 	owner: 'hello',
 	repo: 'world',
 	event: 'pull_request',
-	ref: 'pull/55/merge',
+	ref: 'refs/pull/55/merge',
 }, {
 	payload: {
 		number: 11,
@@ -584,6 +583,8 @@ describe('getChangedFiles', () => {
 });
 
 describe('isMergeable', () => {
+	disableNetConnect(nock);
+
 	it('should use cache', async() => {
 		const fn            = jest.fn();
 		const actionContext = getActionContext(context({}));
@@ -604,6 +605,7 @@ describe('isMergeable', () => {
 
 describe('updatePr', () => {
 	testEnv();
+	disableNetConnect(nock);
 
 	it('should return true 1', async() => {
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
@@ -687,6 +689,7 @@ describe('updatePr', () => {
 describe('resolveConflicts', () => {
 	testEnv();
 	testChildProcess();
+	disableNetConnect(nock);
 
 	it('should merge', async() => {
 		process.env.GITHUB_WORKSPACE = workDir;
@@ -808,6 +811,8 @@ describe('resolveConflicts', () => {
 });
 
 describe('getDefaultBranch', () => {
+	disableNetConnect(nock);
+
 	it('should get cached default branch', async() => {
 		nock('https://api.github.com')
 			.persist()

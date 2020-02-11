@@ -230,11 +230,7 @@ export const updatePr = async(branchName: string, files: string[], output: Comma
 	return true;
 };
 
-const runCommand = async(command: string | ExecuteTask, helper: GitHelper, logger: Logger, context: ActionContext): Promise<{
-	command: string;
-	stdout: string[];
-	stderr: string[];
-}> => {
+const runCommand = async(command: string | ExecuteTask, helper: GitHelper, logger: Logger, context: ActionContext): Promise<CommandOutput> => {
 	if ('string' === typeof command) {
 		return (await helper.runCommand(getWorkspace(), command))[0];
 	}

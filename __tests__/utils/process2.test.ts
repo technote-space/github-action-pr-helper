@@ -39,7 +39,7 @@ const getActionContext             = (context: Context, _actionDetails?: object,
 	},
 });
 
-const context = (action: string, event = 'pull_request', ref = 'pull/55/merge'): Context => generateContext({
+const context = (action: string, event = 'pull_request', ref = 'refs/pull/55/merge'): Context => generateContext({
 	owner: 'hello',
 	repo: 'world',
 	event,
@@ -398,7 +398,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(octokit, getActionContext(context('', 'push', 'heads/test'), {
+		await execute(octokit, getActionContext(context('', 'push', 'refs/heads/test'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
@@ -1118,7 +1118,7 @@ describe('execute', () => {
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({stdout: ''});
 
-		await expect(execute(octokit, getActionContext(context('', 'push', 'heads/test/change'), {
+		await expect(execute(octokit, getActionContext(context('', 'push', 'refs/heads/test/change'), {
 			executeCommands: ['yarn upgrade'],
 			targetBranchPrefix: 'test/',
 		}))).rejects.toThrow('remote branch [test/change] not found.');
@@ -1154,7 +1154,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await expect(execute(octokit, getActionContext(context('', 'push', 'heads/test/change'), {
+		await expect(execute(octokit, getActionContext(context('', 'push', 'refs/heads/test/change'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
@@ -1214,7 +1214,7 @@ describe('execute', () => {
 		});
 		setExists(true);
 
-		await execute(octokit, getActionContext(context('', 'push', 'heads/test/change'), {
+		await execute(octokit, getActionContext(context('', 'push', 'refs/heads/test/change'), {
 			executeCommands: ['yarn upgrade'],
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
