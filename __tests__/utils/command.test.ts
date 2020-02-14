@@ -31,7 +31,6 @@ import {
 } from '../../src/utils/command';
 import { getCacheKey, isCached } from '../../src/utils/misc';
 
-disableNetConnect(nock);
 beforeEach(() => {
 	Logger.resetForTesting();
 });
@@ -45,7 +44,7 @@ const context                      = (pr: object): Context => generateContext({
 	owner: 'hello',
 	repo: 'world',
 	event: 'pull_request',
-	ref: 'pull/55/merge',
+	ref: 'refs/pull/55/merge',
 }, {
 	payload: {
 		number: 11,
@@ -99,7 +98,7 @@ describe('clone', () => {
 		execCalledWith(mockExec, [
 			'git init \'.\'',
 			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
-			'git fetch origin || :',
+			'git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\' || :',
 			'git checkout -b hello-world/test-branch origin/hello-world/test-branch || :',
 		]);
 		stdoutCalledWith(mockStdout, [
@@ -107,7 +106,7 @@ describe('clone', () => {
 			'[command]git init \'.\'',
 			'  >> stdout',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
 			'  >> stdout',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
@@ -149,6 +148,8 @@ describe('checkBranch', () => {
 
 		execCalledWith(mockExec, [
 			'git rev-parse --abbrev-ref HEAD || :',
+			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
+			'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
 			'git checkout -b feature/new-feature origin/feature/new-feature || :',
 			'git checkout -b hello-world/test-branch',
 			'ls -la',
@@ -348,10 +349,8 @@ describe('getChangedFiles', () => {
 		});
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
@@ -359,12 +358,12 @@ describe('getChangedFiles', () => {
 			'  >> hello-world/test-branch',
 			'[command]ls -la',
 			'::endgroup::',
-			'::group::Configuring git committer to be GitHub Actions <example@example.com>',
+			'::group::Merging [origin/hello-world/test-branch] branch...',
+			'[command]git remote add origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
 			'[command]git config \'user.name\' \'GitHub Actions\'',
 			'[command]git config \'user.email\' \'example@example.com\'',
-			'::endgroup::',
-			'::group::Merging [hello-world/test-branch] branch...',
-			'[command]git merge --no-edit origin/hello-world/test-branch || :',
+			'[command]git merge --no-edit origin/hello-world/test-branch',
 			'  >> Auto-merging merge.txt',
 			'  >> CONFLICT (content): Merge conflict in merge.txt',
 			'  >> Automatic merge failed; fix conflicts and then commit the result.',
@@ -429,10 +428,8 @@ describe('getChangedFiles', () => {
 		});
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
@@ -440,12 +437,12 @@ describe('getChangedFiles', () => {
 			'  >> hello-world/test-branch',
 			'[command]ls -la',
 			'::endgroup::',
-			'::group::Configuring git committer to be GitHub Actions <example@example.com>',
+			'::group::Merging [origin/hello-world/test-branch] branch...',
+			'[command]git remote add origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
 			'[command]git config \'user.name\' \'GitHub Actions\'',
 			'[command]git config \'user.email\' \'example@example.com\'',
-			'::endgroup::',
-			'::group::Merging [hello-world/test-branch] branch...',
-			'[command]git merge --no-edit origin/hello-world/test-branch || :',
+			'[command]git merge --no-edit origin/hello-world/test-branch',
 			'  >> Already up to date.',
 			'::endgroup::',
 			'::group::Running commands...',
@@ -541,10 +538,8 @@ describe('getChangedFiles', () => {
 		});
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
@@ -552,12 +547,12 @@ describe('getChangedFiles', () => {
 			'  >> hello-world/test-branch',
 			'[command]ls -la',
 			'::endgroup::',
-			'::group::Configuring git committer to be GitHub Actions <example@example.com>',
+			'::group::Merging [origin/hello-world/test-branch] branch...',
+			'[command]git remote add origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
 			'[command]git config \'user.name\' \'GitHub Actions\'',
 			'[command]git config \'user.email\' \'example@example.com\'',
-			'::endgroup::',
-			'::group::Merging [hello-world/test-branch] branch...',
-			'[command]git merge --no-edit origin/hello-world/test-branch || :',
+			'[command]git merge --no-edit origin/hello-world/test-branch',
 			'  >> Already up to date.',
 			'::endgroup::',
 			'::group::Running commands...',
@@ -584,6 +579,8 @@ describe('getChangedFiles', () => {
 });
 
 describe('isMergeable', () => {
+	disableNetConnect(nock);
+
 	it('should use cache', async() => {
 		const fn            = jest.fn();
 		const actionContext = getActionContext(context({}));
@@ -604,6 +601,7 @@ describe('isMergeable', () => {
 
 describe('updatePr', () => {
 	testEnv();
+	disableNetConnect(nock);
 
 	it('should return true 1', async() => {
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
@@ -687,6 +685,7 @@ describe('updatePr', () => {
 describe('resolveConflicts', () => {
 	testEnv();
 	testChildProcess();
+	disableNetConnect(nock);
 
 	it('should merge', async() => {
 		process.env.GITHUB_WORKSPACE = workDir;
@@ -708,6 +707,9 @@ describe('resolveConflicts', () => {
 		}));
 
 		execCalledWith(mockExec, [
+			'git init \'.\'',
+			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
+			'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
 			'git config \'user.name\' \'GitHub Actions\'',
 			'git config \'user.email\' \'example@example.com\'',
 			'git merge --no-edit origin/feature/new-feature || :',
@@ -740,6 +742,9 @@ describe('resolveConflicts', () => {
 		}));
 
 		execCalledWith(mockExec, [
+			'git init \'.\'',
+			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
+			'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
 			'git config \'user.name\' \'GitHub Actions\'',
 			'git config \'user.email\' \'example@example.com\'',
 			'git merge --no-edit origin/feature/new-feature || :',
@@ -788,6 +793,9 @@ describe('resolveConflicts', () => {
 		}));
 
 		execCalledWith(mockExec, [
+			'git init \'.\'',
+			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
+			'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
 			'git config \'user.name\' \'GitHub Actions\'',
 			'git config \'user.email\' \'example@example.com\'',
 			'git merge --no-edit origin/feature/new-feature || :',
@@ -808,6 +816,8 @@ describe('resolveConflicts', () => {
 });
 
 describe('getDefaultBranch', () => {
+	disableNetConnect(nock);
+
 	it('should get cached default branch', async() => {
 		nock('https://api.github.com')
 			.persist()

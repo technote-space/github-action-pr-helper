@@ -26,15 +26,16 @@ import {
 import { ActionContext, CommandOutput, ExecuteTask, Null } from '../types';
 
 const {getWorkspace, useNpm, getOctokit} = Utils;
+const {getLocalRefspec, getRefspec}      = Utils;
 const {getRepository, isPush}            = ContextHelper;
 
 export const getApiHelper = (octokit: Octokit, context: ActionContext, logger?: Logger): ApiHelper => new ApiHelper(octokit, context.actionContext, logger);
 
 export const clone = async(helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
-	logger.startProcess('Fetching...');
-	await helper.fetchOrigin(getWorkspace(), context.actionContext);
-
 	const branchName = await getPrBranchName(helper, octokit, context);
+	logger.startProcess('Fetching...');
+	await helper.fetchOrigin(getWorkspace(), context.actionContext, ['--no-tags'], [getRefspec(branchName)]);
+
 	logger.startProcess('Switching branch to [%s]...', branchName);
 	await helper.switchBranch(getWorkspace(), branchName);
 };
@@ -53,8 +54,10 @@ export const checkBranch = async(helper: GitHelper, logger: Logger, octokit: Oct
 
 	logger.info('remote branch [%s] not found.', branchName);
 	logger.info('now branch: %s', clonedBranch);
-	logger.startProcess('Cloning [%s] from the remote repo...', getPrHeadRef(context));
-	await helper.switchBranch(getWorkspace(), getPrHeadRef(context));
+	const headRef = getPrHeadRef(context);
+	logger.startProcess('Cloning [%s] from the remote repo...', headRef);
+	await helper.fetchOrigin(getWorkspace(), context.actionContext, ['--no-tags'], [getRefspec(headRef)]);
+	await helper.switchBranch(getWorkspace(), headRef);
 	await helper.createBranch(getWorkspace(), branchName);
 	await helper.runCommand(getWorkspace(), 'ls -la');
 	return false;
@@ -145,21 +148,18 @@ const initDirectory = async(helper: GitHelper, logger: Logger, context: ActionCo
 	await helper.addOrigin(getWorkspace(), context.actionContext);
 };
 
-export const config = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
-	const name  = getCommitName(context);
-	const email = getCommitEmail(context);
-
-	logger.startProcess('Configuring git committer to be %s <%s>', name, email);
-
-	await helper.config(getWorkspace(), name, email);
-};
+export const config = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => await helper.config(getWorkspace(), getCommitName(context), getCommitEmail(context));
 
 export const merge = async(branch: string, helper: GitHelper, logger: Logger, context: ActionContext): Promise<boolean> => {
+	logger.startProcess('Merging [%s] branch...', getLocalRefspec(branch));
+	await helper.fetchOrigin(getWorkspace(), context.actionContext, ['--no-tags'], [getRefspec(branch)]);
 	await config(helper, logger, context);
-
-	logger.startProcess('Merging [%s] branch...', branch.replace(/^(refs\/)?heads/, ''));
 	const results = await helper.runCommand(getWorkspace(),
-		`git merge --no-edit origin/${branch.replace(/^(refs\/)?heads/, '')} || :`,
+		{
+			command: 'git merge',
+			args: ['--no-edit', getLocalRefspec(branch)],
+			suppressError: true,
+		},
 	);
 
 	return !results[0].stdout.some(RegExp.prototype.test, /^CONFLICT /);
@@ -230,11 +230,7 @@ export const updatePr = async(branchName: string, files: string[], output: Comma
 	return true;
 };
 
-const runCommand = async(command: string | ExecuteTask, helper: GitHelper, logger: Logger, context: ActionContext): Promise<{
-	command: string;
-	stdout: string[];
-	stderr: string[];
-}> => {
+const runCommand = async(command: string | ExecuteTask, helper: GitHelper, logger: Logger, context: ActionContext): Promise<CommandOutput> => {
 	if ('string' === typeof command) {
 		return (await helper.runCommand(getWorkspace(), command))[0];
 	}
