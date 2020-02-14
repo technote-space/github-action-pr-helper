@@ -111,8 +111,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
@@ -193,8 +191,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
@@ -245,11 +241,9 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
-			.reply(200, () => [])
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster')
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Atest%2Ftest-1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
@@ -271,8 +265,6 @@ describe('execute', () => {
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic1]',
 			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [test/test-1]...',
@@ -323,11 +315,9 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
-			.reply(200, () => [])
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster')
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
@@ -345,8 +335,6 @@ describe('execute', () => {
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic1]',
 			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [test/test-1]...',
@@ -407,8 +395,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
@@ -462,11 +448,9 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
-			.reply(200, () => [])
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster')
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
@@ -493,8 +477,6 @@ describe('execute', () => {
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic1]',
 			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/new-topic1]...',
@@ -558,10 +540,8 @@ describe('execute', () => {
 			.persist()
 			.get('/repos/hello/world')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list2'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
-			.reply(200, () => ([]))
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Ftest-1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Ftest-2')
@@ -590,8 +570,6 @@ describe('execute', () => {
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [feature/new-topic1]',
 			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/test-1]...',
@@ -647,10 +625,8 @@ describe('execute', () => {
 			.persist()
 			.get('/repos/octocat/Hello-World')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get.dev'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
-			.reply(200, () => ([]))
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic2')
@@ -671,10 +647,6 @@ describe('execute', () => {
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic1]',
 			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'  >> stdout',
-			'[command]git init \'.\'',
-			'  >> stdout',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'  >> stdout',
@@ -730,10 +702,8 @@ describe('execute', () => {
 			.persist()
 			.get('/repos/octocat/Hello-World')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
-			.reply(200, () => ([]))
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic2')
@@ -752,10 +722,6 @@ describe('execute', () => {
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic1]',
 			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'  >> stdout',
-			'[command]git init \'.\'',
-			'  >> stdout',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'  >> stdout',
@@ -818,7 +784,7 @@ describe('execute', () => {
 			.persist()
 			.get('/repos/hello/world')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc')
 			.reply(200, () => ([]))
 			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Ftest-0')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
@@ -840,8 +806,6 @@ describe('execute', () => {
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [master]',
 			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/test-0]...',
@@ -900,10 +864,8 @@ describe('execute', () => {
 			.persist()
 			.get('/repos/hello/world')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list2'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
-			.reply(200, () => ([]))
 			.get('/repos/octocat/Hello-World')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
@@ -920,8 +882,6 @@ describe('execute', () => {
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [feature/new-topic1]',
 			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/test-1]...',
@@ -970,11 +930,9 @@ describe('execute', () => {
 
 		nock('https://api.github.com')
 			.persist()
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=2')
-			.reply(200, () => [])
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster')
 			.reply(200, () => [])
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic1')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
@@ -996,8 +954,6 @@ describe('execute', () => {
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic1]',
 			'> Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'> Switching branch to [hello-world/new-topic1]...',
@@ -1068,8 +1024,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
@@ -1164,8 +1118,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
@@ -1224,8 +1176,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'::endgroup::',
@@ -1283,10 +1233,6 @@ describe('execute', () => {
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'  >> stdout',
-			'[command]git init \'.\'',
-			'  >> stdout',
 			'[command]git remote add origin',
 			'[command]git fetch origin',
 			'  >> stdout',

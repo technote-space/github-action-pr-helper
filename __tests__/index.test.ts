@@ -111,7 +111,7 @@ describe('main', () => {
 			.persist()
 			.get('/repos/hello/world')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
-			.get('/repos/hello/world/pulls?sort=created&direction=asc&per_page=100&page=1')
+			.get('/repos/hello/world/pulls?sort=created&direction=asc')
 			.reply(200, () => []);
 
 		await main(mainArgs({
