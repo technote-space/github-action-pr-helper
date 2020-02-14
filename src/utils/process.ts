@@ -276,6 +276,17 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
 		await sleep(INTERVAL_MS);
 	}
 	await outputResults(results);
+
+	const failed = results.filter(item => 'failed' === item.result).length;
+	// eslint-disable-next-line no-magic-numbers
+	if (1 === failed) {
+		commonLogger.endProcess();
+		throw new Error('There is a failed process.');
+		// eslint-disable-next-line no-magic-numbers
+	} else if (1 < failed) {
+		commonLogger.endProcess();
+		throw new Error('There are failed processes.');
+	}
 };
 
 /**

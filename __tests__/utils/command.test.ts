@@ -98,7 +98,7 @@ describe('clone', () => {
 		execCalledWith(mockExec, [
 			'git init \'.\'',
 			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
-			'git fetch origin || :',
+			'git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\' \'refs/heads/head-test:refs/remotes/origin/head-test\' || :',
 			'git checkout -b hello-world/test-branch origin/hello-world/test-branch || :',
 		]);
 		stdoutCalledWith(mockStdout, [
@@ -106,7 +106,7 @@ describe('clone', () => {
 			'[command]git init \'.\'',
 			'  >> stdout',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\' \'refs/heads/head-test:refs/remotes/origin/head-test\'',
 			'  >> stdout',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
@@ -347,10 +347,8 @@ describe('getChangedFiles', () => {
 		});
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
@@ -362,8 +360,8 @@ describe('getChangedFiles', () => {
 			'[command]git config \'user.name\' \'GitHub Actions\'',
 			'[command]git config \'user.email\' \'example@example.com\'',
 			'::endgroup::',
-			'::group::Merging [hello-world/test-branch] branch...',
-			'[command]git merge --no-edit origin/hello-world/test-branch || :',
+			'::group::Merging [origin/hello-world/test-branch] branch...',
+			'[command]git merge --no-edit origin/hello-world/test-branch',
 			'  >> Auto-merging merge.txt',
 			'  >> CONFLICT (content): Merge conflict in merge.txt',
 			'  >> Automatic merge failed; fix conflicts and then commit the result.',
@@ -428,10 +426,8 @@ describe('getChangedFiles', () => {
 		});
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
@@ -443,8 +439,8 @@ describe('getChangedFiles', () => {
 			'[command]git config \'user.name\' \'GitHub Actions\'',
 			'[command]git config \'user.email\' \'example@example.com\'',
 			'::endgroup::',
-			'::group::Merging [hello-world/test-branch] branch...',
-			'[command]git merge --no-edit origin/hello-world/test-branch || :',
+			'::group::Merging [origin/hello-world/test-branch] branch...',
+			'[command]git merge --no-edit origin/hello-world/test-branch',
 			'  >> Already up to date.',
 			'::endgroup::',
 			'::group::Running commands...',
@@ -540,10 +536,8 @@ describe('getChangedFiles', () => {
 		});
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
-			'[command]rm -rdf [Working Directory]',
-			'[command]git init \'.\'',
 			'[command]git remote add origin',
-			'[command]git fetch origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
 			'::endgroup::',
 			'::group::Switching branch to [hello-world/test-branch]...',
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
@@ -555,8 +549,8 @@ describe('getChangedFiles', () => {
 			'[command]git config \'user.name\' \'GitHub Actions\'',
 			'[command]git config \'user.email\' \'example@example.com\'',
 			'::endgroup::',
-			'::group::Merging [hello-world/test-branch] branch...',
-			'[command]git merge --no-edit origin/hello-world/test-branch || :',
+			'::group::Merging [origin/hello-world/test-branch] branch...',
+			'[command]git merge --no-edit origin/hello-world/test-branch',
 			'  >> Already up to date.',
 			'::endgroup::',
 			'::group::Running commands...',

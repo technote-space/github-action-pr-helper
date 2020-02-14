@@ -25,16 +25,23 @@ import {
 } from './variables';
 import { ActionContext, CommandOutput, ExecuteTask, Null } from '../types';
 
-const {getWorkspace, useNpm, getOctokit} = Utils;
-const {getRepository, isPush}            = ContextHelper;
+const {getWorkspace, useNpm, getOctokit}         = Utils;
+const {getLocalRefspec, getRefspec, uniqueArray} = Utils;
+const {getRepository, isPush}                    = ContextHelper;
 
 export const getApiHelper = (octokit: Octokit, context: ActionContext, logger?: Logger): ApiHelper => new ApiHelper(octokit, context.actionContext, logger);
 
 export const clone = async(helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
+	const branchName    = await getPrBranchName(helper, octokit, context);
+	const contextBranch = getContextBranch(context);
+	const prHeadRef     = getPrHeadRef(context);
+	const refspec       = [getRefspec(branchName), getRefspec(contextBranch)];
+	if (prHeadRef) {
+		refspec.push(getRefspec(prHeadRef));
+	}
 	logger.startProcess('Fetching...');
-	await helper.fetchOrigin(getWorkspace(), context.actionContext);
+	await helper.fetchOrigin(getWorkspace(), context.actionContext, ['--no-tags'], uniqueArray(refspec));
 
-	const branchName = await getPrBranchName(helper, octokit, context);
 	logger.startProcess('Switching branch to [%s]...', branchName);
 	await helper.switchBranch(getWorkspace(), branchName);
 };
@@ -53,8 +60,9 @@ export const checkBranch = async(helper: GitHelper, logger: Logger, octokit: Oct
 
 	logger.info('remote branch [%s] not found.', branchName);
 	logger.info('now branch: %s', clonedBranch);
-	logger.startProcess('Cloning [%s] from the remote repo...', getPrHeadRef(context));
-	await helper.switchBranch(getWorkspace(), getPrHeadRef(context));
+	const headRef = getPrHeadRef(context);
+	logger.startProcess('Cloning [%s] from the remote repo...', headRef);
+	await helper.switchBranch(getWorkspace(), headRef);
 	await helper.createBranch(getWorkspace(), branchName);
 	await helper.runCommand(getWorkspace(), 'ls -la');
 	return false;
@@ -157,9 +165,13 @@ export const config = async(helper: GitHelper, logger: Logger, context: ActionCo
 export const merge = async(branch: string, helper: GitHelper, logger: Logger, context: ActionContext): Promise<boolean> => {
 	await config(helper, logger, context);
 
-	logger.startProcess('Merging [%s] branch...', branch.replace(/^(refs\/)?heads/, ''));
+	logger.startProcess('Merging [%s] branch...', getLocalRefspec(branch));
 	const results = await helper.runCommand(getWorkspace(),
-		`git merge --no-edit origin/${branch.replace(/^(refs\/)?heads/, '')} || :`,
+		{
+			command: 'git merge',
+			args: ['--no-edit', getLocalRefspec(branch)],
+			suppressError: true,
+		},
 	);
 
 	return !results[0].stdout.some(RegExp.prototype.test, /^CONFLICT /);

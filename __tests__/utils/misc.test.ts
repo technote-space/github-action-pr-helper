@@ -178,7 +178,7 @@ describe('isTargetContext', () => {
 
 	it('should return true 8', async() => {
 		expect(await isTargetContext(octokit, generateActionContext({
-			ref: 'heads/test/change',
+			ref: 'refs/heads/test/change',
 			event: 'push',
 		}, {}, {targetBranchPrefix: 'test/', targetEvents: {push: '*'}}))).toBe(true);
 	});
@@ -266,7 +266,7 @@ describe('isTargetContext', () => {
 
 	it('should return false 3', async() => {
 		expect(await isTargetContext(octokit, generateActionContext({
-			ref: 'heads/master',
+			ref: 'refs/heads/master',
 			event: 'pull_request',
 			action: 'synchronize',
 		}, {
@@ -283,14 +283,14 @@ describe('isTargetContext', () => {
 
 	it('should return false 4', async() => {
 		expect(await isTargetContext(octokit, generateActionContext({
-			ref: 'heads/test/change',
+			ref: 'refs/heads/test/change',
 			event: 'push',
 		}))).toBe(false);
 	});
 
 	it('should return false 5', async() => {
 		expect(await isTargetContext(octokit, generateActionContext({
-			ref: 'heads/change',
+			ref: 'refs/heads/change',
 			event: 'pull_request',
 			action: 'synchronize',
 		}, undefined, {
