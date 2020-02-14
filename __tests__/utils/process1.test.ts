@@ -104,11 +104,11 @@ describe('execute', () => {
 			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic1')
 			.reply(204);
 
-		await execute(octokit, getActionContext(context('closed'), {
+		await expect(execute(octokit, getActionContext(context('closed'), {
 			prBranchName: 'test-${PR_ID}',
 			prCloseMessage: 'close message',
 			checkDefaultBranch: false,
-		}));
+		}))).rejects.toThrow('There is a failed process.');
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic1]',
@@ -341,11 +341,11 @@ describe('execute', () => {
 			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic1')
 			.reply(204);
 
-		await execute(octokit, getActionContext(context('', 'schedule'), {
+		await expect(execute(octokit, getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
 			prBranchName: 'test-${PR_ID}',
 			checkDefaultBranch: false,
-		}, 'develop'));
+		}, 'develop'))).rejects.toThrow('There is a failed process.');
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic1]',
@@ -399,7 +399,7 @@ describe('execute', () => {
 			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic1')
 			.reply(204);
 
-		await execute(octokit, getActionContext(context('closed'), {
+		await expect(execute(octokit, getActionContext(context('closed'), {
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
 			commitMessage: 'test: create pull request',
@@ -408,7 +408,7 @@ describe('execute', () => {
 			prBody: 'pull request body',
 			prCloseMessage: 'close message',
 			checkDefaultBranch: false,
-		}));
+		}))).rejects.toThrow('There is a failed process.');
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic1]',
@@ -476,11 +476,11 @@ describe('execute', () => {
 			.delete('/repos/octocat/Hello-World/git/refs/heads/hello-world/new-topic1')
 			.reply(204);
 
-		await execute(octokit, getActionContext(context('', 'schedule'), {
+		await expect(execute(octokit, getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
 			prBranchName: 'test-${PR_ID}',
 			checkDefaultBranch: false,
-		}, 'develop'));
+		}, 'develop'))).rejects.toThrow('There is a failed process.');
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic1]',
@@ -512,11 +512,11 @@ describe('execute', () => {
 			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic2')
 			.reply(200, () => []);
 
-		await execute(octokit, getActionContext(context('', 'schedule'), {
+		await expect(execute(octokit, getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
 			prBranchName: 'test-${PR_ID}',
 			checkDefaultBranch: false,
-		}));
+		}))).rejects.toThrow('There are failed processes.');
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [hello-world/new-topic1]',
@@ -544,9 +544,9 @@ describe('execute', () => {
 			.get('/repos/octocat/Hello-World')
 			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
 
-		await execute(octokit, getActionContext(context('', 'schedule'), {
+		await expect(execute(octokit, getActionContext(context('', 'schedule'), {
 			targetBranchPrefix: 'test/',
-		}));
+		}))).rejects.toThrow('There is a failed process.');
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Target PullRequest Ref [feature/new-topic1]',
