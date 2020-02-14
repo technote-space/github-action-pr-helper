@@ -323,6 +323,9 @@ export const getDefaultBranch = async(octokit: Octokit, context: ActionContext):
 	repo: context.actionContext.repo.repo,
 }), async() => await getApiHelper(octokit, context).getDefaultBranch(), context);
 
-export const getNewPatchVersion = async(helper: GitHelper, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-patch-version'), async() => helper.getNewPatchVersion(getWorkspace()), context);
+export const getNewPatchVersion = async(helper: GitHelper, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-patch-version'), async() => {
+	await helper.fetchTags(getWorkspace(), context.actionContext);
+	return await helper.getNewPatchVersion(getWorkspace());
+}, context);
 
 export const findPR = async(branchName: string, octokit: Octokit, context: ActionContext): Promise<Octokit.PullsListResponseItem | Null> => getCache(getCacheKey('pr', {branchName}), async() => getApiHelper(octokit, context).findPullRequest(branchName), context);
