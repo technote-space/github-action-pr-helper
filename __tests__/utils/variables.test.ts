@@ -8,7 +8,6 @@ import {
 	testEnv,
 	generateContext,
 	testChildProcess,
-	setChildProcessParams,
 	testFs,
 	getApiFixture,
 	disableNetConnect,
@@ -45,6 +44,7 @@ const getActionContext             = (context: Context, _actionDetails?: ActionD
 	actionDetail: _actionDetails ?? actionDetails,
 	cache: Object.assign(cache ?? {}, {
 		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: defaultBranch ?? 'master',
+		[getCacheKey('new-patch-version')]: 'v1.2.4',
 	}),
 	isBatchProcess,
 });
@@ -125,7 +125,6 @@ describe('getPrBranchName', () => {
 	testChildProcess();
 
 	it('should get pr branch name', async() => {
-		setChildProcessParams({stdout: '1.2.3'});
 		expect(await getPrBranchName(helper, octokit, generateActionContext({event: 'pull_request'}, {
 			payload: prPayload,
 		}, {
@@ -134,7 +133,6 @@ describe('getPrBranchName', () => {
 	});
 
 	it('should get pr branch name for default branch 1', async() => {
-		setChildProcessParams({stdout: '1.2.3'});
 		expect(await getPrBranchName(helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'refs/heads/master'}, {
 			payload: {
 				'pull_request': {
@@ -159,7 +157,6 @@ describe('getPrBranchName', () => {
 	});
 
 	it('should get pr branch name for default branch 2', async() => {
-		setChildProcessParams({stdout: '1.2.3'});
 		setExists(false);
 		expect(await getPrBranchName(helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'refs/heads/master'}, {
 			payload: {
@@ -205,16 +202,12 @@ describe('getPrTitle', () => {
 	disableNetConnect(nock);
 
 	it('should get PR title', async() => {
-		setChildProcessParams({stdout: '1.2.3'});
-
 		expect(await getPrTitle(helper, octokit, generateActionContext({}, {payload: prPayload}, {
 			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${PR_LINK}',
 		}))).toBe('11::21031067::feature/new-feature::master::feature/new-feature -> master::#11::v1.2.4::[test title](http://example.com)');
 	});
 
 	it('should get PR title for default branch 1', async() => {
-		setChildProcessParams({stdout: '1.2.3'});
-
 		expect(await getPrTitle(helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'refs/heads/master'}, {
 			payload: {
 				'pull_request': {
@@ -237,8 +230,6 @@ describe('getPrTitle', () => {
 	});
 
 	it('should get PR title for default branch 2', async() => {
-		setChildProcessParams({stdout: '1.2.3'});
-
 		expect(await getPrTitle(helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'refs/heads/master'}, {
 			payload: {
 				'pull_request': {
