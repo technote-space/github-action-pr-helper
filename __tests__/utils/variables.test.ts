@@ -175,7 +175,7 @@ describe('getPrBranchName', () => {
 			},
 		}, {
 			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${PR_LINK}',
-		}))).toBe('hello-world/0::https://github.com/owner/repo/tree/master::21031067::master::master::test title::http://example.com::master::::PATCH_VERSION::::[test title](http://example.com)');
+		}))).toBe('hello-world/0::https://github.com/owner/repo/tree/master::21031067::master::master::test title::http://example.com::master::v1.2.4::[test title](http://example.com)');
 	});
 
 	it('should get push branch name', async() => {
