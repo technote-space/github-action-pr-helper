@@ -123,7 +123,6 @@ export const filterExtension = (line: string, context: ActionContext): boolean =
 export const getHelper = (context: ActionContext): GitHelper => new GitHelper(new Logger(replaceDirectory), {
 	depth: -1,
 	filter: (line: string): boolean => filterGitStatus(line, context) && filterExtension(line, context),
-
 });
 
 export const getPullsArgsForDefaultBranch = async(octokit: Octokit, context: ActionContext): Promise<PullsParams> => ({
