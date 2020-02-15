@@ -856,23 +856,24 @@ describe('getNewPatchVersion', () => {
 	testChildProcess();
 
 	it('should get new patch version', async() => {
-		setChildProcessParams({stdout: '1.2.3'});
-		setExists(true);
 		const actionContext = getActionContext(context({}));
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/git/matching-refs/tags/')
+			.reply(200, () => getApiFixture(rootDir, 'repos.git.matching-refs'));
+
 		expect(isCached(getCacheKey('new-patch-version'), actionContext)).toBe(false);
 
-		expect(await getNewPatchVersion(helper, actionContext)).toBe('v1.2.4');
+		expect(await getNewPatchVersion(octokit, actionContext)).toBe('v2.0.1');
 
 		expect(isCached(getCacheKey('new-patch-version'), actionContext)).toBe(true);
 	});
 
 	it('should get new patch version from cache', async() => {
-		setChildProcessParams({stdout: '1.2.3'});
-		setExists(true);
 		const actionContext = Object.assign({}, getActionContext(context({})), {newPatchVersion: 'v1.2.5'});
 		expect(actionContext.newPatchVersion).toBe('v1.2.5');
 
-		await getNewPatchVersion(helper, actionContext);
+		await getNewPatchVersion(octokit, actionContext);
 
 		expect(actionContext.newPatchVersion).toBe('v1.2.5');
 	});

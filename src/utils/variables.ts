@@ -71,7 +71,7 @@ const contextVariables = async(isComment: boolean, helper: GitHelper, octokit: O
 		{key: 'PR_URL', replace: getPrParamFunc(pr => pr.html_url)},
 		{key: 'PR_MERGE_REF', replace: getPrParamFunc(async(pr) => pr.number ? `${pr.head.ref} -> ${pr.base.ref}` : await getDefaultBranch(octokit, context))},
 		{key: 'PR_LINK', replace: async(): Promise<string> => getPrLink(context)},
-		{key: 'PATCH_VERSION', replace: async(): Promise<string> => isCloned(getWorkspace()) ? getNewPatchVersion(helper, context) : '::PATCH_VERSION::'},
+		{key: 'PATCH_VERSION', replace: async(): Promise<string> => isCloned(getWorkspace()) ? getNewPatchVersion(octokit, context) : '::PATCH_VERSION::'},
 		// eslint-disable-next-line no-magic-numbers
 	].concat([...Array(context.actionDetail.prVariables?.length ?? 0).keys()].map(index => ({
 		// eslint-disable-next-line no-magic-numbers
