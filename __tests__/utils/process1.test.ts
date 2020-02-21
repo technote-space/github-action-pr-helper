@@ -770,7 +770,11 @@ describe('autoMerge', () => {
 			.reply(405, {
 				'message': 'Pull Request is not mergeable',
 				'documentation_url': 'https://developer.github.com/v3/pulls/#merge-a-pull-request-merge-button',
-			});
+			})
+			.get('/repos/hello/world/commits/7638417db6d59f3c431d3e1f261cc637155684cd/status')
+			.reply(200, () => getApiFixture(rootDir, 'status.success'))
+			.get('/repos/hello/world/commits/7638417db6d59f3c431d3e1f261cc637155684cd/check-suites')
+			.reply(200, () => getApiFixture(rootDir, 'checks.success'));
 
 		expect(await autoMerge({
 			'created_at': moment().subtract(11, 'days').toISOString(),
@@ -784,6 +788,28 @@ describe('autoMerge', () => {
 		]);
 	});
 
+	it('should return false 5', async() => {
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls/1347')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
+			.put('/repos/hello/world/pulls/1347/merge')
+			.reply(200, {
+				'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+				'merged': true,
+				'message': 'Pull Request successfully merged',
+			})
+			.get('/repos/hello/world/commits/7638417db6d59f3c431d3e1f261cc637155684cd/status')
+			.reply(200, () => getApiFixture(rootDir, 'status.failed'));
+
+		expect(await autoMerge({
+			'created_at': moment().subtract(11, 'days').toISOString(),
+			number: 1347,
+		}, new Logger(), octokit, getActionContext(context('synchronize'), {
+			autoMergeThresholdDays: '10',
+		}))).toBe(false);
+	});
+
 	it('should return true', async() => {
 		nock('https://api.github.com')
 			.persist()
@@ -794,7 +820,11 @@ describe('autoMerge', () => {
 				'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
 				'merged': true,
 				'message': 'Pull Request successfully merged',
-			});
+			})
+			.get('/repos/hello/world/commits/7638417db6d59f3c431d3e1f261cc637155684cd/status')
+			.reply(200, () => getApiFixture(rootDir, 'status.success'))
+			.get('/repos/hello/world/commits/7638417db6d59f3c431d3e1f261cc637155684cd/check-suites')
+			.reply(200, () => getApiFixture(rootDir, 'checks.success'));
 
 		expect(await autoMerge({
 			'created_at': moment().subtract(11, 'days').toISOString(),

@@ -25,6 +25,7 @@ import {
 	getPrBaseRef,
 	getActionContext,
 	getAutoMergeThresholdDays,
+	isPassedAllChecks,
 } from './misc';
 import { getPrBranchName } from './variables';
 import { INTERVAL_MS } from '../constant';
@@ -83,6 +84,11 @@ export const autoMerge = async(pr: { 'created_at': string; number: number }, log
 
 	if (!await isMergeable(pr.number, octokit, context)) {
 		// not mergeable
+		return false;
+	}
+
+	if (!await isPassedAllChecks(octokit, context)) {
+		// not passed all checked
 		return false;
 	}
 

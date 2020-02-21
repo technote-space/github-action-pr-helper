@@ -195,3 +195,22 @@ export const getTriggerWorkflowMessage = (context: ActionContext): string => con
 
 // eslint-disable-next-line no-magic-numbers
 export const getAutoMergeThresholdDays = (context: ActionContext): number => context.actionDetail.autoMergeThresholdDays && /^\d+$/.test(context.actionDetail.autoMergeThresholdDays) ? Number(context.actionDetail.autoMergeThresholdDays) : 0;
+
+export const isPassedAllChecks = async(octokit: Octokit, context: ActionContext): Promise<boolean> => {
+	const {data: status} = await octokit.repos.getCombinedStatusForRef({
+		...context.actionContext.repo,
+		ref: context.actionContext.sha,
+	});
+	if ('success' !== status.state) {
+		return false;
+	}
+
+	const suites = await octokit.paginate(
+		octokit.checks.listSuitesForRef.endpoint.merge({
+			...context.actionContext.repo,
+			ref: context.actionContext.sha,
+		}),
+	);
+
+	return !suites.filter(suite => 'queued' !== suite.status && ('completed' !== suite.status || 'success' !== suite.conclusion)).length;
+};

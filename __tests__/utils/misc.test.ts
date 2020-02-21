@@ -1,8 +1,9 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
+import nock from 'nock';
 import { resolve } from 'path';
 import { Logger } from '@technote-space/github-action-helper';
-import { testEnv, generateContext, testFs, getOctokit } from '@technote-space/github-action-test-helper';
+import { testEnv, generateContext, testFs, getOctokit, disableNetConnect, getApiFixture } from '@technote-space/github-action-test-helper';
 import {
 	getActionDetail,
 	replaceDirectory,
@@ -22,6 +23,7 @@ import {
 	getPullsArgsForDefaultBranch,
 	isActiveTriggerWorkflow,
 	getTriggerWorkflowMessage,
+	isPassedAllChecks,
 } from '../../src/utils/misc';
 import { ActionContext, ActionDetails } from '../../src/types';
 import { DEFAULT_TRIGGER_WORKFLOW_MESSAGE } from '../../src/constant';
@@ -597,5 +599,68 @@ describe('getTriggerWorkflowMessage', () => {
 
 	it('should get default message', () => {
 		expect(getTriggerWorkflowMessage(generateActionContext({}))).toBe(DEFAULT_TRIGGER_WORKFLOW_MESSAGE);
+	});
+});
+
+describe('isPassedAllChecks', () => {
+	disableNetConnect(nock);
+	const rootDir = resolve(__dirname, '..', 'fixtures');
+
+	it('should return false 1', async() => {
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/commits/test-sha/status')
+			.reply(200, () => getApiFixture(rootDir, 'status.failed'));
+
+		expect(await isPassedAllChecks(octokit, generateActionContext({
+			owner: 'hello',
+			repo: 'world',
+			sha: 'test-sha',
+		}))).toBe(false);
+	});
+
+	it('should return false 2', async() => {
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/commits/test-sha/status')
+			.reply(200, () => getApiFixture(rootDir, 'status.success'))
+			.get('/repos/hello/world/commits/test-sha/check-suites')
+			.reply(200, () => getApiFixture(rootDir, 'checks.failed1'));
+
+		expect(await isPassedAllChecks(octokit, generateActionContext({
+			owner: 'hello',
+			repo: 'world',
+			sha: 'test-sha',
+		}))).toBe(false);
+	});
+
+	it('should return false 3', async() => {
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/commits/test-sha/status')
+			.reply(200, () => getApiFixture(rootDir, 'status.success'))
+			.get('/repos/hello/world/commits/test-sha/check-suites')
+			.reply(200, () => getApiFixture(rootDir, 'checks.failed2'));
+
+		expect(await isPassedAllChecks(octokit, generateActionContext({
+			owner: 'hello',
+			repo: 'world',
+			sha: 'test-sha',
+		}))).toBe(false);
+	});
+
+	it('should return true', async() => {
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/commits/test-sha/status')
+			.reply(200, () => getApiFixture(rootDir, 'status.success'))
+			.get('/repos/hello/world/commits/test-sha/check-suites')
+			.reply(200, () => getApiFixture(rootDir, 'checks.success'));
+
+		expect(await isPassedAllChecks(octokit, generateActionContext({
+			owner: 'hello',
+			repo: 'world',
+			sha: 'test-sha',
+		}))).toBe(true);
 	});
 });

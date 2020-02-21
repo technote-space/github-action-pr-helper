@@ -1327,7 +1327,11 @@ describe('execute', () => {
 				'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
 				'merged': true,
 				'message': 'Pull Request successfully merged',
-			});
+			})
+			.get('/repos/octocat/Hello-World/commits/7638417db6d59f3c431d3e1f261cc637155684cd/status')
+			.reply(200, () => getApiFixture(rootDir, 'status.success'))
+			.get('/repos/octocat/Hello-World/commits/7638417db6d59f3c431d3e1f261cc637155684cd/check-suites')
+			.reply(200, () => getApiFixture(rootDir, 'checks.success'));
 
 		await expect(execute(octokit, getActionContext(context('', 'schedule'), {
 			prBranchPrefix: 'hello-world/',
