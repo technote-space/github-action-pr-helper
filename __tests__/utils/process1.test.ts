@@ -1,5 +1,6 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
+import moment from 'moment';
 import nock from 'nock';
 import { resolve } from 'path';
 import { Logger } from '@technote-space/github-action-helper';
@@ -16,7 +17,7 @@ import {
 	getOctokit,
 } from '@technote-space/github-action-test-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
-import { execute } from '../../src/utils/process';
+import { execute, autoMerge, createCommit } from '../../src/utils/process';
 import { getCacheKey } from '../../src/utils/misc';
 
 const workDir   = resolve(__dirname, 'test');
@@ -31,12 +32,13 @@ const actionDetails: ActionDetails = {
 	actionOwner: 'octocat',
 	actionRepo: 'hello-world',
 };
-const getActionContext             = (context: Context, _actionDetails?: object, branch?: string): ActionContext => ({
+const getActionContext             = (context: Context, _actionDetails?: object, branch?: string, isBatchProcess?: boolean): ActionContext => ({
 	actionContext: context,
 	actionDetail: _actionDetails ? Object.assign({}, actionDetails, _actionDetails) : actionDetails,
 	cache: {
 		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: branch ?? 'master',
 	},
+	isBatchProcess,
 });
 
 const context = (action: string, event = 'pull_request', ref = 'refs/pull/55/merge'): Context => generateContext({
@@ -719,6 +721,146 @@ describe('execute', () => {
 			'::warning::Branch [test/change] is protected.',
 			'::endgroup::',
 			'> \x1b[31;40;0m×\x1b[0m\t[test/change] Branch is protected',
+		]);
+	});
+});
+
+describe('autoMerge', () => {
+	disableNetConnect(nock);
+	testEnv();
+	testChildProcess();
+
+	it('should return false 1', async() => {
+		expect(await autoMerge({
+			'created_at': '',
+			number: 1347,
+		}, new Logger(), octokit, getActionContext(context('synchronize')))).toBe(false);
+	});
+
+	it('should return false 2', async() => {
+		expect(await autoMerge({
+			'created_at': moment().subtract(10, 'days').toISOString(),
+			number: 1347,
+		}, new Logger(), octokit, getActionContext(context('synchronize'), {
+			autoMergeThresholdDays: '10',
+		}))).toBe(false);
+	});
+
+	it('should return false 3', async() => {
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls/1347')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.false'));
+
+		expect(await autoMerge({
+			'created_at': moment().subtract(11, 'days').toISOString(),
+			number: 1347,
+		}, new Logger(), octokit, getActionContext(context('synchronize'), {
+			autoMergeThresholdDays: '10',
+		}))).toBe(false);
+	});
+
+	it('should return false 4', async() => {
+		const mockStdout = spyOnStdout();
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls/1347')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
+			.put('/repos/hello/world/pulls/1347/merge')
+			.reply(405, {
+				'message': 'Pull Request is not mergeable',
+				'documentation_url': 'https://developer.github.com/v3/pulls/#merge-a-pull-request-merge-button',
+			});
+
+		expect(await autoMerge({
+			'created_at': moment().subtract(11, 'days').toISOString(),
+			number: 1347,
+		}, new Logger(), octokit, getActionContext(context('synchronize'), {
+			autoMergeThresholdDays: '10',
+		}))).toBe(false);
+
+		stdoutCalledWith(mockStdout, [
+			'::warning::Pull Request is not mergeable',
+		]);
+	});
+
+	it('should return true', async() => {
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls/1347')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
+			.put('/repos/hello/world/pulls/1347/merge')
+			.reply(200, {
+				'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+				'merged': true,
+				'message': 'Pull Request successfully merged',
+			});
+
+		expect(await autoMerge({
+			'created_at': moment().subtract(11, 'days').toISOString(),
+			number: 1347,
+		}, new Logger(), octokit, getActionContext(context('synchronize'), {
+			autoMergeThresholdDays: '10',
+		}))).toBe(true);
+	});
+});
+
+describe('createCommit', () => {
+	disableNetConnect(nock);
+	testEnv();
+	testChildProcess();
+
+	it('should do nothing 1', async() => {
+		process.env.GITHUB_WORKSPACE   = workDir;
+		process.env.GITHUB_REPOSITORY  = 'hello/world';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.includes(' rev-parse')) {
+					return 'hello-world/test-21031067';
+				}
+				return '';
+			},
+		});
+		setExists(true);
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls/1347')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
+			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Ftest-21031067')
+			.reply(200, () => []);
+
+		expect((await createCommit(true, new Logger(), octokit, getActionContext(context('', 'schedule'), {
+			prBranchName: 'test-${PR_ID}',
+			checkDefaultBranch: false,
+		}, undefined, true))).result).toBe('not changed');
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Fetching...',
+			'[command]git remote add origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/test-21031067:refs/remotes/origin/hello-world/test-21031067\'',
+			'::endgroup::',
+			'::group::Switching branch to [hello-world/test-21031067]...',
+			'[command]git checkout -b hello-world/test-21031067 origin/hello-world/test-21031067',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> hello-world/test-21031067',
+			'[command]ls -la',
+			'::endgroup::',
+			'::group::Merging [origin/master] branch...',
+			'[command]git remote add origin',
+			'[command]git fetch --no-tags origin \'refs/heads/master:refs/remotes/origin/master\'',
+			'[command]git config \'user.name\' test-actor',
+			'[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
+			'[command]git merge --no-edit origin/master',
+			'::endgroup::',
+			'::group::Running commands...',
+			'::endgroup::',
+			'::group::Checking diff...',
+			'[command]git add --all',
+			'[command]git status --short -uno',
+			'> There is no diff.',
 		]);
 	});
 });

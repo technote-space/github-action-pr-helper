@@ -24,6 +24,7 @@ import {
 	getPullsArgsForDefaultBranch,
 	getPrBaseRef,
 	getActionContext,
+	getAutoMergeThresholdDays,
 } from './misc';
 import { getPrBranchName } from './variables';
 import { INTERVAL_MS } from '../constant';
@@ -63,7 +64,42 @@ const checkActionPr = async(logger: Logger, octokit: Octokit, context: ActionCon
 	return true;
 };
 
-const createCommit = async(addComment: boolean, logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult> => {
+export const autoMerge = async(pr: { 'created_at': string; number: number }, logger: Logger, octokit: Octokit, context: ActionContext): Promise<boolean> => {
+	const threshold = getAutoMergeThresholdDays(context);
+	// eslint-disable-next-line no-magic-numbers
+	if (threshold <= 0) {
+		// disabled
+		return false;
+	}
+
+	const created = Date.parse(pr.created_at);
+	const diff    = Date.now() - created;
+	// eslint-disable-next-line no-magic-numbers
+	const days    = Math.floor(diff / 1000 / 60 / 60 / 24);
+	if (days <= threshold) {
+		// less than threshold
+		return false;
+	}
+
+	if (!await isMergeable(pr.number, octokit, context)) {
+		// not mergeable
+		return false;
+	}
+
+	try {
+		await octokit.pulls.merge({
+			...context.actionContext.repo,
+			'pull_number': pr.number,
+		});
+	} catch (error) {
+		logger.warn(error.message);
+		return false;
+	}
+
+	return true;
+};
+
+export const createCommit = async(addComment: boolean, logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult> => {
 	const helper     = getHelper(context);
 	const branchName = await getPrBranchName(helper, octokit, context);
 
@@ -72,10 +108,16 @@ const createCommit = async(addComment: boolean, logger: Logger, octokit: Octokit
 		logger.info('There is no diff.');
 		if (context.isBatchProcess) {
 			const pr = await findPR(branchName, octokit, context);
-			if (pr && !(await getRefDiff(getPrBaseRef(context), helper, logger, context)).length) {
-				// Close if there is no diff
-				await closePR(branchName, logger, octokit, context);
-				return getResult('succeeded', 'has been closed because there is no reference diff', context);
+			if (pr) {
+				if (!(await getRefDiff(getPrBaseRef(context), helper, logger, context)).length) {
+					// Close if there is no diff
+					await closePR(branchName, logger, octokit, context);
+					return getResult('succeeded', 'has been closed because there is no reference diff', context);
+				}
+
+				if (await autoMerge(pr, logger, octokit, context)) {
+					return getResult('succeeded', 'has been auto merged', context);
+				}
 			}
 		}
 

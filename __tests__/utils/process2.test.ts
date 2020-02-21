@@ -1,5 +1,6 @@
 /* eslint-disable no-magic-numbers */
 import { Context } from '@actions/github/lib/context';
+import moment from 'moment';
 import nock from 'nock';
 import { resolve } from 'path';
 import { Logger } from '@technote-space/github-action-helper';
@@ -1283,6 +1284,188 @@ describe('execute', () => {
 			'::group::Creating PullRequest...',
 			'::endgroup::',
 			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] PullRequest created',
+		]);
+	});
+
+	it('should auto merge', async() => {
+		process.env.GITHUB_WORKSPACE   = workDir;
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.includes(' rev-parse')) {
+					return 'hello-world/new-topic1';
+				}
+				if (command.includes(' diff ')) {
+					return '__tests__/fixtures/test.md';
+				}
+				return 'stdout';
+			},
+		});
+		setExists(true);
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
+			.get('/repos/hello/world/pulls?sort=created&direction=asc')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic1')
+			.reply(200, () => {
+				const result            = getApiFixture(rootDir, 'pulls.list.state.open');
+				result[0]['created_at'] = moment().subtract(11, 'days').toISOString();
+				return result;
+			})
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic2')
+			.reply(200, () => [])
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Ftest-1')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World/pulls/1347')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
+			.put('/repos/octocat/Hello-World/pulls/1347/merge')
+			.reply(200, {
+				'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+				'merged': true,
+				'message': 'Pull Request successfully merged',
+			});
+
+		await expect(execute(octokit, getActionContext(context('', 'schedule'), {
+			prBranchPrefix: 'hello-world/',
+			prBranchName: 'test-${PR_ID}',
+			checkDefaultBranch: false,
+			autoMergeThresholdDays: '10',
+		}))).rejects.toThrow('There is a failed process.');
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Target PullRequest Ref [hello-world/new-topic1]',
+			'> Fetching...',
+			'[command]git remote add origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/new-topic1:refs/remotes/origin/hello-world/new-topic1\'',
+			'  >> stdout',
+			'> Switching branch to [hello-world/new-topic1]...',
+			'[command]git checkout -b hello-world/new-topic1 origin/hello-world/new-topic1',
+			'  >> stdout',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> hello-world/new-topic1',
+			'[command]ls -la',
+			'  >> stdout',
+			'> Merging [origin/master] branch...',
+			'[command]git remote add origin',
+			'[command]git fetch --no-tags origin \'refs/heads/master:refs/remotes/origin/master\'',
+			'  >> stdout',
+			'[command]git config \'user.name\' test-actor',
+			'  >> stdout',
+			'[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
+			'  >> stdout',
+			'[command]git merge --no-edit origin/master',
+			'  >> stdout',
+			'> Running commands...',
+			'> Checking diff...',
+			'[command]git add --all',
+			'  >> stdout',
+			'[command]git status --short -uno',
+			'> There is no diff.',
+			'> Checking references diff...',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
+			'[command]git diff \'HEAD..origin/master\' --name-only',
+			'::endgroup::',
+			'::group::Target PullRequest Ref [hello-world/new-topic2]',
+			'::endgroup::',
+			'::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
+			'> \x1b[32;40;0m✔\x1b[0m\t[hello-world/new-topic1] has been auto merged',
+			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic2] not found',
+			'::endgroup::',
+		]);
+	});
+
+	it('should not auto merge', async() => {
+		process.env.GITHUB_WORKSPACE   = workDir;
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.includes(' rev-parse')) {
+					return 'hello-world/new-topic1';
+				}
+				if (command.includes(' diff ')) {
+					return '__tests__/fixtures/test.md';
+				}
+				return 'stdout';
+			},
+		});
+		setExists(true);
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
+			.get('/repos/hello/world/pulls?sort=created&direction=asc')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic1')
+			.reply(200, () => {
+				const result            = getApiFixture(rootDir, 'pulls.list.state.open');
+				result[0]['created_at'] = moment().subtract(10, 'days').toISOString();
+				return result;
+			})
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic2')
+			.reply(200, () => [])
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Ftest-1')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World/pulls/1347')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
+			.put('/repos/octocat/Hello-World/pulls/1347/merge')
+			.reply(200, {
+				'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+				'merged': true,
+				'message': 'Pull Request successfully merged',
+			});
+
+		await expect(execute(octokit, getActionContext(context('', 'schedule'), {
+			prBranchPrefix: 'hello-world/',
+			prBranchName: 'test-${PR_ID}',
+			checkDefaultBranch: false,
+			autoMergeThresholdDays: '10',
+		}))).rejects.toThrow('There is a failed process.');
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Target PullRequest Ref [hello-world/new-topic1]',
+			'> Fetching...',
+			'[command]git remote add origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/new-topic1:refs/remotes/origin/hello-world/new-topic1\'',
+			'  >> stdout',
+			'> Switching branch to [hello-world/new-topic1]...',
+			'[command]git checkout -b hello-world/new-topic1 origin/hello-world/new-topic1',
+			'  >> stdout',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> hello-world/new-topic1',
+			'[command]ls -la',
+			'  >> stdout',
+			'> Merging [origin/master] branch...',
+			'[command]git remote add origin',
+			'[command]git fetch --no-tags origin \'refs/heads/master:refs/remotes/origin/master\'',
+			'  >> stdout',
+			'[command]git config \'user.name\' test-actor',
+			'  >> stdout',
+			'[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
+			'  >> stdout',
+			'[command]git merge --no-edit origin/master',
+			'  >> stdout',
+			'> Running commands...',
+			'> Checking diff...',
+			'[command]git add --all',
+			'  >> stdout',
+			'[command]git status --short -uno',
+			'> There is no diff.',
+			'> Checking references diff...',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
+			'[command]git diff \'HEAD..origin/master\' --name-only',
+			'::endgroup::',
+			'::group::Target PullRequest Ref [hello-world/new-topic2]',
+			'::endgroup::',
+			'::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
+			'> \x1b[33;40;0m✔\x1b[0m\t[hello-world/new-topic1] There is no diff',
+			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic2] not found',
+			'::endgroup::',
 		]);
 	});
 });

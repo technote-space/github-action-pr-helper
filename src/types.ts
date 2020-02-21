@@ -35,6 +35,7 @@ export type ActionDetails = {
 	checkDefaultBranch?: boolean;
 	checkOnlyDefaultBranch?: boolean;
 	triggerWorkflowMessage?: string;
+	autoMergeThresholdDays?: string;
 }
 
 export type MainArguments = ActionDetails & {
