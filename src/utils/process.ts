@@ -75,7 +75,7 @@ export const autoMerge = async(pr: { 'created_at': string; number: number }, log
 	const created = Date.parse(pr.created_at);
 	const diff    = Date.now() - created;
 	// eslint-disable-next-line no-magic-numbers
-	const days    = Math.floor(diff / 1000 / 60 / 60 / 24);
+	const days    = Math.floor(diff / 86400000); // 1000 * 60 * 60 * 24
 	if (days <= threshold) {
 		// less than threshold
 		return false;
