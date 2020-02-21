@@ -99,7 +99,7 @@ export const autoMerge = async(pr: { 'created_at': string; number: number }, log
 	return true;
 };
 
-export const createCommit = async(addComment: boolean, logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult> => {
+const createCommit = async(addComment: boolean, logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult> => {
 	const helper     = getHelper(context);
 	const branchName = await getPrBranchName(helper, octokit, context);
 
@@ -108,16 +108,14 @@ export const createCommit = async(addComment: boolean, logger: Logger, octokit: 
 		logger.info('There is no diff.');
 		if (context.isBatchProcess) {
 			const pr = await findPR(branchName, octokit, context);
-			if (pr) {
-				if (!(await getRefDiff(getPrBaseRef(context), helper, logger, context)).length) {
-					// Close if there is no diff
-					await closePR(branchName, logger, octokit, context);
-					return getResult('succeeded', 'has been closed because there is no reference diff', context);
-				}
+			if (pr && !(await getRefDiff(getPrBaseRef(context), helper, logger, context)).length) {
+				// Close if there is no diff
+				await closePR(branchName, logger, octokit, context);
+				return getResult('succeeded', 'has been closed because there is no reference diff', context);
+			}
 
-				if (await autoMerge(pr, logger, octokit, context)) {
-					return getResult('succeeded', 'has been auto merged', context);
-				}
+			if (pr && await autoMerge(pr, logger, octokit, context)) {
+				return getResult('succeeded', 'has been auto merged', context);
 			}
 		}
 

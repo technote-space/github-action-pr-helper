@@ -17,7 +17,7 @@ import {
 	getOctokit,
 } from '@technote-space/github-action-test-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
-import { execute, autoMerge, createCommit } from '../../src/utils/process';
+import { execute, autoMerge } from '../../src/utils/process';
 import { getCacheKey } from '../../src/utils/misc';
 
 const workDir   = resolve(__dirname, 'test');
@@ -802,65 +802,5 @@ describe('autoMerge', () => {
 		}, new Logger(), octokit, getActionContext(context('synchronize'), {
 			autoMergeThresholdDays: '10',
 		}))).toBe(true);
-	});
-});
-
-describe('createCommit', () => {
-	disableNetConnect(nock);
-	testEnv();
-	testChildProcess();
-
-	it('should do nothing 1', async() => {
-		process.env.GITHUB_WORKSPACE   = workDir;
-		process.env.GITHUB_REPOSITORY  = 'hello/world';
-		process.env.INPUT_GITHUB_TOKEN = 'test-token';
-		const mockStdout               = spyOnStdout();
-		setChildProcessParams({
-			stdout: (command: string): string => {
-				if (command.includes(' rev-parse')) {
-					return 'hello-world/test-21031067';
-				}
-				return '';
-			},
-		});
-		setExists(true);
-
-		nock('https://api.github.com')
-			.persist()
-			.get('/repos/hello/world/pulls/1347')
-			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
-			.get('/repos/hello/world/pulls?head=hello%3Ahello-world%2Ftest-21031067')
-			.reply(200, () => []);
-
-		expect((await createCommit(true, new Logger(), octokit, getActionContext(context('', 'schedule'), {
-			prBranchName: 'test-${PR_ID}',
-			checkDefaultBranch: false,
-		}, undefined, true))).result).toBe('not changed');
-
-		stdoutCalledWith(mockStdout, [
-			'::group::Fetching...',
-			'[command]git remote add origin',
-			'[command]git fetch --no-tags origin \'refs/heads/hello-world/test-21031067:refs/remotes/origin/hello-world/test-21031067\'',
-			'::endgroup::',
-			'::group::Switching branch to [hello-world/test-21031067]...',
-			'[command]git checkout -b hello-world/test-21031067 origin/hello-world/test-21031067',
-			'[command]git rev-parse --abbrev-ref HEAD',
-			'  >> hello-world/test-21031067',
-			'[command]ls -la',
-			'::endgroup::',
-			'::group::Merging [origin/master] branch...',
-			'[command]git remote add origin',
-			'[command]git fetch --no-tags origin \'refs/heads/master:refs/remotes/origin/master\'',
-			'[command]git config \'user.name\' test-actor',
-			'[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
-			'[command]git merge --no-edit origin/master',
-			'::endgroup::',
-			'::group::Running commands...',
-			'::endgroup::',
-			'::group::Checking diff...',
-			'[command]git add --all',
-			'[command]git status --short -uno',
-			'> There is no diff.',
-		]);
 	});
 });
