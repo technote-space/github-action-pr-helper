@@ -7,7 +7,7 @@
   resolved "https://registry.yarnpkg.com/@actions/core/-/core-1.2.2.tgz#3c4848d50378f9e3bcb67bcf97813382ec7369ee"
   integrity sha512-IbCx7oefq+Gi6FWbSs2Fnw8VkEI6Y4gvjrYprY3RV//ksq/KPMlClOerJ4jRosyal6zkUIc8R9fS/cpRMlGClg==
 
-"@actions/github@^2.1.0", "@actions/github@^2.1.1":
+"@actions/github@^2.1.1":
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/@actions/github/-/github-2.1.1.tgz#bcabedff598196d953f58ba750d5e75549a75142"
   integrity sha512-kAgTGUx7yf5KQCndVeHSwCNZuDBvPyxm5xKTswW2lofugeuC1AZX73nUUVDNaysnM9aKFMHv9YCdVJbg7syEyA==
@@ -450,18 +450,18 @@
   dependencies:
     type-detect "4.0.8"
 
-"@technote-space/filter-github-action@^0.2.3":
-  version "0.2.3"
-  resolved "https://registry.yarnpkg.com/@technote-space/filter-github-action/-/filter-github-action-0.2.3.tgz#ab467724de0905b10f9737c69d550354bcb2138c"
-  integrity sha512-9lAbzEseqwfYoEQehJA0CqLEbmDuLAWTl6e8qyAnQBKGXQnqN8wrDXGqdEcY5sMwlIyQtRPLQW32oBtT0O4PRQ==
+"@technote-space/filter-github-action@^0.2.4":
+  version "0.2.4"
+  resolved "https://registry.yarnpkg.com/@technote-space/filter-github-action/-/filter-github-action-0.2.4.tgz#927f147c4b3ca0afa6af49875687c7d51d2e336d"
+  integrity sha512-/EK6LVXUr0w91bFIiIcYrG2KTxeOd8V58P+5IWstFArp6Svf5I1uOtPmZmvt4pOfTQtRiSVRNnVQZmGe5Lu8Pw==
   dependencies:
     "@actions/core" "^1.2.2"
-    "@actions/github" "^2.1.0"
+    "@actions/github" "^2.1.1"
 
-"@technote-space/github-action-helper@^1.1.5":
-  version "1.1.5"
-  resolved "https://registry.yarnpkg.com/@technote-space/github-action-helper/-/github-action-helper-1.1.5.tgz#077f2e18d365a898db2d37fb065bf8de5e1fe53d"
-  integrity sha512-uUqgOme/kV1P7fkfaLB5NhWvVwagpgPZcJje/REu8H44MtaL8q18m/fXzDsTwURWoUD/oT6k77T2QXRL3gKajg==
+"@technote-space/github-action-helper@^1.1.6":
+  version "1.1.6"
+  resolved "https://registry.yarnpkg.com/@technote-space/github-action-helper/-/github-action-helper-1.1.6.tgz#6f5500ec3785d1ea0e7b8f02796c39df7225009a"
+  integrity sha512-psuu1qqPd1N5Tku5Cywsdio5W9/09mVBqhawel/voMRQ1MWwCvIEgHzcQ0MiNLjaJcCUeYB1fGKnQjGk3LBZiQ==
   dependencies:
     "@actions/core" "^1.2.2"
     "@actions/github" "^2.1.1"
