@@ -199,20 +199,38 @@ export const isMergeable = async(number: number, octokit: Octokit, context: Acti
 	'pull_number': number,
 })).data.mergeable, context);
 
-export const updatePr = async(branchName: string, files: string[], output: CommandOutput[], helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<boolean> => {
-	const apiHelper = getApiHelper(getOctokit(getApiToken()), context, logger);
-	const pr        = await apiHelper.findPullRequest(branchName);
-	if (pr) {
-		logger.startProcess('Creating comment to PullRequest...');
-		await apiHelper.createCommentToPr(branchName, await getPrBody(true, files, output, helper, octokit, context));
-		return isMergeable(pr.number, octokit, context);
+export const afterCreatePr = async(branchName: string, number: number, helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
+	if (context.actionDetail.labels?.length) {
+		logger.info('Adding labels...');
+		console.log(context.actionDetail.labels);
+		await octokit.issues.addLabels({
+			...context.actionContext.repo,
+			'issue_number': number,
+			labels: context.actionDetail.labels,
+		});
 	}
 
-	logger.startProcess('Creating PullRequest...');
-	await apiHelper.pullsCreate(branchName, {
-		title: await getPrTitle(helper, octokit, context),
-		body: await getPrBody(false, files, output, helper, octokit, context),
-	});
+	if (context.actionDetail.assignees?.length) {
+		logger.info('Adding assignees...');
+		console.log(context.actionDetail.assignees);
+		await octokit.issues.addAssignees({
+			...context.actionContext.repo,
+			'issue_number': number,
+			assignees: context.actionDetail.assignees,
+		});
+	}
+
+	if (context.actionDetail.reviewers?.length || context.actionDetail.teamReviewers?.length) {
+		logger.info('Adding reviewers...');
+		console.log(context.actionDetail.reviewers);
+		console.log(context.actionDetail.teamReviewers);
+		await octokit.pulls.createReviewRequest({
+			...context.actionContext.repo,
+			'pull_number': number,
+			reviewers: context.actionDetail.reviewers,
+			'team_reviewers': context.actionDetail.teamReviewers,
+		});
+	}
 
 	if (isActiveTriggerWorkflow(context)) {
 		// add empty commit to trigger pr event
@@ -226,6 +244,24 @@ export const updatePr = async(branchName: string, files: string[], output: Comma
 		});
 		await push(branchName, helper, logger, context);
 	}
+};
+
+export const updatePr = async(branchName: string, files: string[], output: CommandOutput[], helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<boolean> => {
+	const apiHelper = getApiHelper(getOctokit(getApiToken()), context, logger);
+	const pr        = await apiHelper.findPullRequest(branchName);
+	if (pr) {
+		logger.startProcess('Creating comment to PullRequest...');
+		await apiHelper.createCommentToPr(branchName, await getPrBody(true, files, output, helper, octokit, context));
+		return isMergeable(pr.number, octokit, context);
+	}
+
+	logger.startProcess('Creating PullRequest...');
+	const {data: {number}} = await apiHelper.pullsCreate(branchName, {
+		title: await getPrTitle(helper, octokit, context),
+		body: await getPrBody(false, files, output, helper, octokit, context),
+	});
+
+	await afterCreatePr(branchName, number, helper, logger, octokit, context);
 
 	return true;
 };
@@ -296,7 +332,7 @@ export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger,
 	return runCommands(helper, logger, context);
 };
 
-export const closePR = async(branchName: string, logger: Logger, octokit: Octokit, context: ActionContext, message?: string): Promise<void> => getApiHelper(getOctokit(getApiToken()), context, logger).closePR(branchName, message ?? context.actionDetail.prCloseMessage);
+export const closePR = async(branchName: string, logger: Logger, context: ActionContext, message?: string): Promise<void> => getApiHelper(getOctokit(getApiToken()), context, logger).closePR(branchName, message ?? context.actionDetail.prCloseMessage);
 
 export const resolveConflicts = async(branchName: string, helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
 	if (await merge(getContextBranch(context), helper, logger, context)) {
@@ -306,7 +342,7 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
 		// failed to merge
 		const {files, output} = await getChangedFilesForRebase(helper, logger, octokit, context);
 		if (!files.length) {
-			await closePR(branchName, logger, octokit, context);
+			await closePR(branchName, logger, context);
 			return;
 		}
 		await commit(helper, logger, context);

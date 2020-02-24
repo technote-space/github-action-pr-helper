@@ -25,6 +25,7 @@ import {
 	getChangedFiles,
 	isMergeable,
 	updatePr,
+	afterCreatePr,
 	resolveConflicts,
 	getDefaultBranch,
 	getNewPatchVersion,
@@ -679,6 +680,103 @@ describe('updatePr', () => {
 			'::group::Pushing to hello/world@test...',
 			'[command]git push origin test:refs/heads/test',
 		]);
+	});
+});
+
+describe('afterCreatePr', () => {
+	testEnv();
+	disableNetConnect(nock);
+
+	it('should add labels', async() => {
+		const fn = jest.fn();
+		nock('https://api.github.com')
+			.persist()
+			.post('/repos/hello/world/issues/123/labels', body => {
+				fn();
+				expect(body).toEqual({
+					'labels': [
+						'label1',
+						'label2',
+					],
+				});
+				return body;
+			})
+			.reply(200, () => getApiFixture(rootDir, 'issues.labels.create'));
+
+		await afterCreatePr('test', 123, helper, logger, octokit, getActionContext(context({}), {
+			labels: ['label1', 'label2'],
+		}));
+
+		expect(fn).toBeCalledTimes(1);
+	});
+
+	it('should add assignees', async() => {
+		const fn = jest.fn();
+		nock('https://api.github.com')
+			.persist()
+			.post('/repos/hello/world/issues/123/assignees', body => {
+				fn();
+				expect(body).toEqual({
+					'assignees': [
+						'user1',
+						'user2',
+					],
+				});
+				return body;
+			})
+			.reply(201, () => getApiFixture(rootDir, 'issues.assignees.create'));
+
+		await afterCreatePr('test', 123, helper, logger, octokit, getActionContext(context({}), {
+			assignees: ['user1', 'user2'],
+		}));
+
+		expect(fn).toBeCalledTimes(1);
+	});
+
+	it('should add reviewers', async() => {
+		const fn = jest.fn();
+		nock('https://api.github.com')
+			.persist()
+			.post('/repos/hello/world/pulls/123/requested_reviewers', body => {
+				fn();
+				expect(body).toEqual({
+					'reviewers': [
+						'user1',
+						'user2',
+					],
+				});
+				return body;
+			})
+			.reply(201, () => getApiFixture(rootDir, 'pulls.requests.create'));
+
+		await afterCreatePr('test', 123, helper, logger, octokit, getActionContext(context({}), {
+			reviewers: ['user1', 'user2'],
+		}));
+
+		expect(fn).toBeCalledTimes(1);
+	});
+
+	it('should add team reviewers', async() => {
+		const fn = jest.fn();
+		nock('https://api.github.com')
+			.persist()
+			.post('/repos/hello/world/pulls/123/requested_reviewers', body => {
+				fn();
+				expect(body).toEqual({
+					'team_reviewers': [
+						'team1',
+						'team2',
+					],
+				});
+				return body;
+			})
+			.reply(201, () => getApiFixture(rootDir, 'pulls.requests.create'));
+
+		await afterCreatePr('test', 123, helper, logger, octokit, getActionContext(context({}), {
+			teamReviewers: ['team1', 'team2'],
+		}));
+
+		expect(fn).toBeCalledTimes(1);
 	});
 });
 

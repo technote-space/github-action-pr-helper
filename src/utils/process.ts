@@ -53,12 +53,12 @@ const checkActionPr = async(logger: Logger, octokit: Octokit, context: ActionCon
 
 	const basePr = await findPR(pr.base.ref, octokit, context);
 	if (!basePr) {
-		await closePR(getPrHeadRef(context), logger, octokit, context, '');
+		await closePR(getPrHeadRef(context), logger, context, '');
 		return getResult('succeeded', 'has been closed because base PullRequest does not exist', context);
 	}
 
 	if (basePr.state === 'closed') {
-		await closePR(getPrHeadRef(context), logger, octokit, context, '');
+		await closePR(getPrHeadRef(context), logger, context, '');
 		return getResult('succeeded', 'has been closed because base PullRequest has been closed', context);
 	}
 
@@ -116,7 +116,7 @@ const createCommit = async(addComment: boolean, logger: Logger, octokit: Octokit
 			const pr = await findPR(branchName, octokit, context);
 			if (pr && !(await getRefDiff(getPrBaseRef(context), helper, logger, context)).length) {
 				// Close if there is no diff
-				await closePR(branchName, logger, octokit, context);
+				await closePR(branchName, logger, context);
 				return getResult('succeeded', 'has been closed because there is no reference diff', context);
 			}
 
@@ -132,7 +132,7 @@ const createCommit = async(addComment: boolean, logger: Logger, octokit: Octokit
 	if (context.isBatchProcess) {
 		if (!(await getRefDiff(getPrBaseRef(context), helper, logger, context)).length) {
 			// Close if there is no diff
-			await closePR(branchName, logger, octokit, context);
+			await closePR(branchName, logger, context);
 			return getResult('succeeded', 'has been closed because there is no reference diff', context);
 		}
 	}
@@ -177,7 +177,7 @@ const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger
 
 	if (!refDiffExists) {
 		// Close if there is no ref diff
-		await closePR(branchName, logger, octokit, context);
+		await closePR(branchName, logger, context);
 		return {
 			mergeable: false,
 			result: getResult('succeeded', 'has been closed because there is no reference diff', context),
@@ -201,7 +201,7 @@ const diffProcess = async(files: string[], output: CommandOutput[], branchName: 
 	await commit(helper, logger, context);
 	if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
 		// Close if there is no diff
-		await closePR(branchName, logger, octokit, context);
+		await closePR(branchName, logger, context);
 		return {
 			mergeable: false,
 			result: getResult('succeeded', 'has been closed because there is no reference diff', context),

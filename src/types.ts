@@ -36,6 +36,10 @@ export type ActionDetails = {
 	checkOnlyDefaultBranch?: boolean;
 	triggerWorkflowMessage?: string;
 	autoMergeThresholdDays?: string;
+	labels?: string[];
+	assignees?: string[];
+	reviewers?: string[];
+	teamReviewers?: string[];
 }
 
 export type MainArguments = ActionDetails & {
