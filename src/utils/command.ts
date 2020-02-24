@@ -201,6 +201,8 @@ export const isMergeable = async(number: number, octokit: Octokit, context: Acti
 
 export const afterCreatePr = async(branchName: string, number: number, helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
 	if (context.actionDetail.labels?.length) {
+		logger.info('Adding labels...');
+		console.log(context.actionDetail.labels);
 		await octokit.issues.addLabels({
 			...context.actionContext.repo,
 			'issue_number': number,
@@ -209,6 +211,8 @@ export const afterCreatePr = async(branchName: string, number: number, helper: G
 	}
 
 	if (context.actionDetail.assignees?.length) {
+		logger.info('Adding assignees...');
+		console.log(context.actionDetail.assignees);
 		await octokit.issues.addAssignees({
 			...context.actionContext.repo,
 			'issue_number': number,
@@ -217,6 +221,9 @@ export const afterCreatePr = async(branchName: string, number: number, helper: G
 	}
 
 	if (context.actionDetail.reviewers?.length || context.actionDetail.teamReviewers?.length) {
+		logger.info('Adding reviewers...');
+		console.log(context.actionDetail.reviewers);
+		console.log(context.actionDetail.teamReviewers);
 		await octokit.pulls.createReviewRequest({
 			...context.actionContext.repo,
 			'pull_number': number,

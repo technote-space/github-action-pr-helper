@@ -15,6 +15,7 @@ import {
 	setChildProcessParams,
 	testChildProcess,
 	getOctokit,
+	getLogStdout,
 } from '@technote-space/github-action-test-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
 import { execute } from '../../src/utils/process';
@@ -1231,7 +1232,9 @@ describe('execute', () => {
 			.get('/repos/hello/world/pulls/11')
 			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
 			.post('/repos/hello/world/pulls')
-			.reply(201, () => getApiFixture(rootDir, 'pulls.create'));
+			.reply(201, () => getApiFixture(rootDir, 'pulls.create'))
+			.post('/repos/hello/world/issues/1347/labels')
+			.reply(200, () => getApiFixture(rootDir, 'issues.labels.create'));
 
 		await execute(octokit, getActionContext(context('synchronize'), {
 			executeCommands: ['yarn upgrade'],
@@ -1240,6 +1243,7 @@ describe('execute', () => {
 			prBranchName: 'test-${PR_ID}',
 			prTitle: 'test: create pull request (${PR_NUMBER})',
 			prBody: 'pull request body',
+			labels: ['label1', 'label2'],
 		}));
 
 		stdoutCalledWith(mockStdout, [
@@ -1282,6 +1286,8 @@ describe('execute', () => {
 			'[command]git diff \'HEAD..origin/feature/new-feature\' --name-only',
 			'::endgroup::',
 			'::group::Creating PullRequest...',
+			'> Adding labels...',
+			getLogStdout(['label1', 'label2']),
 			'::endgroup::',
 			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] PullRequest created',
 		]);
