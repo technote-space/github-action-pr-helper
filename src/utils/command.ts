@@ -199,20 +199,31 @@ export const isMergeable = async(number: number, octokit: Octokit, context: Acti
 	'pull_number': number,
 })).data.mergeable, context);
 
-export const updatePr = async(branchName: string, files: string[], output: CommandOutput[], helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<boolean> => {
-	const apiHelper = getApiHelper(getOctokit(getApiToken()), context, logger);
-	const pr        = await apiHelper.findPullRequest(branchName);
-	if (pr) {
-		logger.startProcess('Creating comment to PullRequest...');
-		await apiHelper.createCommentToPr(branchName, await getPrBody(true, files, output, helper, octokit, context));
-		return isMergeable(pr.number, octokit, context);
+export const afterCreatePr = async(branchName: string, number: number, helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
+	if (context.actionDetail.labels?.length) {
+		await octokit.issues.addLabels({
+			...context.actionContext.repo,
+			'issue_number': number,
+			labels: context.actionDetail.labels,
+		});
 	}
 
-	logger.startProcess('Creating PullRequest...');
-	await apiHelper.pullsCreate(branchName, {
-		title: await getPrTitle(helper, octokit, context),
-		body: await getPrBody(false, files, output, helper, octokit, context),
-	});
+	if (context.actionDetail.assignees?.length) {
+		await octokit.issues.addAssignees({
+			...context.actionContext.repo,
+			'issue_number': number,
+			assignees: context.actionDetail.assignees,
+		});
+	}
+
+	if (context.actionDetail.reviewers?.length || context.actionDetail.teamReviewers?.length) {
+		await octokit.pulls.createReviewRequest({
+			...context.actionContext.repo,
+			'pull_number': number,
+			reviewers: context.actionDetail.reviewers,
+			'team_reviewers': context.actionDetail.teamReviewers,
+		});
+	}
 
 	if (isActiveTriggerWorkflow(context)) {
 		// add empty commit to trigger pr event
@@ -226,6 +237,24 @@ export const updatePr = async(branchName: string, files: string[], output: Comma
 		});
 		await push(branchName, helper, logger, context);
 	}
+};
+
+export const updatePr = async(branchName: string, files: string[], output: CommandOutput[], helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<boolean> => {
+	const apiHelper = getApiHelper(getOctokit(getApiToken()), context, logger);
+	const pr        = await apiHelper.findPullRequest(branchName);
+	if (pr) {
+		logger.startProcess('Creating comment to PullRequest...');
+		await apiHelper.createCommentToPr(branchName, await getPrBody(true, files, output, helper, octokit, context));
+		return isMergeable(pr.number, octokit, context);
+	}
+
+	logger.startProcess('Creating PullRequest...');
+	const {data: {number}} = await apiHelper.pullsCreate(branchName, {
+		title: await getPrTitle(helper, octokit, context),
+		body: await getPrBody(false, files, output, helper, octokit, context),
+	});
+
+	await afterCreatePr(branchName, number, helper, logger, octokit, context);
 
 	return true;
 };
