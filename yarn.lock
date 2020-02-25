@@ -611,10 +611,10 @@
     "@actions/core" "^1.2.2"
     "@actions/github" "^2.1.1"
 
-"@technote-space/github-action-helper@^1.1.9":
-  version "1.1.9"
-  resolved "https://registry.yarnpkg.com/@technote-space/github-action-helper/-/github-action-helper-1.1.9.tgz#567f1e0a2471b19bd584922249bafea72e1eb04b"
-  integrity sha512-5oBPA9Q7yphkVOP4dWzKnYrWn4zXS6nD11+GWw6wGkYc854Hhlxne/UV68CQ+ImWOslcn1K9ZVGnQvKZNxDo2A==
+"@technote-space/github-action-helper@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@technote-space/github-action-helper/-/github-action-helper-1.2.0.tgz#36890da8580951c0df6c598d46dc5e330742c64e"
+  integrity sha512-p6Hxq2twXsBlkNxqEaSK6UdOQw7kXqWNQDRESiQK2OhbGvpDFfWLOTek2dbnKDjbITYAjXFgYVT6b154FvWnaw==
   dependencies:
     "@actions/core" "^1.2.2"
     "@actions/github" "^2.1.1"
@@ -5228,9 +5228,9 @@ wrappy@1:
   integrity sha1-tSQ9jz7BqjXxNkYFvA0QNuMKtp8=
 
 write-file-atomic@^3.0.0:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/write-file-atomic/-/write-file-atomic-3.0.1.tgz#558328352e673b5bb192cf86500d60b230667d4b"
-  integrity sha512-JPStrIyyVJ6oCSz/691fAjFtefZ6q+fP6tm+OS4Qw6o+TGQxNp1ziY2PgS+X/m0V8OWhZiO/m4xSj+Pr4RrZvw==
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/write-file-atomic/-/write-file-atomic-3.0.3.tgz#56bd5c5a5c70481cd19c571bd39ab965a5de56e8"
+  integrity sha512-AvHcyZ5JnSfq3ioSyjrBkH9yW4m7Ayk8/9My/DD9onKeu/94fwrMocemO2QAJFAlnnDN+ZDS+ZjAR5ua1/PV/Q==
   dependencies:
     imurmurhash "^0.1.4"
     is-typedarray "^1.0.0"
