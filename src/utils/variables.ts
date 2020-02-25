@@ -2,7 +2,7 @@ import { Utils, ContextHelper, GitHelper } from '@technote-space/github-action-h
 import moment from 'moment';
 import { Octokit } from '@octokit/rest';
 import { ActionContext, CommandOutput } from '../types';
-import { getNewPatchVersion, findPR, getDefaultBranch } from './command';
+import { getNewPatchVersion, getNewMinorVersion, getNewMajorVersion, findPR, getDefaultBranch } from './command';
 import {
 	getActionDetail,
 	getDefaultBranchUrl,
@@ -72,6 +72,8 @@ const contextVariables = async(isComment: boolean, helper: GitHelper, octokit: O
 		{key: 'PR_MERGE_REF', replace: getPrParamFunc(async(pr) => pr.number ? `${pr.head.ref} -> ${pr.base.ref}` : await getDefaultBranch(octokit, context))},
 		{key: 'PR_LINK', replace: async(): Promise<string> => getPrLink(context)},
 		{key: 'PATCH_VERSION', replace: async(): Promise<string> => getNewPatchVersion(octokit, context)},
+		{key: 'MINOR_VERSION', replace: async(): Promise<string> => getNewMinorVersion(octokit, context)},
+		{key: 'MAJOR_VERSION', replace: async(): Promise<string> => getNewMajorVersion(octokit, context)},
 		// eslint-disable-next-line no-magic-numbers
 	].concat([...Array(context.actionDetail.prVariables?.length ?? 0).keys()].map(index => ({
 		// eslint-disable-next-line no-magic-numbers

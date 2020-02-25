@@ -29,6 +29,8 @@ import {
 	resolveConflicts,
 	getDefaultBranch,
 	getNewPatchVersion,
+	getNewMinorVersion,
+	getNewMajorVersion,
 } from '../../src/utils/command';
 import { getCacheKey, isCached } from '../../src/utils/misc';
 
@@ -974,5 +976,59 @@ describe('getNewPatchVersion', () => {
 		await getNewPatchVersion(octokit, actionContext);
 
 		expect(actionContext.newPatchVersion).toBe('v1.2.5');
+	});
+});
+
+describe('getNewMinorVersion', () => {
+	testChildProcess();
+
+	it('should get new minor version', async() => {
+		const actionContext = getActionContext(context({}));
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/git/matching-refs/tags/')
+			.reply(200, () => getApiFixture(rootDir, 'repos.git.matching-refs'));
+
+		expect(isCached(getCacheKey('new-minor-version'), actionContext)).toBe(false);
+
+		expect(await getNewMinorVersion(octokit, actionContext)).toBe('v2.1.0');
+
+		expect(isCached(getCacheKey('new-minor-version'), actionContext)).toBe(true);
+	});
+
+	it('should get new minor version from cache', async() => {
+		const actionContext = Object.assign({}, getActionContext(context({})), {newPatchVersion: 'v1.3.0'});
+		expect(actionContext.newPatchVersion).toBe('v1.3.0');
+
+		await getNewMinorVersion(octokit, actionContext);
+
+		expect(actionContext.newPatchVersion).toBe('v1.3.0');
+	});
+});
+
+describe('getNewMajorVersion', () => {
+	testChildProcess();
+
+	it('should get new major version', async() => {
+		const actionContext = getActionContext(context({}));
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/git/matching-refs/tags/')
+			.reply(200, () => getApiFixture(rootDir, 'repos.git.matching-refs'));
+
+		expect(isCached(getCacheKey('new-major-version'), actionContext)).toBe(false);
+
+		expect(await getNewMajorVersion(octokit, actionContext)).toBe('v3.0.0');
+
+		expect(isCached(getCacheKey('new-major-version'), actionContext)).toBe(true);
+	});
+
+	it('should get new major version from cache', async() => {
+		const actionContext = Object.assign({}, getActionContext(context({})), {newPatchVersion: 'v2.0.0'});
+		expect(actionContext.newPatchVersion).toBe('v2.0.0');
+
+		await getNewMajorVersion(octokit, actionContext);
+
+		expect(actionContext.newPatchVersion).toBe('v2.0.0');
 	});
 });

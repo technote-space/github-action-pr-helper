@@ -361,4 +361,8 @@ export const getDefaultBranch = async(octokit: Octokit, context: ActionContext):
 
 export const getNewPatchVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-patch-version'), async() => await getApiHelper(octokit, context).getNewPatchVersion(), context);
 
+export const getNewMinorVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-minor-version'), async() => await getApiHelper(octokit, context).getNewMinorVersion(), context);
+
+export const getNewMajorVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-major-version'), async() => await getApiHelper(octokit, context).getNewMajorVersion(), context);
+
 export const findPR = async(branchName: string, octokit: Octokit, context: ActionContext): Promise<Octokit.PullsListResponseItem | Null> => getCache(getCacheKey('pr', {branchName}), async() => getApiHelper(octokit, context).findPullRequest(branchName), context);
