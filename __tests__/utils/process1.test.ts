@@ -761,6 +761,8 @@ describe('autoMerge', () => {
 	});
 
 	it('should return false 4', async() => {
+		process.env.GITHUB_RUN_ID = '123';
+
 		const mockStdout = spyOnStdout();
 		nock('https://api.github.com')
 			.persist()
@@ -773,6 +775,8 @@ describe('autoMerge', () => {
 			})
 			.get('/repos/hello/world/commits/7638417db6d59f3c431d3e1f261cc637155684cd/status')
 			.reply(200, () => getApiFixture(rootDir, 'status.success'))
+			.get('/repos/hello/world/actions/runs/123')
+			.reply(200, () => getApiFixture(rootDir, 'actions.workflow.run'))
 			.get('/repos/hello/world/commits/7638417db6d59f3c431d3e1f261cc637155684cd/check-suites')
 			.reply(200, () => getApiFixture(rootDir, 'checks.success'));
 
@@ -815,6 +819,8 @@ describe('autoMerge', () => {
 	});
 
 	it('should return true', async() => {
+		process.env.GITHUB_RUN_ID = '123';
+
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world/pulls/1347')
@@ -827,6 +833,8 @@ describe('autoMerge', () => {
 			})
 			.get('/repos/hello/world/commits/7638417db6d59f3c431d3e1f261cc637155684cd/status')
 			.reply(200, () => getApiFixture(rootDir, 'status.success'))
+			.get('/repos/hello/world/actions/runs/123')
+			.reply(200, () => getApiFixture(rootDir, 'actions.workflow.run'))
 			.get('/repos/hello/world/commits/7638417db6d59f3c431d3e1f261cc637155684cd/check-suites')
 			.reply(200, () => getApiFixture(rootDir, 'checks.success'));
 

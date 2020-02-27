@@ -1296,6 +1296,7 @@ describe('execute', () => {
 	it('should auto merge', async() => {
 		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		process.env.GITHUB_RUN_ID      = '123';
 		const mockStdout               = spyOnStdout();
 		setChildProcessParams({
 			stdout: (command: string): string => {
@@ -1336,6 +1337,8 @@ describe('execute', () => {
 			})
 			.get('/repos/octocat/Hello-World/commits/7638417db6d59f3c431d3e1f261cc637155684cd/status')
 			.reply(200, () => getApiFixture(rootDir, 'status.success'))
+			.get('/repos/octocat/Hello-World/actions/runs/123')
+			.reply(200, () => getApiFixture(rootDir, 'actions.workflow.run'))
 			.get('/repos/octocat/Hello-World/commits/7638417db6d59f3c431d3e1f261cc637155684cd/check-suites')
 			.reply(200, () => getApiFixture(rootDir, 'checks.success'));
 

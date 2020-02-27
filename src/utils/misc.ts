@@ -196,6 +196,18 @@ export const getTriggerWorkflowMessage = (context: ActionContext): string => con
 // eslint-disable-next-line no-magic-numbers
 export const getAutoMergeThresholdDays = (context: ActionContext): number => context.actionDetail.autoMergeThresholdDays && /^\d+$/.test(context.actionDetail.autoMergeThresholdDays) ? Number(context.actionDetail.autoMergeThresholdDays) : 0;
 
+export const checkSuiteState = (checkSuiteId: number) => (suite: Octokit.ChecksListSuitesForRefResponseCheckSuitesItem): boolean => {
+	if (suite.status === 'queued' || suite.conclusion === 'success') {
+		return false;
+	}
+
+	if (suite.status !== 'in_progress' || suite.app.slug !== 'github-actions') {
+		return true;
+	}
+
+	return suite.id !== checkSuiteId;
+};
+
 export const isPassedAllChecks = async(octokit: Octokit, context: ActionContext): Promise<boolean> => {
 	const {data: status} = await octokit.repos.getCombinedStatusForRef({
 		...context.actionContext.repo,
@@ -205,12 +217,16 @@ export const isPassedAllChecks = async(octokit: Octokit, context: ActionContext)
 		return false;
 	}
 
-	const suites = await octokit.paginate(
+	const checkSuiteUrl = (await octokit.actions.getWorkflowRun({
+		...context.actionContext.repo,
+		'run_id': Number(process.env.GITHUB_RUN_ID),
+	})).data['check_suite_url'];
+	const checkSuiteId  = Number(checkSuiteUrl.replace(/^.+\/(\d+)$/, '$1'));
+
+	return !(await octokit.paginate(
 		octokit.checks.listSuitesForRef.endpoint.merge({
 			...context.actionContext.repo,
 			ref: context.actionContext.sha,
 		}),
-	);
-
-	return !suites.filter(suite => 'queued' !== suite.status && ('completed' !== suite.status || 'success' !== suite.conclusion)).length;
+	)).filter(checkSuiteState(checkSuiteId)).length;
 };
