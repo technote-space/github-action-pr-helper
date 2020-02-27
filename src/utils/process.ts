@@ -73,25 +73,33 @@ export const autoMerge = async(pr: { 'created_at': string; number: number }, log
 		return false;
 	}
 
+	logger.startProcess('Checking auto merge...');
 	const created = Date.parse(pr.created_at);
 	const diff    = Date.now() - created;
 	// eslint-disable-next-line no-magic-numbers
 	const days    = Math.floor(diff / 86400000); // 1000 * 60 * 60 * 24
 	if (days <= threshold) {
-		// less than threshold
+		// not more than threshold
+		logger.info('Number of days since creation is not more than threshold.');
+		logger.info('days: %d, threshold: %d', days, threshold);
 		return false;
 	}
 
 	if (!await isMergeable(pr.number, octokit, context)) {
 		// not mergeable
+		logger.info('This PR is not mergeable.');
 		return false;
 	}
 
 	if (!await isPassedAllChecks(octokit, context)) {
 		// not passed all checked
+		logger.info('This PR is not passed all checks.');
 		return false;
 	}
 
+	logger.info('All checks are passed.');
+
+	logger.startProcess('Auto merging...');
 	try {
 		await octokit.pulls.merge({
 			...context.actionContext.repo,

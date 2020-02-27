@@ -784,6 +784,10 @@ describe('autoMerge', () => {
 		}))).toBe(false);
 
 		stdoutCalledWith(mockStdout, [
+			'::group::Checking auto merge...',
+			'> All checks are passed.',
+			'::endgroup::',
+			'::group::Auto merging...',
 			'::warning::Pull Request is not mergeable',
 		]);
 	});
