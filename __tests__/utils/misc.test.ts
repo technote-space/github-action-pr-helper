@@ -620,10 +620,14 @@ describe('isPassedAllChecks', () => {
 	});
 
 	it('should return false 2', async() => {
+		process.env.GITHUB_RUN_ID = '123';
+
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world/commits/test-sha/status')
 			.reply(200, () => getApiFixture(rootDir, 'status.success'))
+			.get('/repos/hello/world/actions/runs/123')
+			.reply(200, () => getApiFixture(rootDir, 'actions.workflow.run'))
 			.get('/repos/hello/world/commits/test-sha/check-suites')
 			.reply(200, () => getApiFixture(rootDir, 'checks.failed1'));
 
@@ -635,10 +639,14 @@ describe('isPassedAllChecks', () => {
 	});
 
 	it('should return false 3', async() => {
+		process.env.GITHUB_RUN_ID = '123';
+
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world/commits/test-sha/status')
 			.reply(200, () => getApiFixture(rootDir, 'status.success'))
+			.get('/repos/hello/world/actions/runs/123')
+			.reply(200, () => getApiFixture(rootDir, 'actions.workflow.run'))
 			.get('/repos/hello/world/commits/test-sha/check-suites')
 			.reply(200, () => getApiFixture(rootDir, 'checks.failed2'));
 
@@ -650,10 +658,14 @@ describe('isPassedAllChecks', () => {
 	});
 
 	it('should return true', async() => {
+		process.env.GITHUB_RUN_ID = '123';
+
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world/commits/test-sha/status')
 			.reply(200, () => getApiFixture(rootDir, 'status.success'))
+			.get('/repos/hello/world/actions/runs/123')
+			.reply(200, () => getApiFixture(rootDir, 'actions.workflow.run'))
 			.get('/repos/hello/world/commits/test-sha/check-suites')
 			.reply(200, () => getApiFixture(rootDir, 'checks.success'));
 
