@@ -145,6 +145,7 @@ export const getRefDiff = async(compare: string, helper: GitHelper, logger: Logg
 const initDirectory = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
 	logger.startProcess('Initializing working directory...');
 
+	helper.useOrigin(true);
 	await helper.addOrigin(getWorkspace(), context.actionContext);
 };
 
