@@ -850,7 +850,7 @@ describe('resolveConflicts', () => {
 			'git merge --no-edit origin/feature/new-feature || :',
 			'git init \'.\'',
 			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
-			'git clone \'--branch=master\' \'https://octocat:test-token@github.com/hello/world.git\' \'.\' > /dev/null 2>&1 || :',
+			'git clone \'--branch=master\' origin \'.\' > /dev/null 2>&1 || :',
 			'git checkout -b hello-world/test-branch',
 			'yarn upgrade',
 			'git add --all',
@@ -901,7 +901,7 @@ describe('resolveConflicts', () => {
 			'git merge --no-edit origin/feature/new-feature || :',
 			'git init \'.\'',
 			'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
-			'git clone \'--branch=master\' \'https://octocat:test-token@github.com/hello/world.git\' \'.\' > /dev/null 2>&1 || :',
+			'git clone \'--branch=master\' origin \'.\' > /dev/null 2>&1 || :',
 			'git checkout -b hello-world/test-branch',
 			'yarn upgrade',
 			'git add --all',
@@ -910,7 +910,7 @@ describe('resolveConflicts', () => {
 			'git config \'user.email\' \'example@example.com\'',
 			'git commit -qm \'commit message\'',
 			'git show \'--stat-count=10\' HEAD',
-			'git push --force \'https://octocat:test-token@github.com/hello/world.git\' \'test:refs/heads/test\' > /dev/null 2>&1 || :',
+			'git push --force origin \'test:refs/heads/test\' > /dev/null 2>&1 || :',
 		]);
 	});
 });
