@@ -197,7 +197,7 @@ export const getTriggerWorkflowMessage = (context: ActionContext): string => con
 export const getAutoMergeThresholdDays = (context: ActionContext): number => context.actionDetail.autoMergeThresholdDays && /^\d+$/.test(context.actionDetail.autoMergeThresholdDays) ? Number(context.actionDetail.autoMergeThresholdDays) : 0;
 
 export const checkSuiteState = (checkSuiteId: number) => (suite: Octokit.ChecksListSuitesForRefResponseCheckSuitesItem): boolean => {
-	if (suite.status === 'queued' || suite.conclusion === 'success') {
+	if (suite.conclusion === 'success') {
 		return false;
 	}
 
