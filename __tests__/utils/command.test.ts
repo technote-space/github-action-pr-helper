@@ -31,6 +31,7 @@ import {
 	getNewPatchVersion,
 	getNewMinorVersion,
 	getNewMajorVersion,
+	getCurrentVersion,
 } from '../../src/utils/command';
 import { getCacheKey, isCached } from '../../src/utils/misc';
 
@@ -1028,6 +1029,33 @@ describe('getNewMajorVersion', () => {
 		expect(actionContext.newPatchVersion).toBe('v2.0.0');
 
 		await getNewMajorVersion(octokit, actionContext);
+
+		expect(actionContext.newPatchVersion).toBe('v2.0.0');
+	});
+});
+
+describe('getCurrentVersion', () => {
+	testChildProcess();
+
+	it('should get current version', async() => {
+		const actionContext = getActionContext(context({}));
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/git/matching-refs/tags/')
+			.reply(200, () => getApiFixture(rootDir, 'repos.git.matching-refs'));
+
+		expect(isCached(getCacheKey('current-version'), actionContext)).toBe(false);
+
+		expect(await getCurrentVersion(octokit, actionContext)).toBe('v2.0.0');
+
+		expect(isCached(getCacheKey('current-version'), actionContext)).toBe(true);
+	});
+
+	it('should get current version from cache', async() => {
+		const actionContext = Object.assign({}, getActionContext(context({})), {newPatchVersion: 'v2.0.0'});
+		expect(actionContext.newPatchVersion).toBe('v2.0.0');
+
+		await getCurrentVersion(octokit, actionContext);
 
 		expect(actionContext.newPatchVersion).toBe('v2.0.0');
 	});

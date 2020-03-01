@@ -44,6 +44,7 @@ const getActionContext             = (context: Context, _actionDetails?: ActionD
 	actionDetail: _actionDetails ?? actionDetails,
 	cache: Object.assign(cache ?? {}, {
 		[getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: defaultBranch ?? 'master',
+		[getCacheKey('current-version')]: 'v1.2.3',
 		[getCacheKey('new-patch-version')]: 'v1.2.4',
 		[getCacheKey('new-minor-version')]: 'v1.3.0',
 		[getCacheKey('new-major-version')]: 'v2.0.0',
@@ -130,8 +131,8 @@ describe('getPrBranchName', () => {
 		expect(await getPrBranchName(helper, octokit, generateActionContext({event: 'pull_request'}, {
 			payload: prPayload,
 		}, {
-			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${PR_LINK}',
-		}))).toBe('hello-world/11::#11::21031067::feature/new-feature::master::test title::http://example.com::feature/new-feature -> master::v1.2.4::v1.3.0::v2.0.0::[test title](http://example.com)');
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
+		}))).toBe('hello-world/11::#11::21031067::feature/new-feature::master::test title::http://example.com::feature/new-feature -> master::v1.2.4::v1.3.0::v2.0.0::v1.2.3::[test title](http://example.com)');
 	});
 
 	it('should get pr branch name for default branch 1', async() => {
@@ -152,7 +153,7 @@ describe('getPrBranchName', () => {
 			},
 		}, {
 			prBranchPrefix: 'prefix/',
-			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${PR_LINK}',
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
 			prBranchPrefixForDefaultBranch: 'release/',
 			prBranchNameForDefaultBranch: '${PATCH_VERSION}',
 		}))).toBe('release/v1.2.4');
@@ -176,13 +177,13 @@ describe('getPrBranchName', () => {
 				},
 			},
 		}, {
-			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${PR_LINK}',
-		}))).toBe('hello-world/0::https://github.com/owner/repo/tree/master::21031067::master::master::test title::http://example.com::master::v1.2.4::v1.3.0::v2.0.0::[test title](http://example.com)');
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
+		}))).toBe('hello-world/0::https://github.com/owner/repo/tree/master::21031067::master::master::test title::http://example.com::master::v1.2.4::v1.3.0::v2.0.0::v1.2.3::[test title](http://example.com)');
 	});
 
 	it('should get push branch name', async() => {
 		expect(await getPrBranchName(helper, octokit, generateActionContext({event: 'push'}, {ref: 'refs/heads/test-ref'}, {
-			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${PR_LINK}',
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
 		}))).toBe('test-ref');
 	});
 
@@ -193,7 +194,7 @@ describe('getPrBranchName', () => {
 
 	it('should throw error', async() => {
 		await expect(getPrBranchName(helper, octokit, generateActionContext({event: 'pull_request'}, {}, {
-			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${PR_LINK}',
+			prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
 		}))).rejects.toThrow();
 	});
 });
@@ -205,8 +206,8 @@ describe('getPrTitle', () => {
 
 	it('should get PR title', async() => {
 		expect(await getPrTitle(helper, octokit, generateActionContext({}, {payload: prPayload}, {
-			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${PR_LINK}',
-		}))).toBe('11::21031067::feature/new-feature::master::feature/new-feature -> master::#11::v1.2.4::v1.3.0::v2.0.0::[test title](http://example.com)');
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
+		}))).toBe('11::21031067::feature/new-feature::master::feature/new-feature -> master::#11::v1.2.4::v1.3.0::v2.0.0::v1.2.3::[test title](http://example.com)');
 	});
 
 	it('should get PR title for default branch 1', async() => {
@@ -226,7 +227,7 @@ describe('getPrTitle', () => {
 				},
 			},
 		}, {
-			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${PR_LINK}',
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
 			prTitleForDefaultBranch: 'release/${PATCH_VERSION}',
 		}))).toBe('release/v1.2.4');
 	});
@@ -248,8 +249,8 @@ describe('getPrTitle', () => {
 				},
 			},
 		}, {
-			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${PR_LINK}',
-		}))).toBe('0::21031067::master::master::master::https://github.com/owner/repo/tree/master::v1.2.4::v1.3.0::v2.0.0::[test title](http://example.com)');
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
+		}))).toBe('0::21031067::master::master::master::https://github.com/owner/repo/tree/master::v1.2.4::v1.3.0::v2.0.0::v1.2.3::[test title](http://example.com)');
 	});
 
 	it('should throw error', async() => {
@@ -258,7 +259,7 @@ describe('getPrTitle', () => {
 
 	it('should throw error', async() => {
 		await expect(getPrTitle(helper, octokit, generateActionContext({}, {}, {
-			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_BASE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${PR_LINK}',
+			prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_BASE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
 		}))).rejects.toThrow();
 	});
 });
