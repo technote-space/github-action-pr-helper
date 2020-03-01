@@ -360,6 +360,8 @@ export const getDefaultBranch = async(octokit: Octokit, context: ActionContext):
 	repo: context.actionContext.repo.repo,
 }), async() => await getApiHelper(octokit, context).getDefaultBranch(), context);
 
+export const getCurrentVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('current-version'), async() => await getApiHelper(octokit, context).getLastTag(), context);
+
 export const getNewPatchVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-patch-version'), async() => await getApiHelper(octokit, context).getNewPatchVersion(), context);
 
 export const getNewMinorVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-minor-version'), async() => await getApiHelper(octokit, context).getNewMinorVersion(), context);
