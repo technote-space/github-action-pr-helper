@@ -230,6 +230,7 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Deleting reference... [refs/heads/hello-world/test-21031067]',
 			'::endgroup::',
+			'::set-output name=result::succeeded',
 			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] has been closed because there is no reference diff',
 		]);
 	});
@@ -312,6 +313,7 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Deleting reference... [refs/heads/hello-world/test-21031067]',
 			'::endgroup::',
+			'::set-output name=result::succeeded',
 			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] has been closed because there is no reference diff',
 		]);
 	});
@@ -618,6 +620,7 @@ describe('execute', () => {
 			'::group::Checking references diff...',
 			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature',
 			'[command]git diff \'HEAD..origin/feature/new-feature\' --name-only',
+			'::set-output name=result::not changed',
 			'::endgroup::',
 			'> \x1b[33;40;0m✔\x1b[0m\t[feature/new-feature] There is no diff',
 		]);
@@ -662,6 +665,7 @@ describe('execute', () => {
 			'[command]git add --all',
 			'[command]git status --short -uno',
 			'> There is no diff.',
+			'::set-output name=result::not changed',
 			'::endgroup::',
 			'> \x1b[33;40;0m✔\x1b[0m\t[test/change] There is no diff',
 		]);
@@ -732,6 +736,7 @@ describe('execute', () => {
 			'undefined',
 			'{}',
 			'::warning::Branch [test/change] is protected.',
+			'::set-output name=result::failed',
 			'::endgroup::',
 			'> \x1b[31;40;0m×\x1b[0m\t[test/change] Branch is protected',
 		]);

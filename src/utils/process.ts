@@ -1,4 +1,5 @@
 import { Octokit } from '@octokit/rest';
+import { setOutput } from '@actions/core';
 import { Logger, Utils, ContextHelper, GitHelper } from '@technote-space/github-action-helper';
 import {
 	getApiHelper,
@@ -290,6 +291,7 @@ const outputResult = (result: ProcessResult, endProcess = false): void => {
 		'not changed': commonLogger.c('✔', {color: 'yellow'}),
 	};
 	if (endProcess) {
+		setOutput('result', result.result);
 		commonLogger.endProcess();
 	}
 
