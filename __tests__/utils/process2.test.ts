@@ -152,6 +152,7 @@ describe('execute', () => {
 			'[command]git push origin hello-world/test-21031067:refs/heads/hello-world/test-21031067',
 			'::endgroup::',
 			'::group::Creating comment to PullRequest...',
+			'::set-output name=result::succeeded',
 			'::endgroup::',
 			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] updated',
 		]);
@@ -223,6 +224,7 @@ describe('execute', () => {
 			'::group::Checking references diff...',
 			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature',
 			'[command]git diff \'HEAD..origin/feature/new-feature\' --name-only',
+			'::set-output name=result::not changed',
 			'::endgroup::',
 			'> \x1b[33;40;0m✔\x1b[0m\t[feature/new-feature] There is no diff',
 		]);
@@ -520,6 +522,7 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Pushing to hello/world@test...',
 			'[command]git push origin test:refs/heads/test',
+			'::set-output name=result::succeeded',
 			'::endgroup::',
 			'> \x1b[32;40;0m✔\x1b[0m\t[test] updated',
 		]);
@@ -1187,6 +1190,7 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Pushing to hello/world@hello-world/test-21031067...',
 			'[command]git push origin hello-world/test-21031067:refs/heads/hello-world/test-21031067',
+			'::set-output name=result::succeeded',
 			'::endgroup::',
 			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] updated',
 		]);
@@ -1329,6 +1333,7 @@ describe('execute', () => {
 			'::endgroup::',
 			'::group::Pushing to hello/world@test/change...',
 			'[command]git push origin test/change:refs/heads/test/change',
+			'::set-output name=result::succeeded',
 			'::endgroup::',
 			'> \x1b[32;40;0m✔\x1b[0m\t[test/change] updated',
 		]);
@@ -1405,6 +1410,7 @@ describe('execute', () => {
 			'::group::Creating PullRequest...',
 			'> Adding labels...',
 			getLogStdout(['label1', 'label2']),
+			'::set-output name=result::succeeded',
 			'::endgroup::',
 			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] PullRequest created',
 		]);
