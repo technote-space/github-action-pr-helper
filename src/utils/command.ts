@@ -37,6 +37,12 @@ export const clone = async(helper: GitHelper, logger: Logger, octokit: Octokit, 
 	helper.useOrigin(true);
 	await helper.fetchOrigin(getWorkspace(), context.actionContext, ['--no-tags'], [getRefspec(branchName)]);
 
+	await helper.runCommand(getWorkspace(), {
+		command: 'git reset',
+		args: ['--hard'],
+		suppressError: true,
+	});
+
 	logger.startProcess('Switching branch to [%s]...', branchName);
 	await helper.switchBranch(getWorkspace(), branchName);
 };
@@ -45,10 +51,6 @@ export const checkBranch = async(helper: GitHelper, logger: Logger, octokit: Oct
 	const clonedBranch = await helper.getCurrentBranchName(getWorkspace());
 	const branchName   = await getPrBranchName(helper, octokit, context);
 	if (branchName === clonedBranch) {
-		await helper.runCommand(getWorkspace(), {
-			command: 'git reset',
-			args: ['--hard'],
-		});
 		await helper.runCommand(getWorkspace(),
 			{
 				command: 'git merge',
