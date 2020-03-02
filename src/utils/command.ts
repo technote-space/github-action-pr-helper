@@ -34,6 +34,7 @@ export const getApiHelper = (octokit: Octokit, context: ActionContext, logger?: 
 export const clone = async(helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
 	const branchName = await getPrBranchName(helper, octokit, context);
 	logger.startProcess('Fetching...');
+	helper.useOrigin(true);
 	await helper.fetchOrigin(getWorkspace(), context.actionContext, ['--no-tags'], [getRefspec(branchName)]);
 
 	logger.startProcess('Switching branch to [%s]...', branchName);

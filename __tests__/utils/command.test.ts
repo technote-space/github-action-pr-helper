@@ -814,7 +814,7 @@ describe('resolveConflicts', () => {
 			'git config \'user.name\' \'GitHub Actions\'',
 			'git config \'user.email\' \'example@example.com\'',
 			'git merge --no-edit origin/feature/new-feature || :',
-			'git push \'https://octocat:test-token@github.com/hello/world.git\' \'test:refs/heads/test\' > /dev/null 2>&1 || :',
+			'git push origin \'test:refs/heads/test\' > /dev/null 2>&1 || :',
 		]);
 	});
 
