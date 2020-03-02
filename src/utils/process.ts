@@ -113,7 +113,7 @@ export const autoMerge = async(pr: { 'created_at': string; number: number }, log
 	return true;
 };
 
-const createCommit = async(addComment: boolean, logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult> => {
+const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult> => {
 	const helper     = getHelper(context);
 	const branchName = await getPrBranchName(helper, octokit, context);
 
@@ -143,6 +143,10 @@ const createCommit = async(addComment: boolean, logger: Logger, octokit: Octokit
 			await closePR(branchName, logger, context);
 			return getResult('succeeded', 'has been closed because there is no reference diff', context);
 		}
+	}
+
+	if (isClose) {
+		return getResult('not changed', 'This is close event', context);
 	}
 
 	try {
@@ -240,7 +244,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
 			return processResult;
 		}
 
-		return createCommit(true, logger, octokit, context);
+		return createCommit(true, isClose, logger, octokit, context);
 	} else if (!await isTargetBranch(getPrHeadRef(context), octokit, context)) {
 		return getResult('skipped', 'This is not target branch', context);
 	}
@@ -365,7 +369,7 @@ export const execute = async(octokit: Octokit, context: ActionContext): Promise<
 	if (isClosePR(context)) {
 		await runCreatePrClosed(octokit, context);
 	} else if (isPush(context.actionContext)) {
-		await outputResult(await createCommit(false, commonLogger, octokit, context), true);
+		await outputResult(await createCommit(false, false, commonLogger, octokit, context), true);
 	} else if (isPr(context.actionContext)) {
 		await outputResult(await createPr(false, false, getHelper(context), commonLogger, octokit, context), true);
 	} else {

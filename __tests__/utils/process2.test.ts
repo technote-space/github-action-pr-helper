@@ -375,6 +375,92 @@ describe('execute', () => {
 		]);
 	});
 
+	it('should skip (action pull request)', async() => {
+		process.env.GITHUB_WORKSPACE   = workDir;
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.endsWith('status --short -uno')) {
+					return 'M  __tests__/fixtures/test.md';
+				}
+				if (command.includes(' diff ')) {
+					return '__tests__/fixtures/test.md';
+				}
+				if (command.includes(' rev-parse')) {
+					return 'hello-world/new-topic1';
+				}
+				return '';
+			},
+		});
+		setExists(true);
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/hello/world/pulls?sort=created&direction=asc')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+			.get('/repos/hello/world/pulls?sort=created&direction=asc&head=hello%3Amaster')
+			.reply(200, () => [])
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic1')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Ahello-world%2Fnew-topic2')
+			.reply(200, () => [])
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'))
+			.get('/repos/octocat/Hello-World/pulls/1347')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
+			.post('/repos/octocat/Hello-World/issues/1347/comments')
+			.reply(201);
+
+		await expect(execute(octokit, getActionContext(context('closed'), {
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create pull request',
+			prBranchName: 'test-${PR_ID}',
+			prTitle: 'test: create pull request (${PR_NUMBER})',
+			prBody: 'pull request body',
+			prCloseMessage: 'close message',
+			checkDefaultBranch: false,
+		}))).rejects.toThrow('There is a failed process.');
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Target PullRequest Ref [hello-world/new-topic1]',
+			'> Fetching...',
+			'[command]git remote add origin',
+			'[command]git fetch --no-tags origin \'refs/heads/hello-world/new-topic1:refs/remotes/origin/hello-world/new-topic1\'',
+			'> Switching branch to [hello-world/new-topic1]...',
+			'[command]git checkout -b hello-world/new-topic1 origin/hello-world/new-topic1',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> hello-world/new-topic1',
+			'[command]ls -la',
+			'> Merging [origin/master] branch...',
+			'[command]git remote add origin',
+			'[command]git fetch --no-tags origin \'refs/heads/master:refs/remotes/origin/master\'',
+			'[command]git config \'user.name\' \'GitHub Actions\'',
+			'[command]git config \'user.email\' \'example@example.com\'',
+			'[command]git merge --no-edit origin/master',
+			'> Running commands...',
+			'> Checking diff...',
+			'[command]git add --all',
+			'[command]git status --short -uno',
+			'[command]git config \'user.name\' \'GitHub Actions\'',
+			'[command]git config \'user.email\' \'example@example.com\'',
+			'> Committing...',
+			'[command]git commit -qm \'test: create pull request\'',
+			'[command]git show \'--stat-count=10\' HEAD',
+			'> Checking references diff...',
+			'[command]git fetch --prune --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
+			'[command]git diff \'HEAD..origin/master\' --name-only',
+			'::endgroup::',
+			'::group::Target PullRequest Ref [hello-world/new-topic2]',
+			'::endgroup::',
+			'::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
+			'> \x1b[33;40;0m✔\x1b[0m\t[hello-world/new-topic1] This is close event',
+			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic2] not found',
+			'::endgroup::',
+		]);
+	});
+
 	it('should create commit', async() => {
 		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.GITHUB_REPOSITORY  = 'hello/world';
@@ -468,7 +554,7 @@ describe('execute', () => {
 			.post('/repos/octocat/Hello-World/issues/1347/comments')
 			.reply(201);
 
-		await expect(execute(octokit, getActionContext(context('closed'), {
+		await expect(execute(octokit, getActionContext(context('', 'schedule'), {
 			commitName: 'GitHub Actions',
 			commitEmail: 'example@example.com',
 			commitMessage: 'test: create pull request',
