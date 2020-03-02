@@ -45,6 +45,16 @@ export const checkBranch = async(helper: GitHelper, logger: Logger, octokit: Oct
 	const clonedBranch = await helper.getCurrentBranchName(getWorkspace());
 	const branchName   = await getPrBranchName(helper, octokit, context);
 	if (branchName === clonedBranch) {
+		await helper.runCommand(getWorkspace(), {
+			command: 'git reset',
+			args: ['--hard'],
+		});
+		await helper.runCommand(getWorkspace(),
+			{
+				command: 'git merge',
+				args: ['--no-edit', getLocalRefspec(branchName)],
+			},
+		);
 		await helper.runCommand(getWorkspace(), 'ls -la');
 		return !isPush(context.actionContext);
 	}
