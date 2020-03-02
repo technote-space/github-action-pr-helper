@@ -136,6 +136,8 @@ describe('checkBranch', () => {
 
 		execCalledWith(mockExec, [
 			'git rev-parse --abbrev-ref HEAD || :',
+			'git reset --hard',
+			'git merge --no-edit origin/hello-world/test-branch',
 			'ls -la',
 		]);
 	});
@@ -360,6 +362,11 @@ describe('getChangedFiles', () => {
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
 			'[command]git rev-parse --abbrev-ref HEAD',
 			'  >> hello-world/test-branch',
+			'[command]git reset --hard',
+			'[command]git merge --no-edit origin/hello-world/test-branch',
+			'  >> Auto-merging merge.txt',
+			'  >> CONFLICT (content): Merge conflict in merge.txt',
+			'  >> Automatic merge failed; fix conflicts and then commit the result.',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Merging [origin/hello-world/test-branch] branch...',
@@ -439,6 +446,9 @@ describe('getChangedFiles', () => {
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
 			'[command]git rev-parse --abbrev-ref HEAD',
 			'  >> hello-world/test-branch',
+			'[command]git reset --hard',
+			'[command]git merge --no-edit origin/hello-world/test-branch',
+			'  >> Already up to date.',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Merging [origin/hello-world/test-branch] branch...',
@@ -549,6 +559,9 @@ describe('getChangedFiles', () => {
 			'[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
 			'[command]git rev-parse --abbrev-ref HEAD',
 			'  >> hello-world/test-branch',
+			'[command]git reset --hard',
+			'[command]git merge --no-edit origin/hello-world/test-branch',
+			'  >> Already up to date.',
 			'[command]ls -la',
 			'::endgroup::',
 			'::group::Merging [origin/hello-world/test-branch] branch...',
@@ -814,7 +827,7 @@ describe('resolveConflicts', () => {
 			'git config \'user.name\' \'GitHub Actions\'',
 			'git config \'user.email\' \'example@example.com\'',
 			'git merge --no-edit origin/feature/new-feature || :',
-			'git push \'https://octocat:test-token@github.com/hello/world.git\' \'test:refs/heads/test\' > /dev/null 2>&1 || :',
+			'git push origin \'test:refs/heads/test\' > /dev/null 2>&1 || :',
 		]);
 	});
 
