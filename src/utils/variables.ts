@@ -17,8 +17,8 @@ import {
 	getPrBranchPrefixForDefaultBranch,
 } from './misc';
 
-const {getRegExp, replaceAll, getBranch} = Utils;
-const {isPush}                           = ContextHelper;
+const {getBranch} = Utils;
+const {isPush}    = ContextHelper;
 
 export const getCommitMessage = (context: ActionContext): string => getActionDetail<string>('commitMessage', context);
 
@@ -88,28 +88,12 @@ const contextVariables = async(isComment: boolean, helper: GitHelper, octokit: O
 
 /**
  * @param {string} string string
- * @param {object[]} variables variables
- * @return {string} replaced
- */
-const replaceVariables = async(string: string, variables: { key: string; replace: () => Promise<string> }[]): Promise<string> => {
-	let replaced = string;
-	for (const variable of variables) {
-		if (getRegExp(`\${${variable.key}}`).test(replaced)) {
-			replaced = replaceAll(replaced, `\${${variable.key}}`, await variable.replace());
-		}
-	}
-
-	return replaced;
-};
-
-/**
- * @param {string} string string
  * @param {GitHelper} helper git helper
  * @param {Octokit} octokit octokit
  * @param {ActionDetails} context action details
  * @return {Promise<string>} replaced
  */
-const replaceContextVariables = async(string: string, helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<string> => replaceVariables(string, await contextVariables(false, helper, octokit, context));
+const replaceContextVariables = async(string: string, helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(string, await contextVariables(false, helper, octokit, context));
 
 export const getPrBranchName = async(helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<string> =>
 	isPush(context.actionContext) ?
@@ -209,7 +193,7 @@ const prBodyVariables = async(isComment: boolean, files: string[], output: Comma
 	].concat(await contextVariables(isComment, helper, octokit, context));
 };
 
-const replacePrBodyVariables = async(isComment: boolean, prBody: string, files: string[], output: CommandOutput[], helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<string> => replaceVariables(prBody, await prBodyVariables(isComment, files, output, helper, octokit, context));
+const replacePrBodyVariables = async(isComment: boolean, prBody: string, files: string[], output: CommandOutput[], helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(prBody, await prBodyVariables(isComment, files, output, helper, octokit, context));
 
 export const getPrBody = async(isComment: boolean, files: string[], output: CommandOutput[], helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<string> => replacePrBodyVariables(
 	isComment,
