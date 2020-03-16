@@ -159,6 +159,7 @@ const initDirectory = async(helper: GitHelper, logger: Logger, context: ActionCo
 	logger.startProcess('Initializing working directory...');
 
 	helper.useOrigin(true);
+	await helper.runCommand(getWorkspace(), {command: 'rm', args: ['-rdf', getWorkspace()]});
 	await helper.addOrigin(getWorkspace(), context.actionContext);
 };
 
