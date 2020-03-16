@@ -150,16 +150,7 @@ const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger
 		return getResult('not changed', 'This is close event', context);
 	}
 
-	try {
-		await push(branchName, helper, logger, context);
-	} catch (error) {
-		if (/protected branch hook declined/.test(error.message)) {
-			logger.warn('Branch [%s] is protected.', branchName);
-			return getResult('failed', 'Branch is protected', context);
-		}
-		throw error;
-	}
-
+	await push(branchName, helper, logger, context);
 	if (addComment) {
 		await updatePr(branchName, files, output, helper, logger, octokit, context);
 	}
