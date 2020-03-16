@@ -6,7 +6,7 @@ import { Logger, GitHelper, Utils } from '@technote-space/github-action-helper';
 import {
 	generateContext,
 	testEnv,
-	spyOnExec,
+	spyOnSpawn,
 	execCalledWith,
 	spyOnStdout,
 	stdoutCalledWith,
@@ -85,7 +85,7 @@ describe('clone', () => {
 
 	it('should run clone command', async() => {
 		process.env.GITHUB_WORKSPACE = workDir;
-		const mockExec               = spyOnExec();
+		const mockExec               = spyOnSpawn();
 		const mockStdout             = spyOnStdout();
 
 		await clone(helper, logger, octokit, getActionContext(context({
@@ -130,7 +130,7 @@ describe('checkBranch', () => {
 	it('should do nothing', async() => {
 		process.env.GITHUB_WORKSPACE = workDir;
 		setChildProcessParams({stdout: 'hello-world/test-branch'});
-		const mockExec = spyOnExec();
+		const mockExec = spyOnSpawn();
 		setExists(true);
 
 		expect(await checkBranch(helper, logger, octokit, getActionContext(context({}), {
@@ -147,7 +147,7 @@ describe('checkBranch', () => {
 	it('should checkout new branch', async() => {
 		process.env.GITHUB_WORKSPACE = workDir;
 		setChildProcessParams({stdout: 'test-branch2'});
-		const mockExec = spyOnExec();
+		const mockExec = spyOnSpawn();
 		setExists(true);
 
 		expect(await checkBranch(helper, logger, octokit, getActionContext(context({}), {
@@ -174,7 +174,7 @@ describe('getDiff', () => {
 		process.env.INPUT_FILTER_GIT_STATUS = 'M';
 		process.env.INPUT_FILTER_EXTENSIONS = 'md';
 		setChildProcessParams({stdout: 'M  test1.txt\nM  test2.md\nA  test3.md'});
-		const mockExec = spyOnExec();
+		const mockExec = spyOnSpawn();
 
 		expect(await getDiff(helper, logger)).toEqual(['test1.txt', 'test2.md', 'test3.md']);
 
@@ -813,7 +813,7 @@ describe('resolveConflicts', () => {
 				return '';
 			},
 		});
-		const mockExec = spyOnExec();
+		const mockExec = spyOnSpawn();
 
 		await resolveConflicts('test', helper, logger, octokit, getActionContext(context({}), {
 			prBranchName: 'test-branch',
@@ -844,7 +844,7 @@ describe('resolveConflicts', () => {
 				return '';
 			},
 		});
-		const mockExec = spyOnExec();
+		const mockExec = spyOnSpawn();
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world/pulls?head=hello%3Atest')
@@ -888,7 +888,7 @@ describe('resolveConflicts', () => {
 				return '';
 			},
 		});
-		const mockExec = spyOnExec();
+		const mockExec = spyOnSpawn();
 		nock('https://api.github.com')
 			.persist()
 			.get('/repos/hello/world/pulls?head=hello%3Atest')
