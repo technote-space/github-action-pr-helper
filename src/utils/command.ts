@@ -6,7 +6,6 @@ import {
 	isDisabledDeletePackage,
 	filterExtension,
 	getPrHeadRef,
-	getPrBaseRef,
 	getContextBranch,
 	getGitFilterStatus,
 	getCacheKey,
@@ -341,7 +340,7 @@ export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger,
 	output: CommandOutput[];
 }> => {
 	await initDirectory(helper, logger, context);
-	await helper.cloneBranch(getWorkspace(), getPrBaseRef(context), context.actionContext);
+	await helper.cloneBranch(getWorkspace(), getContextBranch(context), context.actionContext);
 	await helper.createBranch(getWorkspace(), await getPrBranchName(helper, octokit, context));
 
 	return runCommands(helper, logger, context);
