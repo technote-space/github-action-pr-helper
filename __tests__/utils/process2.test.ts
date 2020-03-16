@@ -1026,7 +1026,7 @@ describe('execute', () => {
 			'{}',
 			'::endgroup::',
 			'::group::Total:3  Succeeded:0  Failed:1  Skipped:2',
-			'> \x1b[31;40;0m×\x1b[0m\t[feature/new-topic1] test error',
+			'> \x1b[31;40;0m×\x1b[0m\t[feature/new-topic1] command [git status] exited with code undefined. message: test error',
 			'> \x1b[33;40;0m→\x1b[0m\t[feature/new-topic2] duplicated (hello-world/test-21031067)',
 			'> \x1b[33;40;0m→\x1b[0m\t[master] duplicated (hello-world/test-21031067)',
 			'::endgroup::',
@@ -1103,7 +1103,7 @@ describe('execute', () => {
 			'::group::Target PullRequest Ref [hello-world/new-topic2]',
 			'::endgroup::',
 			'::group::Total:3  Succeeded:0  Failed:2  Skipped:1',
-			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic1] test error',
+			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic1] command [git status] exited with code undefined. message: test error',
 			'> \x1b[31;40;0m×\x1b[0m\t[hello-world/new-topic2] not found',
 			'> \x1b[33;40;0m→\x1b[0m\t[master] duplicated (hello-world/test-21031067)',
 			'::endgroup::',
@@ -1245,7 +1245,7 @@ describe('execute', () => {
 			commitEmail: 'example@example.com',
 			commitMessage: 'test: create pull request',
 			targetBranchPrefix: 'test/',
-		}))).rejects.toThrow('unexpected error');
+		}))).rejects.toThrow('command [git push origin test/change:refs/heads/test/change] exited with code undefined.');
 
 		stdoutCalledWith(mockStdout, [
 			'::group::Fetching...',
