@@ -154,12 +154,11 @@ export const getRefDiff = async(compare: string, helper: GitHelper, logger: Logg
 	return (await helper.getRefDiff(getWorkspace(), 'HEAD', compare, getGitFilterStatus(context), '..')).filter(line => filterExtension(line, context));
 };
 
-const initDirectory = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
+const initDirectory = async(helper: GitHelper, logger: Logger): Promise<void> => {
 	logger.startProcess('Initializing working directory...');
 
 	helper.useOrigin(true);
 	await helper.runCommand(getWorkspace(), {command: 'rm', args: ['-rdf', getWorkspace()]});
-	await helper.addOrigin(getWorkspace(), context.actionContext);
 };
 
 export const config = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => await helper.config(getWorkspace(), getCommitName(context), getCommitEmail(context));
@@ -339,8 +338,11 @@ export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger,
 	files: string[];
 	output: CommandOutput[];
 }> => {
-	await initDirectory(helper, logger, context);
-	await helper.cloneBranch(getWorkspace(), getContextBranch(context), context.actionContext);
+	await initDirectory(helper, logger);
+
+	const branchName = getContextBranch(context);
+	await helper.fetchOrigin(getWorkspace(), context.actionContext, ['--no-tags'], [getRefspec(branchName)]);
+	await helper.switchBranch(getWorkspace(), branchName);
 	await helper.createBranch(getWorkspace(), await getPrBranchName(helper, octokit, context));
 
 	return runCommands(helper, logger, context);
