@@ -28,7 +28,7 @@
   "dependencies": {
     "@actions/core": "^1.2.3",
     "@actions/github": "^2.1.1",
-    "@technote-space/filter-github-action": "^0.2.5",
+    "@technote-space/filter-github-action": "^0.2.6",
     "@technote-space/github-action-helper": "^2.0.0",
     "moment": "^2.24.0"
   },
@@ -45,7 +45,7 @@
     "jest": "^25.1.0",
     "jest-circus": "^25.1.0",
     "lint-staged": "^10.0.8",
-    "nock": "^12.0.2",
+    "nock": "^12.0.3",
     "ts-jest": "^25.2.1",
     "typescript": "^3.8.3"
   },
