@@ -163,13 +163,13 @@ const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger
 	const refDiffExists = !!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length;
 	const pr            = await findPR(branchName, octokit, context);
 
-	if (!pr) {
-		// There is no PR
-		if (refDiffExists) {
-			await updatePr(branchName, [], [], helper, logger, octokit, context);
+	if (!refDiffExists) {
+		if (pr) {
+			// Close if there is no ref diff
+			await closePR(branchName, logger, context);
 			return {
 				mergeable: false,
-				result: getResult('succeeded', 'PullRequest created', context),
+				result: getResult('succeeded', 'has been closed because there is no reference diff', context),
 			};
 		}
 
@@ -179,19 +179,19 @@ const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger
 		};
 	}
 
-	if (!refDiffExists) {
-		// Close if there is no ref diff
-		await closePR(branchName, logger, context);
-		return {
-			mergeable: false,
-			result: getResult('succeeded', 'has been closed because there is no reference diff', context),
-		};
-	}
-
 	if (isClose) {
 		return {
 			mergeable: false,
 			result: getResult('not changed', 'This is close event', context),
+		};
+	}
+
+	if (!pr) {
+		// There is no PR
+		await updatePr(branchName, [], [], helper, logger, octokit, context);
+		return {
+			mergeable: false,
+			result: getResult('succeeded', 'PullRequest created', context),
 		};
 	}
 
@@ -306,7 +306,7 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
 	for await (const pull of getPulls(octokit, context)) {
 		const actionContext = await getActionContext(pull, octokit, context);
 		const helper        = getHelper(actionContext);
-		const target        = context.actionDetail.prBranchName ? await getPrBranchName(helper, octokit, context) : actionContext.actionContext.payload.number;
+		const target        = context.actionDetail.prBranchName ? await getPrBranchName(helper, octokit, actionContext) : actionContext.actionContext.payload.number;
 		if (target in processed && !isActionPr(actionContext)) {
 			results.push(getResult('skipped', `duplicated (${target})`, actionContext));
 			continue;
