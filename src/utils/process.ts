@@ -306,7 +306,7 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
 	for await (const pull of getPulls(octokit, context)) {
 		const actionContext = await getActionContext(pull, octokit, context);
 		const helper        = getHelper(actionContext);
-		const target        = context.actionDetail.prBranchName ? await getPrBranchName(helper, octokit, context) : actionContext.actionContext.payload.number;
+		const target        = context.actionDetail.prBranchName ? await getPrBranchName(helper, octokit, actionContext) : actionContext.actionContext.payload.number;
 		if (target in processed && !isActionPr(actionContext)) {
 			results.push(getResult('skipped', `duplicated (${target})`, actionContext));
 			continue;
