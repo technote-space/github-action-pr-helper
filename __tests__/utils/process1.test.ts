@@ -574,8 +574,8 @@ describe('execute', () => {
 			'::group::Target PullRequest Ref [master]',
 			'::endgroup::',
 			'::group::Total:3  Succeeded:0  Failed:1  Skipped:2',
-			'> \x1b[33;40;0m→\x1b[0m\t[fork1:feature/new-feature] PR from fork (fork1:feature/new-topic3)',
-			'> \x1b[33;40;0m→\x1b[0m\t[fork2:feature/new-feature] PR from fork (fork2:feature/new-topic4)',
+			'> \x1b[33;40;0m→\x1b[0m\t[fork1:feature/new-topic3] PR from fork',
+			'> \x1b[33;40;0m→\x1b[0m\t[fork2:feature/new-topic4] PR from fork',
 			'> \x1b[31;40;0m×\x1b[0m\t[master] parameter [prBranchName] is required.',
 			'::endgroup::',
 		]);

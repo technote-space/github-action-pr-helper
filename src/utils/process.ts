@@ -304,14 +304,14 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
 	const processed                = {};
 
 	for await (const pull of getPulls(octokit, context)) {
+		const actionContext = await getActionContext(pull, octokit, context);
 		if (pull.head.user.login !== context.actionContext.repo.owner) {
-			results.push(getResult('skipped', `PR from fork (${pull.head.user.login}:${pull.head.ref})`, context, pull.head.user.login));
+			results.push(getResult('skipped', 'PR from fork', actionContext, pull.head.user.login));
 			continue;
 		}
 
-		const actionContext = await getActionContext(pull, octokit, context);
-		const helper        = getHelper(actionContext);
-		const target        = context.actionDetail.prBranchName ? await getPrBranchName(helper, octokit, actionContext) : actionContext.actionContext.payload.number;
+		const helper = getHelper(actionContext);
+		const target = context.actionDetail.prBranchName ? await getPrBranchName(helper, octokit, actionContext) : actionContext.actionContext.payload.number;
 		if (target in processed) {
 			results.push(getResult('skipped', `duplicated (${target})`, actionContext));
 			continue;
