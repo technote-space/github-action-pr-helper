@@ -193,7 +193,7 @@
     ],
     "head": {
       "label": "octocat:new-topic",
-      "ref": "hello-world/new-topic1",
+      "ref": "change/new-topic1",
       "sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e",
       "user": {
         "login": "octocat",
@@ -680,7 +680,7 @@
     ],
     "head": {
       "label": "octocat:new-topic",
-      "ref": "hello-world/new-topic2",
+      "ref": "change/new-topic2",
       "sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e",
       "user": {
         "login": "octocat",

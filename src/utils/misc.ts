@@ -130,6 +130,9 @@ export const getPullsArgsForDefaultBranch = async(octokit: Octokit, context: Act
 	id: 0,
 	head: {
 		ref: await getDefaultBranch(octokit, context),
+		user: {
+			login: context.actionContext.repo.owner,
+		},
 	},
 	base: {
 		repo: {
