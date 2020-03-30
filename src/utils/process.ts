@@ -36,10 +36,10 @@ const {sleep, getBranch} = Utils;
 const {isPr, isPush}     = ContextHelper;
 const commonLogger       = new Logger(replaceDirectory);
 
-const getResult = (result: 'succeeded' | 'failed' | 'skipped' | 'not changed', detail: string, context: ActionContext): ProcessResult => ({
+const getResult = (result: 'succeeded' | 'failed' | 'skipped' | 'not changed', detail: string, context: ActionContext, fork?: string): ProcessResult => ({
 	result,
 	detail,
-	branch: getPrHeadRef(context) || getBranch(context.actionContext), // for push
+	branch: (fork ? `${fork}:` : '') + (getPrHeadRef(context) || getBranch(context.actionContext)),
 });
 
 const checkActionPr = async(logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult | true> => {
@@ -304,6 +304,11 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
 	const processed                = {};
 
 	for await (const pull of getPulls(octokit, context)) {
+		if (pull.head.user.login !== context.actionContext.repo.owner) {
+			results.push(getResult('skipped', `PR from fork (${pull.head.user.login}:${pull.head.ref})`, context, pull.head.user.login));
+			continue;
+		}
+
 		const actionContext = await getActionContext(pull, octokit, context);
 		const helper        = getHelper(actionContext);
 		const target        = context.actionDetail.prBranchName ? await getPrBranchName(helper, octokit, actionContext) : actionContext.actionContext.payload.number;

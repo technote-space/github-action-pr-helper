@@ -15,7 +15,7 @@ import {
 	setChildProcessParams,
 	testChildProcess,
 	getOctokit,
-	getLogStdout, stdoutContains,
+	getLogStdout,
 } from '@technote-space/github-action-test-helper';
 import { ActionContext, ActionDetails } from '../../src/types';
 import { execute } from '../../src/utils/process';

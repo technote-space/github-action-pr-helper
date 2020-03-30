@@ -78,6 +78,9 @@ export type PullsParams = PayloadPullsParams & {
 	id: number;
 	head: {
 		ref: string;
+		user: {
+			login: string;
+		};
 	};
 	base: {
 		repo: {

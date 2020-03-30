@@ -556,6 +556,31 @@ describe('execute', () => {
 		]);
 	});
 
+	it('should do nothing (PR from fork)', async() => {
+		process.env.GITHUB_WORKSPACE   = workDir;
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/octocat/Hello-World/pulls?sort=created&direction=asc')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list3'))
+			.get('/repos/octocat/Hello-World')
+			.reply(200, () => getApiFixture(rootDir, 'repos.get'));
+
+		await expect(execute(octokit, getActionContext(context('', 'schedule'), {}))).rejects.toThrow('There is a failed process.');
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Target PullRequest Ref [master]',
+			'::endgroup::',
+			'::group::Total:3  Succeeded:0  Failed:1  Skipped:2',
+			'> \x1b[33;40;0m→\x1b[0m\t[fork1:feature/new-feature] PR from fork (fork1:feature/new-topic3)',
+			'> \x1b[33;40;0m→\x1b[0m\t[fork2:feature/new-feature] PR from fork (fork2:feature/new-topic4)',
+			'> \x1b[31;40;0m×\x1b[0m\t[master] parameter [prBranchName] is required.',
+			'::endgroup::',
+		]);
+	});
+
 	it('should do nothing (no diff)', async() => {
 		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
