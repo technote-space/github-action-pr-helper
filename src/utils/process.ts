@@ -27,6 +27,7 @@ import {
 	getActionContext,
 	getAutoMergeThresholdDays,
 	isPassedAllChecks,
+	isNotCreatePR,
 } from './misc';
 import { getPrBranchName } from './variables';
 import { INTERVAL_MS } from '../constant';
@@ -230,7 +231,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
 		commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
 	}
 
-	if (isActionPr(context)) {
+	if (isActionPr(context) || isNotCreatePR(context)) {
 		const processResult = await checkActionPr(logger, octokit, context);
 		if (processResult !== true) {
 			return processResult;

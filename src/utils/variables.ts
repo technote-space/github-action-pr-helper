@@ -15,6 +15,7 @@ import {
 	getPullsArgsForDefaultBranch,
 	getPrBranchPrefix,
 	getPrBranchPrefixForDefaultBranch,
+	isNotCreatePR,
 } from './misc';
 
 const {getBranch} = Utils;
@@ -99,7 +100,7 @@ export const getPrBranchName = async(helper: GitHelper, octokit: Octokit, contex
 	isPush(context.actionContext) ?
 		getBranch(context.actionContext) :
 		(
-			isActionPr(context) ? getPrHeadRef(context) : (
+			isActionPr(context) || isNotCreatePR(context) ? getPrHeadRef(context) : (
 				await isDefaultBranch(octokit, context) ?
 					getPrBranchPrefixForDefaultBranch(context) + await replaceContextVariables(getActionDetail<string>('prBranchNameForDefaultBranch', context, () => getActionDetail<string>('prBranchName', context)), helper, octokit, context) :
 					getPrBranchPrefix(context) + await replaceContextVariables(getActionDetail<string>('prBranchName', context), helper, octokit, context)
