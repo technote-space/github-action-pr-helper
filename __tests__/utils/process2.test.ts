@@ -557,6 +557,85 @@ describe('execute', () => {
 		]);
 	});
 
+	it('should create commit (pull request)', async() => {
+		process.env.GITHUB_WORKSPACE   = workDir;
+		process.env.GITHUB_REPOSITORY  = 'octocat/Hello-World';
+		process.env.INPUT_GITHUB_TOKEN = 'test-token';
+		const mockStdout               = spyOnStdout();
+		setChildProcessParams({
+			stdout: (command: string): string => {
+				if (command.endsWith('status --short -uno')) {
+					return 'M  __tests__/fixtures/test.md';
+				}
+				if (command.includes(' rev-parse')) {
+					return 'feature/new-feature';
+				}
+				return '';
+			},
+		});
+		setExists(true);
+
+		nock('https://api.github.com')
+			.persist()
+			.get('/repos/octocat/Hello-World/pulls?head=octocat%3Afeature%2Fnew-feature')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+			.post('/repos/octocat/Hello-World/issues/1347/comments')
+			.reply(201)
+			.get('/repos/octocat/Hello-World/pulls/1347')
+			.reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'));
+
+		await execute(octokit, getActionContext(context('synchronize'), {
+			executeCommands: ['yarn upgrade'],
+			commitName: 'GitHub Actions',
+			commitEmail: 'example@example.com',
+			commitMessage: 'test: create test commit',
+			notCreatePr: true,
+			prBodyForComment: 'pull request comment body',
+		}));
+
+		stdoutCalledWith(mockStdout, [
+			'::group::Fetching...',
+			'[command]git remote add origin',
+			'[command]git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\'',
+			'[command]git reset --hard',
+			'::endgroup::',
+			'::group::Switching branch to [feature/new-feature]...',
+			'[command]git checkout -b feature/new-feature origin/feature/new-feature',
+			'[command]git rev-parse --abbrev-ref HEAD',
+			'  >> feature/new-feature',
+			'[command]git merge --no-edit origin/feature/new-feature',
+			'[command]ls -la',
+			'::endgroup::',
+			'::group::Merging [origin/feature/new-feature] branch...',
+			'[command]git remote add origin',
+			'[command]git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\'',
+			'[command]git config \'user.name\' \'GitHub Actions\'',
+			'[command]git config \'user.email\' \'example@example.com\'',
+			'[command]git merge --no-edit origin/feature/new-feature',
+			'::endgroup::',
+			'::group::Running commands...',
+			'[command]yarn upgrade',
+			'::endgroup::',
+			'::group::Checking diff...',
+			'[command]git add --all',
+			'[command]git status --short -uno',
+			'[command]git config \'user.name\' \'GitHub Actions\'',
+			'[command]git config \'user.email\' \'example@example.com\'',
+			'::endgroup::',
+			'::group::Committing...',
+			'[command]git commit -qm \'test: create test commit\'',
+			'[command]git show \'--stat-count=10\' HEAD',
+			'::endgroup::',
+			'::group::Pushing to octocat/Hello-World@feature/new-feature...',
+			'[command]git push origin feature/new-feature:refs/heads/feature/new-feature',
+			'::endgroup::',
+			'::group::Creating comment to PullRequest...',
+			'::set-output name=result::succeeded',
+			'::endgroup::',
+			'> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] updated',
+		]);
+	});
+
 	it('should create commit (action pull request)', async() => {
 		process.env.GITHUB_WORKSPACE   = workDir;
 		process.env.INPUT_GITHUB_TOKEN = 'test-token';
