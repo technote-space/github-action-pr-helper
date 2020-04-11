@@ -23,9 +23,9 @@ jobs:
             bash .github/workflows/.tmp/workflows/ts-repo/copy.sh release
 
             echo "${GITHUB_REPOSITORY}"
-            MINUTE=$(echo "${GITHUB_REPOSITORY}" | md5sum | tr -d -c 0-9 | xargs -I{} echo {}123456789 | cut -c 2-9 | xargs -I{} bash -c 'echo $(({} % 60))')
-            HOUR=$(echo "${GITHUB_REPOSITORY}" | md5sum | tr -d -c 0-9 | xargs -I{} echo {}123456789 | cut -c 2-9 | xargs -I{} bash -c 'echo $(({} % 24))')
-            DATE=$(echo "${GITHUB_REPOSITORY}" | md5sum | tr -d -c 0-9 | xargs -I{} echo {}123456789 | cut -c 2-9 | xargs -I{} bash -c 'echo $(({} % 28 + 1))')
+            export MINUTE=$(echo "${GITHUB_REPOSITORY}" | md5sum | tr -d -c 0-9 | xargs -I{} echo {}123456789 | cut -c 2-9 | xargs -I{} bash -c 'echo $(({} % 60))')
+            export HOUR=$(echo "${GITHUB_REPOSITORY}" | md5sum | tr -d -c 0-9 | xargs -I{} echo {}123456789 | cut -c 2-9 | xargs -I{} bash -c 'echo $(({} % 24))')
+            export DATE=$(echo "${GITHUB_REPOSITORY}" | md5sum | tr -d -c 0-9 | xargs -I{} echo {}123456789 | cut -c 2-9 | xargs -I{} bash -c 'echo $(({} % 28 + 1))')
             sed -i "s/cron:.\+$/cron: ${MINUTE} ${HOUR} ${DATE} * */" .github/workflows/update-dependencies.yml
 
             rm -rdf .github/workflows/.tmp
