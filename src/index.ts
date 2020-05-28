@@ -1,9 +1,9 @@
-import { setFailed } from '@actions/core';
-import { Context } from '@actions/github/lib/context';
-import { Logger, ContextHelper, Utils } from '@technote-space/github-action-helper';
-import { isTargetContext } from './utils/misc';
-import { execute } from './utils/process';
-import { ActionContext, MainArguments } from './types';
+import {setFailed} from '@actions/core';
+import {Context} from '@actions/github/lib/context';
+import {Logger, ContextHelper, Utils} from '@technote-space/github-action-helper';
+import {isTargetContext} from './utils/misc';
+import {execute} from './utils/process';
+import {ActionContext, MainArguments} from './types';
 
 const {showActionInfo} = ContextHelper;
 const getLogger        = (logger?: Logger): Logger => logger ?? new Logger();
@@ -12,9 +12,9 @@ const getLogger        = (logger?: Logger): Logger => logger ?? new Logger();
 const getContext = (option: MainArguments): Context => option.context ?? new Context();
 
 const getActionContext = async(option: MainArguments): Promise<ActionContext> => ({
-	actionContext: getContext(option),
-	actionDetail: option,
-	cache: {},
+  actionContext: getContext(option),
+  actionDetail: option,
+  cache: {},
 });
 
 /**
@@ -27,17 +27,17 @@ const getActionContext = async(option: MainArguments): Promise<ActionContext> =>
  * @return {Promise<void>} void
  */
 export async function main(option: MainArguments): Promise<void> {
-	if (option.rootDir) {
-		showActionInfo(option.rootDir, getLogger(option.logger), getContext(option));
-	}
+  if (option.rootDir) {
+    showActionInfo(option.rootDir, getLogger(option.logger), getContext(option));
+  }
 
-	const octokit = Utils.getOctokit();
-	if (!await isTargetContext(octokit, await getActionContext(option))) {
-		getLogger(option.logger).info(option.notTargetEventMessage ?? 'This is not target event.');
-		return;
-	}
+  const octokit = Utils.getOctokit();
+  if (!await isTargetContext(octokit, await getActionContext(option))) {
+    getLogger(option.logger).info(option.notTargetEventMessage ?? 'This is not target event.');
+    return;
+  }
 
-	await execute(octokit, await getActionContext(option));
+  await execute(octokit, await getActionContext(option));
 }
 
 /* istanbul ignore next */
@@ -48,9 +48,9 @@ export async function main(option: MainArguments): Promise<void> {
  * @return {void} void
  */
 export function run(option: MainArguments): void {
-	/* istanbul ignore next */
-	main(option).catch(error => {
-		console.log(error);
-		setFailed(error.message);
-	});
+  /* istanbul ignore next */
+  main(option).catch(error => {
+    console.log(error);
+    setFailed(error.message);
+  });
 }
