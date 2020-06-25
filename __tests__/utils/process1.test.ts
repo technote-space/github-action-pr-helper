@@ -90,11 +90,11 @@ describe('execute', () => {
       .persist()
       .get('/repos/octocat/Hello-World/pulls?sort=created&direction=asc')
       .reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-      .get('/repos/octocat/Hello-World/pulls?sort=created&direction=asc&head=octocat%3Amaster')
+      .get('/repos/octocat/Hello-World/pulls?sort=created&direction=asc&head=' + encodeURIComponent('octocat:master'))
       .reply(200, () => [])
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3Achange%2Fnew-topic1')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:change/new-topic1'))
       .reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3Achange%2Fnew-topic2')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:change/new-topic2'))
       .reply(200, () => [])
       .get('/repos/octocat/Hello-World')
       .reply(200, () => getApiFixture(rootDir, 'repos.get'))
@@ -102,7 +102,7 @@ describe('execute', () => {
       .reply(201)
       .patch('/repos/octocat/Hello-World/pulls/1347')
       .reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-      .delete('/repos/octocat/Hello-World/git/refs/heads/change/new-topic1')
+      .delete('/repos/octocat/Hello-World/git/refs/' + encodeURIComponent('heads/change/new-topic1'))
       .reply(204);
 
     await expect(execute(octokit, getActionContext(context('closed'), {
@@ -172,13 +172,13 @@ describe('execute', () => {
       .persist()
       .get('/repos/octocat/Hello-World/pulls?sort=created&direction=asc')
       .reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3AHello-World%2Ftest-21031067')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:Hello-World/test-21031067'))
       .reply(200, () => getApiFixture(rootDir, 'pulls.list'))
       .get('/repos/octocat/Hello-World/pulls/11')
       .reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
       .patch('/repos/octocat/Hello-World/pulls/1347')
       .reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-      .delete('/repos/octocat/Hello-World/git/refs/heads/Hello-World/test-21031067')
+      .delete('/repos/octocat/Hello-World/git/refs/' + encodeURIComponent('heads/Hello-World/test-21031067'))
       .reply(204);
 
     await execute(octokit, getActionContext(context('synchronize'), {
@@ -254,13 +254,13 @@ describe('execute', () => {
 
     nock('https://api.github.com')
       .persist()
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3AHello-World%2Ftest-21031067')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:Hello-World/test-21031067'))
       .reply(200, () => getApiFixture(rootDir, 'pulls.list'))
       .get('/repos/octocat/Hello-World/pulls/11')
       .reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
       .patch('/repos/octocat/Hello-World/pulls/1347')
       .reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-      .delete('/repos/octocat/Hello-World/git/refs/heads/Hello-World/test-21031067')
+      .delete('/repos/octocat/Hello-World/git/refs/' + encodeURIComponent('heads/Hello-World/test-21031067'))
       .reply(204);
 
     await execute(octokit, getActionContext(context('synchronize'), {
@@ -331,15 +331,15 @@ describe('execute', () => {
       .reply(200, () => getApiFixture(rootDir, 'repos.get.dev'))
       .get('/repos/octocat/Hello-World/pulls?sort=created&direction=asc')
       .reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3Achange%2Fnew-topic1')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:change/new-topic1'))
       .reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3Achange%2Fnew-topic2')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:change/new-topic2'))
       .reply(200, () => [])
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3Amaster')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:master'))
       .reply(200, () => getApiFixture(rootDir, 'pulls.list.state.close'))
       .patch('/repos/octocat/Hello-World/pulls/1347')
       .reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-      .delete('/repos/octocat/Hello-World/git/refs/heads/change/new-topic1')
+      .delete('/repos/octocat/Hello-World/git/refs/' + encodeURIComponent('heads/change/new-topic1'))
       .reply(204);
 
     await expect(execute(octokit, getActionContext(context('', 'schedule'), {
@@ -383,11 +383,11 @@ describe('execute', () => {
       .persist()
       .get('/repos/octocat/Hello-World/pulls?sort=created&direction=asc')
       .reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-      .get('/repos/octocat/Hello-World/pulls?sort=created&direction=asc&head=octocat%3Amaster')
+      .get('/repos/octocat/Hello-World/pulls?sort=created&direction=asc&head=' + encodeURIComponent('octocat:master'))
       .reply(200, () => [])
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3Achange%2Fnew-topic1')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:change/new-topic1'))
       .reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3Achange%2Fnew-topic2')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:change/new-topic2'))
       .reply(200, () => [])
       .get('/repos/octocat/Hello-World')
       .reply(200, () => getApiFixture(rootDir, 'repos.get'))
@@ -395,7 +395,7 @@ describe('execute', () => {
       .reply(201)
       .patch('/repos/octocat/Hello-World/pulls/1347')
       .reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-      .delete('/repos/octocat/Hello-World/git/refs/heads/change/new-topic1')
+      .delete('/repos/octocat/Hello-World/git/refs/' + encodeURIComponent('heads/change/new-topic1'))
       .reply(204);
 
     await expect(execute(octokit, getActionContext(context('closed'), {
@@ -463,15 +463,15 @@ describe('execute', () => {
       .reply(200, () => getApiFixture(rootDir, 'repos.get.dev'))
       .get('/repos/octocat/Hello-World/pulls?sort=created&direction=asc')
       .reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3Achange%2Fnew-topic1')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:change/new-topic1'))
       .reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3Achange%2Fnew-topic2')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:change/new-topic2'))
       .reply(200, () => [])
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3Amaster')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:master'))
       .reply(200, () => [])
       .patch('/repos/octocat/Hello-World/pulls/1347')
       .reply(200, () => getApiFixture(rootDir, 'pulls.update'))
-      .delete('/repos/octocat/Hello-World/git/refs/heads/change/new-topic1')
+      .delete('/repos/octocat/Hello-World/git/refs/' + encodeURIComponent('heads/change/new-topic1'))
       .reply(204);
 
     await expect(execute(octokit, getActionContext(context('', 'schedule'), {
@@ -503,9 +503,9 @@ describe('execute', () => {
       .persist()
       .get('/repos/octocat/Hello-World/pulls?sort=created&direction=asc')
       .reply(200, () => getApiFixture(rootDir, 'pulls.list'))
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3Achange%2Fnew-topic1')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:change/new-topic1'))
       .reply(200, () => [])
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3Achange%2Fnew-topic2')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:change/new-topic2'))
       .reply(200, () => []);
 
     await expect(execute(octokit, getActionContext(context('', 'schedule'), {
@@ -598,7 +598,7 @@ describe('execute', () => {
 
     nock('https://api.github.com')
       .persist()
-      .get('/repos/octocat/Hello-World/pulls?head=octocat%3AHello-World%2Ftest-21031067')
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:Hello-World/test-21031067'))
       .reply(200, () => []);
 
     await execute(octokit, getActionContext(context('synchronize'), {

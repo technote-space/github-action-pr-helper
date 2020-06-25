@@ -628,7 +628,7 @@ describe('updatePr', () => {
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     nock('https://api.github.com')
       .persist()
-      .get('/repos/hello/world/pulls?head=hello%3Atest')
+      .get('/repos/hello/world/pulls?head=' + encodeURIComponent('hello:test'))
       .reply(200, () => getApiFixture(rootDir, 'pulls.list'))
       .post('/repos/hello/world/issues/1347/comments')
       .reply(201, () => getApiFixture(rootDir, 'issues.comment.create'))
@@ -645,7 +645,7 @@ describe('updatePr', () => {
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     nock('https://api.github.com')
       .persist()
-      .get('/repos/hello/world/pulls?head=hello%3Atest')
+      .get('/repos/hello/world/pulls?head=' + encodeURIComponent('hello:test'))
       .reply(200, () => [])
       .get('/repos/hello/world/pulls/11')
       .reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
@@ -662,7 +662,7 @@ describe('updatePr', () => {
     process.env.INPUT_API_TOKEN = 'test-token';
     nock('https://api.github.com')
       .persist()
-      .get('/repos/hello/world/pulls?head=hello%3Atest')
+      .get('/repos/hello/world/pulls?head=' + encodeURIComponent('hello:test'))
       .reply(200, () => getApiFixture(rootDir, 'pulls.list'))
       .post('/repos/hello/world/issues/1347/comments')
       .reply(201, () => getApiFixture(rootDir, 'issues.comment.create'))
@@ -680,7 +680,7 @@ describe('updatePr', () => {
     const mockStdout            = spyOnStdout();
     nock('https://api.github.com')
       .persist()
-      .get('/repos/hello/world/pulls?head=hello%3Atest')
+      .get('/repos/hello/world/pulls?head=' + encodeURIComponent('hello:test'))
       .reply(200, () => [])
       .get('/repos/hello/world/pulls/11')
       .reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
@@ -849,7 +849,7 @@ describe('resolveConflicts', () => {
     const mockExec = spyOnSpawn();
     nock('https://api.github.com')
       .persist()
-      .get('/repos/hello/world/pulls?head=hello%3Atest')
+      .get('/repos/hello/world/pulls?head=' + encodeURIComponent('hello:test'))
       .reply(200, () => []);
 
     await resolveConflicts('test', helper, logger, octokit, getActionContext(context({}), {
@@ -895,7 +895,7 @@ describe('resolveConflicts', () => {
     const mockExec = spyOnSpawn();
     nock('https://api.github.com')
       .persist()
-      .get('/repos/hello/world/pulls?head=hello%3Atest')
+      .get('/repos/hello/world/pulls?head=' + encodeURIComponent('hello:test'))
       .reply(200, () => getApiFixture(rootDir, 'pulls.list'))
       .get('/repos/hello/world/pulls/11')
       .reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.true'))
@@ -981,7 +981,7 @@ describe('getNewPatchVersion', () => {
     const actionContext = getActionContext(context({}));
     nock('https://api.github.com')
       .persist()
-      .get('/repos/hello/world/git/matching-refs/tags/')
+      .get('/repos/hello/world/git/matching-refs/tags%2F')
       .reply(200, () => getApiFixture(rootDir, 'repos.git.matching-refs'));
 
     expect(isCached(getCacheKey('new-patch-version'), actionContext)).toBe(false);
@@ -1008,7 +1008,7 @@ describe('getNewMinorVersion', () => {
     const actionContext = getActionContext(context({}));
     nock('https://api.github.com')
       .persist()
-      .get('/repos/hello/world/git/matching-refs/tags/')
+      .get('/repos/hello/world/git/matching-refs/tags%2F')
       .reply(200, () => getApiFixture(rootDir, 'repos.git.matching-refs'));
 
     expect(isCached(getCacheKey('new-minor-version'), actionContext)).toBe(false);
@@ -1035,7 +1035,7 @@ describe('getNewMajorVersion', () => {
     const actionContext = getActionContext(context({}));
     nock('https://api.github.com')
       .persist()
-      .get('/repos/hello/world/git/matching-refs/tags/')
+      .get('/repos/hello/world/git/matching-refs/tags%2F')
       .reply(200, () => getApiFixture(rootDir, 'repos.git.matching-refs'));
 
     expect(isCached(getCacheKey('new-major-version'), actionContext)).toBe(false);
@@ -1062,7 +1062,7 @@ describe('getCurrentVersion', () => {
     const actionContext = getActionContext(context({}));
     nock('https://api.github.com')
       .persist()
-      .get('/repos/hello/world/git/matching-refs/tags/')
+      .get('/repos/hello/world/git/matching-refs/tags%2F')
       .reply(200, () => getApiFixture(rootDir, 'repos.git.matching-refs'));
 
     expect(isCached(getCacheKey('current-version'), actionContext)).toBe(false);

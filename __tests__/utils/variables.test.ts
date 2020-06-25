@@ -784,7 +784,7 @@ describe('getPrBody', () => {
   it('should get body for comment (not default branch)', async() => {
     nock('https://api.github.com')
       .persist()
-      .get('/repos/octocat/hello-world/pulls?head=octocat%3Afeature%2Fnew-feature')
+      .get('/repos/octocat/hello-world/pulls?head=' + encodeURIComponent('octocat:feature/new-feature'))
       .reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'));
 
     expect(await getPrBody(true, [], [], helper, octokit, generateActionContext({
