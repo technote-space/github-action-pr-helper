@@ -648,18 +648,6 @@
     before-after-hook "^2.1.0"
     universal-user-agent "^5.0.0"
 
-"@octokit/core@^3.0.0":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@octokit/core/-/core-3.1.0.tgz#9c3c9b23f7504668cfa057f143ccbf0c645a0ac9"
-  integrity sha512-yPyQSmxIXLieEIRikk2w8AEtWkFdfG/LXcw1KvEtK3iP0ENZLW/WYQmdzOKqfSaLhooz4CJ9D+WY79C8ZliACw==
-  dependencies:
-    "@octokit/auth-token" "^2.4.0"
-    "@octokit/graphql" "^4.3.1"
-    "@octokit/request" "^5.4.0"
-    "@octokit/types" "^5.0.0"
-    before-after-hook "^2.1.0"
-    universal-user-agent "^5.0.0"
-
 "@octokit/endpoint@^6.0.1":
   version "6.0.3"
   resolved "https://registry.yarnpkg.com/@octokit/endpoint/-/endpoint-6.0.3.tgz#dd09b599662d7e1b66374a177ab620d8cdf73487"
@@ -685,25 +673,20 @@
   dependencies:
     "@octokit/types" "^5.0.0"
 
-"@octokit/plugin-request-log@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@octokit/plugin-request-log/-/plugin-request-log-1.0.0.tgz#eef87a431300f6148c39a7f75f8cfeb218b2547e"
-  integrity sha512-ywoxP68aOT3zHCLgWZgwUJatiENeHE7xJzYjfz8WI0goynp96wETBF+d95b8g/uL4QmS6owPVlaxiz3wyMAzcw==
-
-"@octokit/plugin-rest-endpoint-methods@4.0.0", "@octokit/plugin-rest-endpoint-methods@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/@octokit/plugin-rest-endpoint-methods/-/plugin-rest-endpoint-methods-4.0.0.tgz#b02a2006dda8e908c3f8ab381dd5475ef5a810a8"
-  integrity sha512-emS6gysz4E9BNi9IrCl7Pm4kR+Az3MmVB0/DoDCmF4U48NbYG3weKyDlgkrz6Jbl4Mu4nDx8YWZwC4HjoTdcCA==
-  dependencies:
-    "@octokit/types" "^5.0.0"
-    deprecation "^2.3.1"
-
 "@octokit/plugin-rest-endpoint-methods@^3.10.0":
   version "3.17.0"
   resolved "https://registry.yarnpkg.com/@octokit/plugin-rest-endpoint-methods/-/plugin-rest-endpoint-methods-3.17.0.tgz#d8ba04eb883849dd98666c55bf49d8c9fe7be055"
   integrity sha512-NFV3vq7GgoO2TrkyBRUOwflkfTYkFKS0tLAPym7RNpkwLCttqShaEGjthOsPEEL+7LFcYv3mU24+F2yVd3npmg==
   dependencies:
     "@octokit/types" "^4.1.6"
+    deprecation "^2.3.1"
+
+"@octokit/plugin-rest-endpoint-methods@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@octokit/plugin-rest-endpoint-methods/-/plugin-rest-endpoint-methods-4.0.0.tgz#b02a2006dda8e908c3f8ab381dd5475ef5a810a8"
+  integrity sha512-emS6gysz4E9BNi9IrCl7Pm4kR+Az3MmVB0/DoDCmF4U48NbYG3weKyDlgkrz6Jbl4Mu4nDx8YWZwC4HjoTdcCA==
+  dependencies:
+    "@octokit/types" "^5.0.0"
     deprecation "^2.3.1"
 
 "@octokit/request-error@^2.0.0":
@@ -728,16 +711,6 @@
     node-fetch "^2.3.0"
     once "^1.4.0"
     universal-user-agent "^5.0.0"
-
-"@octokit/rest@^18.0.0":
-  version "18.0.0"
-  resolved "https://registry.yarnpkg.com/@octokit/rest/-/rest-18.0.0.tgz#7f401d9ce13530ad743dfd519ae62ce49bcc0358"
-  integrity sha512-4G/a42lry9NFGuuECnua1R1eoKkdBYJap97jYbWDNYBOUboWcM75GJ1VIcfvwDV/pW0lMPs7CEmhHoVrSV5shg==
-  dependencies:
-    "@octokit/core" "^3.0.0"
-    "@octokit/plugin-paginate-rest" "^2.2.0"
-    "@octokit/plugin-request-log" "^1.0.0"
-    "@octokit/plugin-rest-endpoint-methods" "4.0.0"
 
 "@octokit/types@^4.1.6":
   version "4.1.10"
@@ -767,10 +740,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@technote-space/filter-github-action@^0.2.16":
-  version "0.2.16"
-  resolved "https://registry.yarnpkg.com/@technote-space/filter-github-action/-/filter-github-action-0.2.16.tgz#6ecd4cf9e7c37c6b2ff9984fa348c74e63383159"
-  integrity sha512-HwBVXb5vTHa1s9JyoWMa9DI3Lpb8q4MudRRZOgrzb/47rHoJImEiZlDWflmrHTOKQEzKWvbspSIaHBkhhMgIYA==
+"@technote-space/filter-github-action@^0.2.17":
+  version "0.2.17"
+  resolved "https://registry.yarnpkg.com/@technote-space/filter-github-action/-/filter-github-action-0.2.17.tgz#51dc7022469b719255b7443bd63efb81b78fece6"
+  integrity sha512-mXP9Af7Xo5ghBBnYyYuj6/LzLYiyz6cPWMX4aV6M47ZM9VewXz7rPw6d1PUlV4xqXrTaIim0ZsM+tWcJPxklzA==
   dependencies:
     "@actions/core" "^1.2.4"
     "@actions/github" "^3.0.0"
@@ -786,14 +759,13 @@
     shell-escape "^0.2.0"
     sprintf-js "^1.1.2"
 
-"@technote-space/github-action-test-helper@^0.4.0":
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/@technote-space/github-action-test-helper/-/github-action-test-helper-0.4.0.tgz#ad52697904c1a540fdbbc1241b1a1b6b6489d04e"
-  integrity sha512-xiaDI/f0fjM+n/lY8cYK7438bgc8fVpxieVghGDUiGX3WI9cRVaMc4S3oSGNvhx62vKPH4dVb2IVqjhsS1FjZg==
+"@technote-space/github-action-test-helper@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@technote-space/github-action-test-helper/-/github-action-test-helper-0.5.0.tgz#8a355a89d3b75237a6968ad55a3c51e767e89944"
+  integrity sha512-G84qLpP0R/ot2c+AiY5Xs5hsoW88gajnOfnsS+en9Fo1eZbFz7Ws19epL/zf/LMZptZjeqfzQwjJZxqqbVAsyg==
   dependencies:
     "@actions/github" "^3.0.0"
     "@octokit/plugin-rest-endpoint-methods" "^4.0.0"
-    "@octokit/rest" "^18.0.0"
     js-yaml "^3.14.0"
 
 "@types/babel__core@^7.0.0", "@types/babel__core@^7.1.7":
