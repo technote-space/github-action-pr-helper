@@ -1,6 +1,7 @@
-import {Octokit} from '@octokit/rest';
 import {setOutput} from '@actions/core';
 import {Logger, Utils, ContextHelper, GitHelper} from '@technote-space/github-action-helper';
+import {Octokit} from '@technote-space/github-action-helper/dist/types';
+import {RestEndpointMethods} from '@octokit/plugin-rest-endpoint-methods/dist-types/generated/method-types';
 import {
   getApiHelper,
   getChangedFiles,
@@ -103,7 +104,7 @@ export const autoMerge = async(pr: { 'created_at': string; number: number }, log
 
   logger.startProcess('Auto merging...');
   try {
-    await octokit.pulls.merge({
+    await (octokit as RestEndpointMethods).pulls.merge({
       ...context.actionContext.repo,
       'pull_number': pr.number,
     });

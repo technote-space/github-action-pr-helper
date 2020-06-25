@@ -1,6 +1,7 @@
 import {getInput} from '@actions/core' ;
-import {Octokit} from '@octokit/rest';
+import {Octokit} from '@technote-space/github-action-helper/dist/types';
 import {Logger, GitHelper, Utils, ContextHelper, ApiHelper} from '@technote-space/github-action-helper';
+import {PullsListResponseData} from '@octokit/types';
 import {
   getActionDetail,
   isDisabledDeletePackage,
@@ -269,7 +270,7 @@ export const updatePr = async(branchName: string, files: string[], output: Comma
   }
 
   logger.startProcess('Creating PullRequest...');
-  const {data: {number}} = await apiHelper.pullsCreate(branchName, {
+  const {number} = await apiHelper.pullsCreate(branchName, {
     title: await getPrTitle(helper, octokit, context),
     body: await getPrBody(false, files, output, helper, octokit, context),
   });
@@ -383,4 +384,4 @@ export const getNewMinorVersion = async(octokit: Octokit, context: ActionContext
 
 export const getNewMajorVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-major-version'), async() => await getApiHelper(octokit, context).getNewMajorVersion(), context);
 
-export const findPR = async(branchName: string, octokit: Octokit, context: ActionContext): Promise<Octokit.PullsListResponseItem | Null> => getCache(getCacheKey('pr', {branchName}), async() => getApiHelper(octokit, context).findPullRequest(branchName), context);
+export const findPR = async(branchName: string, octokit: Octokit, context: ActionContext): Promise<PullsListResponseData[number] | Null> => getCache(getCacheKey('pr', {branchName}), async() => getApiHelper(octokit, context).findPullRequest(branchName), context);

@@ -1,6 +1,6 @@
-import {Utils, ContextHelper, GitHelper} from '@technote-space/github-action-helper';
 import moment from 'moment';
-import {Octokit} from '@octokit/rest';
+import {Utils, ContextHelper, GitHelper} from '@technote-space/github-action-helper';
+import {Octokit} from '@technote-space/github-action-helper/dist/types';
 import {ActionContext, CommandOutput} from '../types';
 import {getNewPatchVersion, getNewMinorVersion, getNewMajorVersion, getCurrentVersion, findPR, getDefaultBranch} from './command';
 import {
