@@ -1,7 +1,7 @@
 import {getInput} from '@actions/core';
 import {Utils, ContextHelper, GitHelper, Logger} from '@technote-space/github-action-helper';
+import {Octokit} from '@technote-space/github-action-helper/dist/types';
 import {isTargetEvent, isTargetLabels} from '@technote-space/filter-github-action';
-import {Octokit} from '@octokit/rest';
 import {ActionContext, PullsParams, PayloadPullsParams, Null} from '../types';
 import {getDefaultBranch} from './command';
 import {DEFAULT_TARGET_EVENTS, DEFAULT_TRIGGER_WORKFLOW_MESSAGE} from '../constant';
@@ -201,7 +201,15 @@ export const getTriggerWorkflowMessage = (context: ActionContext): string => con
 // eslint-disable-next-line no-magic-numbers
 export const getAutoMergeThresholdDays = (context: ActionContext): number => context.actionDetail.autoMergeThresholdDays && /^\d+$/.test(context.actionDetail.autoMergeThresholdDays) ? Number(context.actionDetail.autoMergeThresholdDays) : 0;
 
-export const checkSuiteState = (checkSuiteId: number) => (suite: Octokit.ChecksListSuitesForRefResponseCheckSuitesItem): boolean => {
+type ChecksListSuitesForRefResponseItem = {
+  id: number;
+  status: string;
+  conclusion: string;
+  app: {
+    slug: string;
+  };
+}
+export const checkSuiteState = (checkSuiteId: number) => (suite: ChecksListSuitesForRefResponseItem): boolean => {
   if (suite.conclusion === 'success') {
     return false;
   }
@@ -233,5 +241,5 @@ export const isPassedAllChecks = async(octokit: Octokit, context: ActionContext)
       ...context.actionContext.repo,
       ref: context.actionContext.sha,
     }),
-  )).filter(checkSuiteState(checkSuiteId)).length;
+  )).filter(suite => checkSuiteState(checkSuiteId)(suite as ChecksListSuitesForRefResponseItem)).length;
 };
