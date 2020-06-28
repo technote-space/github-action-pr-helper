@@ -11,6 +11,7 @@ import {
   stdoutCalledWith,
   testChildProcess,
   getApiFixture,
+  getLogStdout,
 } from '@technote-space/github-action-test-helper';
 import {main} from '../src';
 import {MainArguments} from '../src/types';
@@ -65,7 +66,28 @@ describe('main', () => {
       'repo:     world',
       '',
       '::group::Dump context',
-      '{\n\t"payload": {\n\t\t"action": "create"\n\t},\n\t"eventName": "issues",\n\t"sha": "",\n\t"ref": "",\n\t"workflow": "",\n\t"action": "hello-generator",\n\t"actor": "",\n\t"issue": {\n\t\t"owner": "hello",\n\t\t"repo": "world"\n\t},\n\t"repo": {\n\t\t"owner": "hello",\n\t\t"repo": "world"\n\t}\n}',
+      getLogStdout({
+        'payload': {
+          'action': 'create',
+        },
+        'eventName': 'issues',
+        'sha': '',
+        'ref': '',
+        'workflow': '',
+        'action': 'hello-generator',
+        'actor': '',
+        'issue': {
+          'owner': 'hello',
+          'repo': 'world',
+        },
+        'repo': {
+          'owner': 'hello',
+          'repo': 'world',
+        },
+        'job': '',
+        'runNumber': 1,
+        'runId': 1,
+      }),
       '::endgroup::',
       '::group::Dump Payload',
       '{\n	"action": "create"\n}',
@@ -138,7 +160,28 @@ describe('main', () => {
       'repo:     world',
       '',
       '::group::Dump context',
-      '{\n\t"payload": {\n\t\t"action": ""\n\t},\n\t"eventName": "schedule",\n\t"sha": "",\n\t"ref": "",\n\t"workflow": "",\n\t"action": "hello-generator",\n\t"actor": "",\n\t"issue": {\n\t\t"owner": "hello",\n\t\t"repo": "world"\n\t},\n\t"repo": {\n\t\t"owner": "hello",\n\t\t"repo": "world"\n\t}\n}',
+      getLogStdout({
+        'payload': {
+          'action': '',
+        },
+        'eventName': 'schedule',
+        'sha': '',
+        'ref': '',
+        'workflow': '',
+        'action': 'hello-generator',
+        'actor': '',
+        'issue': {
+          'owner': 'hello',
+          'repo': 'world',
+        },
+        'repo': {
+          'owner': 'hello',
+          'repo': 'world',
+        },
+        'job': '',
+        'runNumber': 1,
+        'runId': 1,
+      }),
       '::endgroup::',
       '::group::Dump Payload',
       '{\n	"action": ""\n}',
