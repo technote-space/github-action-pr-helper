@@ -182,12 +182,18 @@ describe('isTargetContext', () => {
 
   it('should return true 8', async() => {
     expect(await isTargetContext(octokit, generateActionContext({
+      event: 'workflow_dispatch',
+    }))).toBe(true);
+  });
+
+  it('should return true 9', async() => {
+    expect(await isTargetContext(octokit, generateActionContext({
       ref: 'refs/heads/test/change',
       event: 'push',
     }, {}, {targetBranchPrefix: 'test/', targetEvents: {push: '*'}}))).toBe(true);
   });
 
-  it('should return true 9', async() => {
+  it('should return true 10', async() => {
     expect(await isTargetContext(octokit, generateActionContext({
       event: 'pull_request',
       action: 'synchronize',
@@ -205,7 +211,7 @@ describe('isTargetContext', () => {
     }))).toBe(true);
   });
 
-  it('should return true 10', async() => {
+  it('should return true 11', async() => {
     expect(await isTargetContext(octokit, generateActionContext({
       event: 'pull_request',
       action: 'synchronize',
@@ -220,7 +226,7 @@ describe('isTargetContext', () => {
     }))).toBe(true);
   });
 
-  it('should return true 11', async() => {
+  it('should return true 12', async() => {
     expect(await isTargetContext(octokit, generateActionContext({
       event: 'pull_request',
       action: 'synchronize',
@@ -237,7 +243,7 @@ describe('isTargetContext', () => {
     }))).toBe(true);
   });
 
-  it('should return true 12', async() => {
+  it('should return true 13', async() => {
     expect(await isTargetContext(octokit, generateActionContext({
       event: 'pull_request',
       action: 'closed',
