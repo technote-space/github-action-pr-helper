@@ -6,9 +6,9 @@ import {ActionContext, PullsParams, PayloadPullsParams, Null} from '../types';
 import {getDefaultBranch} from './command';
 import {DEFAULT_TARGET_EVENTS, DEFAULT_TRIGGER_WORKFLOW_MESSAGE} from '../constant';
 
-const {getWorkspace, getPrefixRegExp, getAccessToken} = Utils;
-const {escapeRegExp, replaceAll, getBranch}           = Utils;
-const {isPr, isCron, isPush, isCustomEvent}           = ContextHelper;
+const {getWorkspace, getPrefixRegExp, getAccessToken}      = Utils;
+const {escapeRegExp, replaceAll, getBranch}                = Utils;
+const {isPr, isCron, isPush, isCustomEvent, isManualEvent} = ContextHelper;
 
 export const getActionDetail = <T>(key: string, context: ActionContext, defaultValue?: () => T): T => {
   if (undefined === defaultValue && !(key in context.actionDetail)) {
@@ -73,7 +73,7 @@ export const isTargetContext = async(octokit: Octokit, context: ActionContext): 
     return false;
   }
 
-  if (isCron(context.actionContext) || isCustomEvent(context.actionContext)) {
+  if (isCron(context.actionContext) || isCustomEvent(context.actionContext) || isManualEvent(context.actionContext)) {
     return true;
   }
 
