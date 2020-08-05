@@ -11,5 +11,6 @@ export const DEFAULT_TARGET_EVENTS            = {
   'schedule': '*',
   'repository_dispatch': '*',
   'workflow_dispatch': '*',
+  'workflow_run': '*',
 };
 export const INTERVAL_MS                      = 1000;
