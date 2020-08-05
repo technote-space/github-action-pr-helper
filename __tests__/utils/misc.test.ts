@@ -256,6 +256,19 @@ describe('isTargetContext', () => {
     }))).toBe(true);
   });
 
+  it('should return true 15', async() => {
+    expect(await isTargetContext(octokit, generateActionContext({
+      event: 'pull_request_target',
+      action: 'closed',
+    }))).toBe(true);
+  });
+
+  it('should return true 16', async() => {
+    expect(await isTargetContext(octokit, generateActionContext({
+      event: 'workflow_run',
+    }))).toBe(true);
+  });
+
   it('should return false 1', async() => {
     expect(await isTargetContext(octokit, generateActionContext({
       ref: 'tags/test',
