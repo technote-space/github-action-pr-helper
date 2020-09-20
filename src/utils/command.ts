@@ -1,6 +1,7 @@
 import {getInput} from '@actions/core' ;
 import {Octokit} from '@technote-space/github-action-helper/dist/types';
-import {Logger, GitHelper, Utils, ContextHelper, ApiHelper} from '@technote-space/github-action-helper';
+import {GitHelper, Utils, ContextHelper, ApiHelper} from '@technote-space/github-action-helper';
+import {Logger} from '@technote-space/github-action-log-helper';
 import {RestEndpointMethods} from '@octokit/plugin-rest-endpoint-methods/dist-types/generated/method-types';
 import {PullsListResponseData} from '@octokit/types';
 import {

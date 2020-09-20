@@ -3,7 +3,8 @@ import {Context} from '@actions/github/lib/context';
 import moment from 'moment';
 import nock from 'nock';
 import {resolve} from 'path';
-import {GitHelper, Logger} from '@technote-space/github-action-helper';
+import {GitHelper} from '@technote-space/github-action-helper';
+import {Logger} from '@technote-space/github-action-log-helper';
 import {
   testEnv,
   generateContext,
@@ -140,7 +141,12 @@ describe('getPrBranchName', () => {
   });
 
   it('should get pr branch name for default branch 1', async() => {
-    expect(await getPrBranchName(helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'refs/heads/master'}, {
+    expect(await getPrBranchName(helper, octokit, generateActionContext({
+      owner: 'owner',
+      repo: 'repo',
+      event: 'pull_request',
+      ref: 'refs/heads/master',
+    }, {
       payload: {
         'pull_request': {
           number: 0,
@@ -165,7 +171,12 @@ describe('getPrBranchName', () => {
 
   it('should get pr branch name for default branch 2', async() => {
     setExists(false);
-    expect(await getPrBranchName(helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'refs/heads/master'}, {
+    expect(await getPrBranchName(helper, octokit, generateActionContext({
+      owner: 'owner',
+      repo: 'repo',
+      event: 'pull_request',
+      ref: 'refs/heads/master',
+    }, {
       payload: {
         'pull_request': {
           number: 0,
@@ -215,7 +226,12 @@ describe('getPrTitle', () => {
   });
 
   it('should get PR title for default branch 1', async() => {
-    expect(await getPrTitle(helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'refs/heads/master'}, {
+    expect(await getPrTitle(helper, octokit, generateActionContext({
+      owner: 'owner',
+      repo: 'repo',
+      event: 'pull_request',
+      ref: 'refs/heads/master',
+    }, {
       payload: {
         'pull_request': {
           number: 0,
@@ -237,7 +253,12 @@ describe('getPrTitle', () => {
   });
 
   it('should get PR title for default branch 2', async() => {
-    expect(await getPrTitle(helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'refs/heads/master'}, {
+    expect(await getPrTitle(helper, octokit, generateActionContext({
+      owner: 'owner',
+      repo: 'repo',
+      event: 'pull_request',
+      ref: 'refs/heads/master',
+    }, {
       payload: {
         'pull_request': {
           number: 0,
@@ -634,7 +655,12 @@ describe('getPrBody', () => {
     const prBody                 = '${ACTION_OWNER}';
     const prBodyForDefaultBranch = '${ACTION_REPO}';
 
-    expect(await getPrBody(false, [], [], helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'refs/heads/master'}, {
+    expect(await getPrBody(false, [], [], helper, octokit, generateActionContext({
+      owner: 'owner',
+      repo: 'repo',
+      event: 'pull_request',
+      ref: 'refs/heads/master',
+    }, {
       payload: {
         'pull_request': {
           number: 0,
@@ -660,7 +686,12 @@ describe('getPrBody', () => {
   it('should get PR Body for default branch 2', async() => {
     const prBody = '${ACTION_OWNER}';
 
-    expect(await getPrBody(false, [], [], helper, octokit, generateActionContext({owner: 'owner', repo: 'repo', event: 'pull_request', ref: 'refs/heads/master'}, {
+    expect(await getPrBody(false, [], [], helper, octokit, generateActionContext({
+      owner: 'owner',
+      repo: 'repo',
+      event: 'pull_request',
+      ref: 'refs/heads/master',
+    }, {
       payload: {
         'pull_request': {
           number: 0,

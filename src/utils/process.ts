@@ -1,5 +1,6 @@
 import {setOutput} from '@actions/core';
-import {Logger, Utils, ContextHelper, GitHelper} from '@technote-space/github-action-helper';
+import {Utils, ContextHelper, GitHelper} from '@technote-space/github-action-helper';
+import {Logger} from '@technote-space/github-action-log-helper';
 import {Octokit} from '@technote-space/github-action-helper/dist/types';
 import {RestEndpointMethods} from '@octokit/plugin-rest-endpoint-methods/dist-types/generated/method-types';
 import {
