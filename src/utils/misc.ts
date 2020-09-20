@@ -1,5 +1,6 @@
 import {getInput} from '@actions/core';
-import {Utils, ContextHelper, GitHelper, Logger} from '@technote-space/github-action-helper';
+import {Utils, ContextHelper, GitHelper} from '@technote-space/github-action-helper';
+import {Logger} from '@technote-space/github-action-log-helper';
 import {Octokit} from '@technote-space/github-action-helper/dist/types';
 import {isTargetEvent, isTargetLabels} from '@technote-space/filter-github-action';
 import {ActionContext, PullsParams, PayloadPullsParams, Null} from '../types';

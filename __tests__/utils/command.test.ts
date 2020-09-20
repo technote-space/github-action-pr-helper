@@ -2,7 +2,8 @@
 import {Context} from '@actions/github/lib/context';
 import nock from 'nock';
 import {resolve} from 'path';
-import {Logger, GitHelper, Utils} from '@technote-space/github-action-helper';
+import {GitHelper, Utils} from '@technote-space/github-action-helper';
+import {Logger} from '@technote-space/github-action-log-helper';
 import {
   generateContext,
   testEnv,
