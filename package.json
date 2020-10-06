@@ -37,7 +37,7 @@
     "@actions/core": "^1.2.6",
     "@actions/github": "^4.0.0",
     "@technote-space/filter-github-action": "^0.5.5",
-    "@technote-space/github-action-helper": "^4.0.2",
+    "@technote-space/github-action-helper": "^4.0.3",
     "moment": "^2.29.1"
   },
   "devDependencies": {

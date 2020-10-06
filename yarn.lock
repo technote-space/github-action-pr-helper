@@ -774,7 +774,7 @@
     "@actions/core" "^1.2.6"
     "@actions/github" "^4.0.0"
 
-"@technote-space/github-action-helper@^4.0.2":
+"@technote-space/github-action-helper@^4.0.3":
   version "4.0.3"
   resolved "https://registry.yarnpkg.com/@technote-space/github-action-helper/-/github-action-helper-4.0.3.tgz#f84c624f1aa4784bfc835bafab9df138b68d1fc1"
   integrity sha512-kDM/jnvs5oxHZYV2kAiZaA8BAIWUTEAFQZrBLxqMTRgJihTqKI3mPMA+a+w5VHk/DdWxHGQBwmceNt4O81C7rQ==
