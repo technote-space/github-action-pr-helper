@@ -155,7 +155,7 @@ describe('execute', () => {
       '::group::Creating comment to PullRequest...',
       '::set-output name=result::succeeded',
       '::endgroup::',
-      '> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] updated',
+      '> \x1b[32;40m✔\x1b[0m\t[feature/new-feature] updated',
     ]);
   });
 
@@ -227,7 +227,7 @@ describe('execute', () => {
       '[command]git diff \'HEAD..origin/feature/new-feature\' --name-only',
       '::set-output name=result::not changed',
       '::endgroup::',
-      '> \x1b[33;40;0m✔\x1b[0m\t[feature/new-feature] There is no diff',
+      '> \x1b[33;40m✔\x1b[0m\t[feature/new-feature] There is no diff',
     ]);
   });
 
@@ -327,8 +327,8 @@ describe('execute', () => {
       '[command]git diff \'HEAD..origin/change/new-topic2\' --name-only',
       '::endgroup::',
       '::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
-      '> \x1b[33;40;0m✔\x1b[0m\t[change/new-topic1] This is close event',
-      '> \x1b[33;40;0m✔\x1b[0m\t[change/new-topic2] This is close event',
+      '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] This is close event',
+      '> \x1b[33;40m✔\x1b[0m\t[change/new-topic2] This is close event',
       '::endgroup::',
     ]);
   });
@@ -404,8 +404,8 @@ describe('execute', () => {
       '[command]git diff \'HEAD..origin/change/new-topic1\' --name-only',
       '::endgroup::',
       '::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
-      '> \x1b[33;40;0m✔\x1b[0m\t[change/new-topic1] This is close event',
-      '> \x1b[33;40;0m→\x1b[0m\t[change/new-topic2] duplicated (test/test-branch)',
+      '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] This is close event',
+      '> \x1b[33;40m→\x1b[0m\t[change/new-topic2] duplicated (test/test-branch)',
       '::endgroup::',
     ]);
   });
@@ -493,8 +493,8 @@ describe('execute', () => {
       '::group::Target PullRequest Ref [change/new-topic2]',
       '::endgroup::',
       '::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
-      '> \x1b[33;40;0m✔\x1b[0m\t[change/new-topic1] This is close event',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic2] not found',
+      '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] This is close event',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
       '::endgroup::',
     ]);
   });
@@ -554,7 +554,7 @@ describe('execute', () => {
       '[command]git push origin test:refs/heads/test',
       '::set-output name=result::succeeded',
       '::endgroup::',
-      '> \x1b[32;40;0m✔\x1b[0m\t[test] updated',
+      '> \x1b[32;40m✔\x1b[0m\t[test] updated',
     ]);
   });
 
@@ -633,7 +633,7 @@ describe('execute', () => {
       '::group::Creating comment to PullRequest...',
       '::set-output name=result::succeeded',
       '::endgroup::',
-      '> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] updated',
+      '> \x1b[32;40m✔\x1b[0m\t[feature/new-feature] updated',
     ]);
   });
 
@@ -723,8 +723,8 @@ describe('execute', () => {
       '::group::Target PullRequest Ref [change/new-topic2]',
       '::endgroup::',
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
-      '> \x1b[32;40;0m✔\x1b[0m\t[change/new-topic1] updated',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic2] not found',
+      '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] updated',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
       '::endgroup::',
     ]);
   });
@@ -815,8 +815,8 @@ describe('execute', () => {
       '> Creating comment to PullRequest...',
       '::endgroup::',
       '::group::Total:2  Succeeded:1  Failed:0  Skipped:1',
-      '> \x1b[32;40;0m✔\x1b[0m\t[feature/new-topic3] updated',
-      '> \x1b[33;40;0m→\x1b[0m\t[feature/new-topic4] duplicated (Hello-World/test-branch)',
+      '> \x1b[32;40m✔\x1b[0m\t[feature/new-topic3] updated',
+      '> \x1b[33;40m→\x1b[0m\t[feature/new-topic4] duplicated (Hello-World/test-branch)',
       '::endgroup::',
     ]);
   });
@@ -898,8 +898,8 @@ describe('execute', () => {
       '::group::Target PullRequest Ref [change/new-topic2]',
       '::endgroup::',
       '::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
-      '> \x1b[33;40;0m✔\x1b[0m\t[change/new-topic1] There is no diff',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic2] not found',
+      '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] There is no diff',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
       '::endgroup::',
     ]);
   });
@@ -979,8 +979,8 @@ describe('execute', () => {
       '::group::Target PullRequest Ref [change/new-topic2]',
       '::endgroup::',
       '::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
-      '> \x1b[33;40;0m✔\x1b[0m\t[change/new-topic1] There is no diff',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic2] not found',
+      '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] There is no diff',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
       '::endgroup::',
     ]);
   });
@@ -1065,7 +1065,7 @@ describe('execute', () => {
       '> Creating comment to PullRequest...',
       '::endgroup::',
       '::group::Total:1  Succeeded:1  Failed:0  Skipped:0',
-      '> \x1b[32;40;0m✔\x1b[0m\t[master] updated',
+      '> \x1b[32;40m✔\x1b[0m\t[master] updated',
       '::endgroup::',
     ]);
   });
@@ -1134,9 +1134,9 @@ describe('execute', () => {
       '{}',
       '::endgroup::',
       '::group::Total:3  Succeeded:0  Failed:1  Skipped:2',
-      '> \x1b[31;40;0m×\x1b[0m\t[feature/new-topic3] command [git status] exited with code undefined. message: test error',
-      '> \x1b[33;40;0m→\x1b[0m\t[feature/new-topic4] duplicated (Hello-World/test-branch)',
-      '> \x1b[33;40;0m→\x1b[0m\t[master] duplicated (Hello-World/test-branch)',
+      '> \x1b[31;40m×\x1b[0m\t[feature/new-topic3] command [git status] exited with code undefined. message: test error',
+      '> \x1b[33;40m→\x1b[0m\t[feature/new-topic4] duplicated (Hello-World/test-branch)',
+      '> \x1b[33;40m→\x1b[0m\t[master] duplicated (Hello-World/test-branch)',
       '::endgroup::',
     ]);
   });
@@ -1237,9 +1237,9 @@ describe('execute', () => {
       '{}',
       '::endgroup::',
       '::group::Total:3  Succeeded:0  Failed:3  Skipped:0',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic1] command [git status] exited with code undefined. message: test error',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic2] not found',
-      '> \x1b[31;40;0m×\x1b[0m\t[master] command [git status] exited with code undefined. message: test error',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic1] command [git status] exited with code undefined. message: test error',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
+      '> \x1b[31;40m×\x1b[0m\t[master] command [git status] exited with code undefined. message: test error',
       '::endgroup::',
     ]);
   });
@@ -1326,7 +1326,7 @@ describe('execute', () => {
       '[command]git push origin Hello-World/test-21031067:refs/heads/Hello-World/test-21031067',
       '::set-output name=result::succeeded',
       '::endgroup::',
-      '> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] updated',
+      '> \x1b[32;40m✔\x1b[0m\t[feature/new-feature] updated',
     ]);
   });
 
@@ -1469,7 +1469,7 @@ describe('execute', () => {
       '[command]git push origin test/change:refs/heads/test/change',
       '::set-output name=result::succeeded',
       '::endgroup::',
-      '> \x1b[32;40;0m✔\x1b[0m\t[test/change] updated',
+      '> \x1b[32;40m✔\x1b[0m\t[test/change] updated',
     ]);
   });
 
@@ -1546,7 +1546,7 @@ describe('execute', () => {
       getLogStdout(['label1', 'label2']),
       '::set-output name=result::succeeded',
       '::endgroup::',
-      '> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] PullRequest created',
+      '> \x1b[32;40m✔\x1b[0m\t[feature/new-feature] PullRequest created',
     ]);
   });
 
@@ -1649,8 +1649,8 @@ describe('execute', () => {
       '::group::Target PullRequest Ref [change/new-topic2]',
       '::endgroup::',
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
-      '> \x1b[32;40;0m✔\x1b[0m\t[change/new-topic1] has been auto merged',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic2] not found',
+      '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been auto merged',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
       '::endgroup::',
     ]);
   });
@@ -1747,8 +1747,8 @@ describe('execute', () => {
       '::group::Target PullRequest Ref [change/new-topic2]',
       '::endgroup::',
       '::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
-      '> \x1b[33;40;0m✔\x1b[0m\t[change/new-topic1] There is no diff',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic2] not found',
+      '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] There is no diff',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
       '::endgroup::',
     ]);
   });

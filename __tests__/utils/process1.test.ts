@@ -144,8 +144,8 @@ describe('execute', () => {
       '::group::Target PullRequest Ref [change/new-topic2]',
       '::endgroup::',
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
-      '> \x1b[32;40;0m✔\x1b[0m\t[change/new-topic1] has been closed because there is no reference diff',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic2] not found',
+      '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because there is no reference diff',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
       '::endgroup::',
     ]);
   });
@@ -233,7 +233,7 @@ describe('execute', () => {
       '::group::Deleting reference... [refs/heads/Hello-World/test-21031067]',
       '::endgroup::',
       '::set-output name=result::succeeded',
-      '> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] has been closed because there is no reference diff',
+      '> \x1b[32;40m✔\x1b[0m\t[feature/new-feature] has been closed because there is no reference diff',
     ]);
   });
 
@@ -316,7 +316,7 @@ describe('execute', () => {
       '::group::Deleting reference... [refs/heads/Hello-World/test-21031067]',
       '::endgroup::',
       '::set-output name=result::succeeded',
-      '> \x1b[32;40;0m✔\x1b[0m\t[feature/new-feature] has been closed because there is no reference diff',
+      '> \x1b[32;40m✔\x1b[0m\t[feature/new-feature] has been closed because there is no reference diff',
     ]);
   });
 
@@ -356,8 +356,8 @@ describe('execute', () => {
       '::group::Target PullRequest Ref [change/new-topic2]',
       '::endgroup::',
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
-      '> \x1b[32;40;0m✔\x1b[0m\t[change/new-topic1] has been closed because base PullRequest has been closed',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic2] not found',
+      '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because base PullRequest has been closed',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
       '::endgroup::',
     ]);
   });
@@ -446,8 +446,8 @@ describe('execute', () => {
       '::group::Target PullRequest Ref [change/new-topic2]',
       '::endgroup::',
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
-      '> \x1b[32;40;0m✔\x1b[0m\t[change/new-topic1] has been closed because there is no reference diff',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic2] not found',
+      '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because there is no reference diff',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
       '::endgroup::',
     ]);
   });
@@ -488,8 +488,8 @@ describe('execute', () => {
       '::group::Target PullRequest Ref [change/new-topic2]',
       '::endgroup::',
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
-      '> \x1b[32;40;0m✔\x1b[0m\t[change/new-topic1] has been closed because base PullRequest does not exist',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic2] not found',
+      '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because base PullRequest does not exist',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
       '::endgroup::',
     ]);
   });
@@ -520,8 +520,8 @@ describe('execute', () => {
       '::group::Target PullRequest Ref [change/new-topic2]',
       '::endgroup::',
       '::group::Total:2  Succeeded:0  Failed:2  Skipped:0',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic1] not found',
-      '> \x1b[31;40;0m×\x1b[0m\t[change/new-topic2] not found',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic1] not found',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
       '::endgroup::',
     ]);
   });
@@ -550,9 +550,9 @@ describe('execute', () => {
       '::group::Target PullRequest Ref [master]',
       '::endgroup::',
       '::group::Total:3  Succeeded:0  Failed:1  Skipped:2',
-      '> \x1b[33;40;0m→\x1b[0m\t[feature/new-topic3] This is not target branch',
-      '> \x1b[33;40;0m→\x1b[0m\t[feature/new-topic4] This is not target branch',
-      '> \x1b[31;40;0m×\x1b[0m\t[master] parameter [prBranchName] is required.',
+      '> \x1b[33;40m→\x1b[0m\t[feature/new-topic3] This is not target branch',
+      '> \x1b[33;40m→\x1b[0m\t[feature/new-topic4] This is not target branch',
+      '> \x1b[31;40m×\x1b[0m\t[master] parameter [prBranchName] is required.',
       '::endgroup::',
     ]);
   });
@@ -575,9 +575,9 @@ describe('execute', () => {
       '::group::Target PullRequest Ref [master]',
       '::endgroup::',
       '::group::Total:3  Succeeded:0  Failed:1  Skipped:2',
-      '> \x1b[33;40;0m→\x1b[0m\t[fork1:feature/new-topic3] PR from fork',
-      '> \x1b[33;40;0m→\x1b[0m\t[fork2:feature/new-topic4] PR from fork',
-      '> \x1b[31;40;0m×\x1b[0m\t[master] parameter [prBranchName] is required.',
+      '> \x1b[33;40m→\x1b[0m\t[fork1:feature/new-topic3] PR from fork',
+      '> \x1b[33;40m→\x1b[0m\t[fork2:feature/new-topic4] PR from fork',
+      '> \x1b[31;40m×\x1b[0m\t[master] parameter [prBranchName] is required.',
       '::endgroup::',
     ]);
   });
@@ -650,7 +650,7 @@ describe('execute', () => {
       '[command]git diff \'HEAD..origin/feature/new-feature\' --name-only',
       '::set-output name=result::not changed',
       '::endgroup::',
-      '> \x1b[33;40;0m✔\x1b[0m\t[feature/new-feature] There is no diff',
+      '> \x1b[33;40m✔\x1b[0m\t[feature/new-feature] There is no diff',
     ]);
   });
 
@@ -695,7 +695,7 @@ describe('execute', () => {
       '> There is no diff.',
       '::set-output name=result::not changed',
       '::endgroup::',
-      '> \x1b[33;40;0m✔\x1b[0m\t[test/change] There is no diff',
+      '> \x1b[33;40m✔\x1b[0m\t[test/change] There is no diff',
     ]);
   });
 });
