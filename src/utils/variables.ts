@@ -16,6 +16,7 @@ import {
   getPrBranchPrefix,
   getPrBranchPrefixForDefaultBranch,
   isNotCreatePR,
+  ParameterRequiredError,
 } from './misc';
 
 const {getBranch} = Utils;
@@ -96,16 +97,38 @@ const contextVariables = async(isComment: boolean, helper: GitHelper, octokit: O
  */
 const replaceContextVariables = async(string: string, helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(string, await contextVariables(false, helper, octokit, context));
 
-export const getPrBranchName = async(helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<string> =>
-  isPush(context.actionContext) ?
-    getBranch(context.actionContext) :
-    (
-      isActionPr(context) || isNotCreatePR(context) ? getPrHeadRef(context) : (
-        await isDefaultBranch(octokit, context) ?
-          getPrBranchPrefixForDefaultBranch(context) + await replaceContextVariables(getActionDetail<string>('prBranchNameForDefaultBranch', context, () => getActionDetail<string>('prBranchName', context)), helper, octokit, context) :
-          getPrBranchPrefix(context) + await replaceContextVariables(getActionDetail<string>('prBranchName', context), helper, octokit, context)
-      )
-    );
+export const getPrBranchName = async(helper: GitHelper, octokit: Octokit, context: ActionContext, isDuplicateCheck = false): Promise<string> => {
+  if (isPush(context.actionContext)) {
+    return getBranch(context.actionContext);
+  }
+
+  if (isActionPr(context) || isNotCreatePR(context)) {
+    return getPrHeadRef(context);
+  }
+
+  let prefix: string, branch: string;
+  if (await isDefaultBranch(octokit, context)) {
+    prefix = getPrBranchPrefixForDefaultBranch(context);
+  } else {
+    prefix = getPrBranchPrefix(context);
+  }
+
+  try {
+    if (await isDefaultBranch(octokit, context)) {
+      branch = getActionDetail<string>('prBranchNameForDefaultBranch', context, () => getActionDetail<string>('prBranchName', context));
+    } else {
+      branch = getActionDetail<string>('prBranchName', context);
+    }
+  } catch (error) {
+    if (isDuplicateCheck && (error instanceof ParameterRequiredError)) {
+      return `${context.actionContext.runNumber}`;
+    }
+
+    throw error;
+  }
+
+  return prefix + await replaceContextVariables(branch, helper, octokit, context);
+};
 
 export const getPrTitle = async(helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<string> => await replaceContextVariables(
   (
