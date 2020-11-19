@@ -11,13 +11,27 @@ const {getWorkspace, getPrefixRegExp, getAccessToken}                     = Util
 const {escapeRegExp, replaceAll, getBranch}                               = Utils;
 const {isPr, isCron, isPush, isCustomEvent, isManualEvent, isWorkflowRun} = ContextHelper;
 
+/**
+ * ParameterRequiredError
+ */
+export class ParameterRequiredError extends Error {
+  /**
+   * @param {string} target target
+   */
+  constructor(target: string) {
+    super(`parameter [${target}] is required.`);
+
+    Object.setPrototypeOf(this, ParameterRequiredError.prototype);
+  }
+}
+
 export const getActionDetail = <T>(key: string, context: ActionContext, defaultValue?: () => T): T => {
   if (undefined === defaultValue && !(key in context.actionDetail)) {
-    throw new Error(`parameter [${key}] is required.`);
+    throw new ParameterRequiredError(key);
   }
 
   if (undefined === defaultValue && typeof context.actionDetail[key] === 'string' && context.actionDetail[key].trim() === '') {
-    throw new Error(`parameter [${key}] is required.`);
+    throw new ParameterRequiredError(key);
   }
 
   return context.actionDetail[key] || (typeof defaultValue === 'function' ? defaultValue() : undefined);
