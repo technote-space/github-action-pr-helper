@@ -313,11 +313,15 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
       continue;
     }
 
-    const helper = getHelper(actionContext);
-    const target = await getPrBranchName(helper, octokit, actionContext, true);
-    if (target in processed) {
-      results.push(getResult('skipped', `duplicated (${target})`, actionContext));
-      continue;
+    const helper   = getHelper(actionContext);
+    const isTarget = await isTargetBranch(getPrHeadRef(context), octokit, context);
+    let target     = '';
+    if (isTarget) {
+      target = await getPrBranchName(helper, octokit, actionContext, true);
+      if (target in processed) {
+        results.push(getResult('skipped', `duplicated (${target})`, actionContext));
+        continue;
+      }
     }
 
     try {
