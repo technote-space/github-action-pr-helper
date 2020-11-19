@@ -314,7 +314,7 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
     }
 
     const helper   = getHelper(actionContext);
-    const isTarget = await isTargetBranch(getPrHeadRef(context), octokit, context);
+    const isTarget = await isTargetBranch(getPrHeadRef(actionContext), octokit, actionContext);
     let target     = '';
     if (isTarget) {
       target = await getPrBranchName(helper, octokit, actionContext, true);
