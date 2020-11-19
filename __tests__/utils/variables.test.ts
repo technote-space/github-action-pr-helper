@@ -202,15 +202,15 @@ describe('getPrBranchName', () => {
     }))).toBe('test-ref');
   });
 
-  it('should throw error', async() => {
-    await expect(getPrBranchName(helper, octokit, generateActionContext({}))).rejects.toThrow();
-    await expect(getPrBranchName(helper, octokit, generateActionContext({}, {}, {prBranchName: ''}))).rejects.toThrow();
+  it('should get run number', async() => {
+    expect(await getPrBranchName(helper, octokit, generateActionContext({}), true)).toBe('1');
   });
 
   it('should throw error', async() => {
     await expect(getPrBranchName(helper, octokit, generateActionContext({event: 'pull_request'}, {}, {
       prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
     }))).rejects.toThrow();
+    await expect(getPrBranchName(helper, octokit, generateActionContext({}))).rejects.toThrow();
   });
 });
 
