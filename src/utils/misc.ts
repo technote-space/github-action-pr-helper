@@ -68,7 +68,7 @@ export const isDisabledDeletePackage = (context: ActionContext): boolean => !(co
 
 export const isClosePR = (context: ActionContext): boolean => isPr(context.actionContext) && context.actionContext.payload.action === 'closed';
 
-export const isNotCreatePR = (context: ActionContext): boolean => isPr(context.actionContext) && true === context.actionDetail.notCreatePr;
+export const isNotCreatePR = (context: ActionContext): boolean => true === context.actionDetail.notCreatePr;
 
 export const isTargetBranch = async(branchName: string, octokit: Octokit, context: ActionContext): Promise<boolean> => {
   if (branchName === await getDefaultBranch(octokit, context)) {

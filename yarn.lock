@@ -764,10 +764,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@technote-space/filter-github-action@^0.5.7":
-  version "0.5.7"
-  resolved "https://registry.yarnpkg.com/@technote-space/filter-github-action/-/filter-github-action-0.5.7.tgz#6608b1e43347bd49f554d9d928a67482321d06f4"
-  integrity sha512-Z+o9LDjlxavShBxVJLSaqjsF4N7FjCrrv6VNaRbmOGOKVxsp+a4n4vTpsekmpomp5h6pIPwt4RbSmG4JdiBL6g==
+"@technote-space/filter-github-action@^0.5.8":
+  version "0.5.8"
+  resolved "https://registry.yarnpkg.com/@technote-space/filter-github-action/-/filter-github-action-0.5.8.tgz#a9e3cf4bda26c43831acf78569f859077712a4a3"
+  integrity sha512-fHnGnS7CPhyPtFfTwXFKB+31x19mNMNFCZabWOEkkSD+30cyRbA2K2IU81FTjZSOCblFWjsz+kiaZ4kGSsU4gg==
   dependencies:
     "@actions/core" "^1.2.6"
     "@actions/github" "^4.0.0"
