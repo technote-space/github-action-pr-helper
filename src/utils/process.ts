@@ -46,12 +46,17 @@ const getResult = (result: 'succeeded' | 'failed' | 'skipped' | 'not changed', d
 });
 
 const checkActionPr = async(logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult | true> => {
+  const defaultBranch = await getDefaultBranch(octokit, context);
+  if (defaultBranch === getPrHeadRef(context)) {
+    return true;
+  }
+
   const pr = await findPR(getPrHeadRef(context), octokit, context);
   if (!pr) {
     return getResult('failed', 'not found', context);
   }
 
-  if (pr.base.ref === await getDefaultBranch(octokit, context)) {
+  if (pr.base.ref === defaultBranch) {
     return true;
   }
 
@@ -233,15 +238,17 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
     commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
   }
 
+  if (!isActionPr(context) && !await isTargetBranch(getPrHeadRef(context), octokit, context)) {
+    return getResult('skipped', 'This is not target branch', context);
+  }
+
   if (isActionPr(context) || isNotCreatePR(context)) {
     const processResult = await checkActionPr(logger, octokit, context);
     if (processResult !== true) {
       return processResult;
     }
 
-    return createCommit(true, isClose, logger, octokit, context);
-  } else if (!await isTargetBranch(getPrHeadRef(context), octokit, context)) {
-    return getResult('skipped', 'This is not target branch', context);
+    return createCommit(isActionPr(context), isClose, logger, octokit, context);
   }
 
   const {files, output}                   = await getChangedFiles(helper, logger, octokit, context);
