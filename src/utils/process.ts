@@ -33,7 +33,7 @@ import {
 } from './misc';
 import {getPrBranchName} from './variables';
 import {INTERVAL_MS} from '../constant';
-import {ActionContext, ProcessResult, PullsParams, CommandOutput} from '../types';
+import {ActionContext, ProcessResult, AllProcessResult, PullsParams, CommandOutput} from '../types';
 
 const {sleep, getBranch} = Utils;
 const {isPr, isPush}     = ContextHelper;
@@ -46,12 +46,17 @@ const getResult = (result: 'succeeded' | 'failed' | 'skipped' | 'not changed', d
 });
 
 const checkActionPr = async(logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult | true> => {
+  const defaultBranch = await getDefaultBranch(octokit, context);
+  if (defaultBranch === getPrHeadRef(context)) {
+    return true;
+  }
+
   const pr = await findPR(getPrHeadRef(context), octokit, context);
   if (!pr) {
     return getResult('failed', 'not found', context);
   }
 
-  if (pr.base.ref === await getDefaultBranch(octokit, context)) {
+  if (pr.base.ref === defaultBranch) {
     return true;
   }
 
@@ -233,15 +238,17 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
     commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
   }
 
+  if (!isActionPr(context) && !await isTargetBranch(getPrHeadRef(context), octokit, context)) {
+    return getResult('skipped', 'This is not target branch', context);
+  }
+
   if (isActionPr(context) || isNotCreatePR(context)) {
     const processResult = await checkActionPr(logger, octokit, context);
     if (processResult !== true) {
       return processResult;
     }
 
-    return createCommit(true, isClose, logger, octokit, context);
-  } else if (!await isTargetBranch(getPrHeadRef(context), octokit, context)) {
-    return getResult('skipped', 'This is not target branch', context);
+    return createCommit(isActionPr(context), isClose, logger, octokit, context);
   }
 
   const {files, output}                   = await getChangedFiles(helper, logger, octokit, context);
@@ -292,6 +299,13 @@ const outputResult = (result: ProcessResult, endProcess = false): void => {
   commonLogger.info(mark[result.result] + '\t[%s] %s', result.branch, result.detail);
 };
 
+const getOutputResult = (results: ProcessResult[]): typeof AllProcessResult[number] => {
+  const resultItems = results.map(result => result.result);
+
+  // eslint-disable-next-line no-magic-numbers
+  return (AllProcessResult.filter(item => resultItems.includes(item)).slice(-1)[0] as (typeof AllProcessResult[number]) | undefined) ?? AllProcessResult[0];
+};
+
 const outputResults = (results: ProcessResult[]): void => {
   const total     = results.length;
   const succeeded = results.filter(item => item.result === 'succeeded').length;
@@ -299,6 +313,7 @@ const outputResults = (results: ProcessResult[]): void => {
 
   commonLogger.startProcess('Total:%d  Succeeded:%d  Failed:%d  Skipped:%d', total, succeeded, failed, total - succeeded - failed);
   results.forEach(result => outputResult(result));
+  setOutput('result', getOutputResult(results));
 };
 
 const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) => AsyncIterable<PullsParams>, octokit: Octokit, context: ActionContext): Promise<void> => {

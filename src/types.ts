@@ -59,8 +59,15 @@ export type ActionContext = {
   cache: { [key: string]: any };
 }
 
+export const AllProcessResult = [
+  'skipped',
+  'not changed',
+  'succeeded',
+  'failed',
+] as const;
+
 export type ProcessResult = {
-  result: 'succeeded' | 'failed' | 'skipped' | 'not changed';
+  result: typeof AllProcessResult[number];
   detail: string;
   branch: string;
 }
