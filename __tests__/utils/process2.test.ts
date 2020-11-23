@@ -329,6 +329,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] This is close event',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic2] This is close event',
+      '::set-output name=result::not changed',
       '::endgroup::',
     ]);
   });
@@ -406,6 +407,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] This is close event',
       '> \x1b[33;40m→\x1b[0m\t[change/new-topic2] duplicated (test/test-branch)',
+      '::set-output name=result::not changed',
       '::endgroup::',
     ]);
   });
@@ -495,6 +497,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] This is close event',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
@@ -723,6 +726,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
       '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] updated',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
@@ -815,6 +819,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:0  Skipped:1',
       '> \x1b[32;40m✔\x1b[0m\t[feature/new-topic3] updated',
       '> \x1b[33;40m→\x1b[0m\t[feature/new-topic4] duplicated (Hello-World/test-branch)',
+      '::set-output name=result::succeeded',
       '::endgroup::',
     ]);
   });
@@ -898,6 +903,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] There is no diff',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
@@ -979,6 +985,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] There is no diff',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
@@ -1068,6 +1075,7 @@ describe('execute', () => {
       '> \x1b[33;40m→\x1b[0m\t[change/new-topic1] This is not target branch',
       '> \x1b[33;40m→\x1b[0m\t[change/new-topic2] This is not target branch',
       '> \x1b[32;40m✔\x1b[0m\t[master] updated',
+      '::set-output name=result::succeeded',
       '::endgroup::',
     ]);
   });
@@ -1139,6 +1147,7 @@ describe('execute', () => {
       '> \x1b[31;40m×\x1b[0m\t[feature/new-topic3] command [git status] exited with code undefined. message: test error',
       '> \x1b[33;40m→\x1b[0m\t[feature/new-topic4] duplicated (Hello-World/test-branch)',
       '> \x1b[33;40m→\x1b[0m\t[master] duplicated (Hello-World/test-branch)',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
@@ -1242,6 +1251,7 @@ describe('execute', () => {
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic1] command [git status] exited with code undefined. message: test error',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
       '> \x1b[31;40m×\x1b[0m\t[master] command [git status] exited with code undefined. message: test error',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
@@ -1653,6 +1663,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
       '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been auto merged',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
@@ -1751,6 +1762,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] There is no diff',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });

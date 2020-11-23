@@ -33,7 +33,7 @@ import {
 } from './misc';
 import {getPrBranchName} from './variables';
 import {INTERVAL_MS} from '../constant';
-import {ActionContext, ProcessResult, PullsParams, CommandOutput} from '../types';
+import {ActionContext, ProcessResult, AllProcessResult, PullsParams, CommandOutput} from '../types';
 
 const {sleep, getBranch} = Utils;
 const {isPr, isPush}     = ContextHelper;
@@ -299,6 +299,13 @@ const outputResult = (result: ProcessResult, endProcess = false): void => {
   commonLogger.info(mark[result.result] + '\t[%s] %s', result.branch, result.detail);
 };
 
+const getOutputResult = (results: ProcessResult[]): typeof AllProcessResult[number] => {
+  const resultItems = results.map(result => result.result);
+
+  // eslint-disable-next-line no-magic-numbers
+  return (AllProcessResult.filter(item => resultItems.includes(item)).slice(-1)[0] as (typeof AllProcessResult[number]) | undefined) ?? AllProcessResult[0];
+};
+
 const outputResults = (results: ProcessResult[]): void => {
   const total     = results.length;
   const succeeded = results.filter(item => item.result === 'succeeded').length;
@@ -306,6 +313,7 @@ const outputResults = (results: ProcessResult[]): void => {
 
   commonLogger.startProcess('Total:%d  Succeeded:%d  Failed:%d  Skipped:%d', total, succeeded, failed, total - succeeded - failed);
   results.forEach(result => outputResult(result));
+  setOutput('result', getOutputResult(results));
 };
 
 const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) => AsyncIterable<PullsParams>, octokit: Octokit, context: ActionContext): Promise<void> => {

@@ -146,6 +146,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
       '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because there is no reference diff',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
@@ -358,6 +359,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
       '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because base PullRequest has been closed',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
@@ -448,6 +450,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
       '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because there is no reference diff',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
@@ -490,6 +493,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
       '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because base PullRequest does not exist',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
@@ -522,6 +526,7 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:2  Skipped:0',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic1] not found',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
@@ -553,6 +558,7 @@ describe('execute', () => {
       '> \x1b[33;40m→\x1b[0m\t[feature/new-topic3] This is not target branch',
       '> \x1b[33;40m→\x1b[0m\t[feature/new-topic4] This is not target branch',
       '> \x1b[31;40m×\x1b[0m\t[master] parameter [prBranchName] is required.',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
@@ -578,6 +584,7 @@ describe('execute', () => {
       '> \x1b[33;40m→\x1b[0m\t[fork1:feature/new-topic3] PR from fork',
       '> \x1b[33;40m→\x1b[0m\t[fork2:feature/new-topic4] PR from fork',
       '> \x1b[31;40m×\x1b[0m\t[master] parameter [prBranchName] is required.',
+      '::set-output name=result::failed',
       '::endgroup::',
     ]);
   });
