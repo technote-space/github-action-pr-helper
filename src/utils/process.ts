@@ -126,7 +126,7 @@ const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger
   const helper     = getHelper(context);
   const branchName = await getPrBranchName(helper, octokit, context);
 
-  const {files, output} = await getChangedFiles(helper, logger, octokit, context);
+  const {files, output, aborted} = await getChangedFiles(helper, logger, octokit, context);
   if (!files.length) {
     logger.info('There is no diff.');
     if (context.isBatchProcess) {
@@ -139,6 +139,13 @@ const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger
 
       if (pr && await autoMerge(pr, logger, octokit, context)) {
         return getResult('succeeded', 'has been auto merged', context);
+      }
+
+      if (pr && aborted && !await isMergeable(pr.number, octokit, context)) {
+        // not mergeable
+        logger.info('This PR is not mergeable.');
+        // Resolve conflicts if PR is not mergeable
+        return getResult('succeeded', await resolveConflicts(branchName, helper, logger, octokit, context), context);
       }
     }
 
@@ -278,7 +285,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
 
   if (!mergeable) {
     // Resolve conflicts if PR is not mergeable
-    await resolveConflicts(branchName, helper, logger, octokit, context);
+    detail = await resolveConflicts(branchName, helper, logger, octokit, context);
   }
 
   return getResult(result, detail, context);

@@ -325,11 +325,13 @@ const runCommands = async(helper: GitHelper, logger: Logger, context: ActionCont
 export const getChangedFiles = async(helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<{
   files: string[];
   output: CommandOutput[];
+  aborted?: boolean;
 }> => {
   await clone(helper, logger, octokit, context);
   if (await checkBranch(helper, logger, octokit, context)) {
     if (!await merge(getContextBranch(context), helper, logger, context)) {
       await abortMerge(helper, logger);
+      return {files: [], output: [], aborted: true};
     }
   }
 
@@ -352,7 +354,7 @@ export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger,
 
 export const closePR = async(branchName: string, logger: Logger, context: ActionContext, message?: string): Promise<void> => getApiHelper(getOctokit(getApiToken()), context, logger).closePR(branchName, message ?? context.actionDetail.prCloseMessage);
 
-export const resolveConflicts = async(branchName: string, helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
+export const resolveConflicts = async(branchName: string, helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<string> => {
   if (await merge(getContextBranch(context), helper, logger, context)) {
     // succeeded to merge
     await push(branchName, helper, logger, context);
@@ -361,7 +363,7 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
     const {files, output} = await getChangedFilesForRebase(helper, logger, octokit, context);
     if (!files.length) {
       await closePR(branchName, logger, context);
-      return;
+      return 'has been closed because there is no diff';
     }
     await commit(helper, logger, context);
     await forcePush(branchName, helper, logger, context);
@@ -370,6 +372,7 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
       body: await getPrBody(false, files, output, helper, octokit, context),
     });
   }
+  return 'updated';
 };
 
 export const getDefaultBranch = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('repos', {
