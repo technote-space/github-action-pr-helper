@@ -104,7 +104,7 @@ describe('clone', () => {
 
     execCalledWith(mockExec, [
       'git init \'.\'',
-      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
+      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' || :',
       'git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\' || :',
       'git reset --hard || :',
       'git checkout -b hello-world/test-branch origin/hello-world/test-branch || :',
@@ -115,6 +115,7 @@ describe('clone', () => {
       '[command]git init \'.\'',
       '  >> stdout',
       '[command]git remote add origin',
+      '  >> stdout',
       '[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
       '  >> stdout',
       '[command]git reset --hard',
@@ -162,7 +163,7 @@ describe('checkBranch', () => {
 
     execCalledWith(mockExec, [
       'git rev-parse --abbrev-ref HEAD || :',
-      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
+      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
       'git checkout -b feature/new-feature origin/feature/new-feature || :',
       'git checkout feature/new-feature || :',
@@ -707,6 +708,7 @@ describe('updatePr', () => {
       '::endgroup::',
       '::group::Pushing to hello/world@test...',
       '[command]git push origin test:refs/heads/test',
+      '  >> stdout',
     ]);
   });
 });
@@ -834,12 +836,12 @@ describe('resolveConflicts', () => {
 
     execCalledWith(mockExec, [
       'git init \'.\'',
-      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
+      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
       'git config \'user.name\' \'GitHub Actions\'',
       'git config \'user.email\' \'example@example.com\'',
       'git merge --no-edit origin/feature/new-feature || :',
-      'git push origin \'test:refs/heads/test\' > /dev/null 2>&1 || :',
+      'git push origin \'test:refs/heads/test\' || :',
     ]);
   });
 
@@ -869,14 +871,14 @@ describe('resolveConflicts', () => {
 
     execCalledWith(mockExec, [
       'git init \'.\'',
-      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
+      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
       'git config \'user.name\' \'GitHub Actions\'',
       'git config \'user.email\' \'example@example.com\'',
       'git merge --no-edit origin/feature/new-feature || :',
       `rm -rdf ${workDir}`,
       'git init \'.\'',
-      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
+      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
       'git checkout -b feature/new-feature origin/feature/new-feature || :',
       'git checkout feature/new-feature || :',
@@ -923,14 +925,14 @@ describe('resolveConflicts', () => {
 
     execCalledWith(mockExec, [
       'git init \'.\'',
-      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
+      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
       'git config \'user.name\' \'GitHub Actions\'',
       'git config \'user.email\' \'example@example.com\'',
       'git merge --no-edit origin/feature/new-feature || :',
       `rm -rdf ${workDir}`,
       'git init \'.\'',
-      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
+      'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
       'git checkout -b feature/new-feature origin/feature/new-feature || :',
       'git checkout feature/new-feature || :',
@@ -942,7 +944,7 @@ describe('resolveConflicts', () => {
       'git config \'user.email\' \'example@example.com\'',
       'git commit -qm \'commit message\'',
       'git show \'--stat-count=10\' HEAD',
-      'git push --force origin \'test:refs/heads/test\' > /dev/null 2>&1 || :',
+      'git push --force origin \'test:refs/heads/test\' || :',
     ]);
   });
 });
