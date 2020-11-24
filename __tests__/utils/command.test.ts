@@ -345,23 +345,8 @@ describe('getChangedFiles', () => {
       commitEmail: 'example@example.com',
     }))).toEqual({
       files: [],
-      output: [
-        {
-          command: 'sudo npm install -g npm-check-updates',
-          stdout: [],
-          stderr: [],
-        },
-        {
-          command: 'npm install --save test1 test2',
-          stdout: [],
-          stderr: [],
-        },
-        {
-          command: 'npm update',
-          stdout: [],
-          stderr: [],
-        },
-      ],
+      output: [],
+      aborted: true,
     });
     stdoutCalledWith(mockStdout, [
       '::group::Fetching...',
@@ -392,15 +377,6 @@ describe('getChangedFiles', () => {
       '::endgroup::',
       '::group::Aborting merge...',
       '[command]git merge --abort',
-      '::endgroup::',
-      '::group::Running commands...',
-      '[command]sudo npm install -g npm-check-updates',
-      '[command]npm install --save test1 test2',
-      '[command]npm update',
-      '::endgroup::',
-      '::group::Checking diff...',
-      '[command]git add --all',
-      '[command]git status --short -uno',
     ]);
   });
 

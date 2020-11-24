@@ -1289,7 +1289,7 @@ describe('execute', () => {
     ]);
   });
 
-  it('should resolve conflicts', async() => {
+  it('should resolve conflicts 1', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.GITHUB_REPOSITORY  = 'octocat/Hello-World';
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
@@ -1374,6 +1374,112 @@ describe('execute', () => {
       '::set-output name=result::succeeded',
       '::endgroup::',
       '> \x1b[32;40m✔\x1b[0m\t[feature/new-feature] updated',
+    ]);
+  });
+
+  it('should resolve conflicts 2', async() => {
+    process.env.GITHUB_WORKSPACE   = workDir;
+    process.env.INPUT_GITHUB_TOKEN = 'test-token';
+    const mockStdout               = spyOnStdout();
+    setChildProcessParams({
+      stdout: (command: string): string => {
+        if (command.includes(' rev-parse')) {
+          return 'change/new-topic1';
+        }
+        if (command.startsWith('git merge --no-edit')) {
+          return 'Auto-merging merge.txt\nCONFLICT (content): Merge conflict in merge.txt\nAutomatic merge failed; fix conflicts and then commit the result.';
+        }
+        if (command.includes('--name-only')) {
+          return 'package.json';
+        }
+        return '';
+      },
+    });
+    setExists(true);
+
+    nock('https://api.github.com')
+      .persist()
+      .get('/repos/octocat/Hello-World/pulls?sort=created&direction=asc')
+      .reply(200, () => getApiFixture(rootDir, 'pulls.list'))
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:change/new-topic1'))
+      .reply(200, () => getApiFixture(rootDir, 'pulls.list.state.open'))
+      .get('/repos/octocat/Hello-World/pulls?head=' + encodeURIComponent('octocat:change/new-topic2'))
+      .reply(200, () => [])
+      .get('/repos/octocat/Hello-World/pulls/1347')
+      .reply(200, () => getApiFixture(rootDir, 'pulls.get.mergeable.false'))
+      .patch('/repos/octocat/Hello-World/pulls/1347')
+      .reply(200, () => getApiFixture(rootDir, 'pulls.update'))
+      .delete('/repos/octocat/Hello-World/git/refs/' + encodeURIComponent('heads/change/new-topic1'))
+      .reply(204);
+
+    await expect(execute(octokit, getActionContext(context('', 'schedule'), {
+      prBranchPrefix: 'change/',
+      prBranchName: 'test-${PR_ID}',
+      checkDefaultBranch: false,
+    }))).rejects.toThrow('There is a failed process.');
+
+    stdoutCalledWith(mockStdout, [
+      '::group::Target PullRequest Ref [change/new-topic1]',
+      '> Fetching...',
+      '[command]git remote add origin',
+      '[command]git fetch --no-tags origin \'refs/heads/change/new-topic1:refs/remotes/origin/change/new-topic1\'',
+      '[command]git reset --hard',
+      '> Switching branch to [change/new-topic1]...',
+      '[command]git checkout -b change/new-topic1 origin/change/new-topic1',
+      '[command]git checkout change/new-topic1',
+      '[command]git rev-parse --abbrev-ref HEAD',
+      '  >> change/new-topic1',
+      '[command]git merge --no-edit origin/change/new-topic1',
+      '  >> Auto-merging merge.txt',
+      '  >> CONFLICT (content): Merge conflict in merge.txt',
+      '  >> Automatic merge failed; fix conflicts and then commit the result.',
+      '[command]ls -la',
+      '> Merging [origin/master] branch...',
+      '[command]git remote add origin',
+      '[command]git fetch --no-tags origin \'refs/heads/master:refs/remotes/origin/master\'',
+      '[command]git config \'user.name\' test-actor',
+      '[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
+      '[command]git merge --no-edit origin/master',
+      '  >> Auto-merging merge.txt',
+      '  >> CONFLICT (content): Merge conflict in merge.txt',
+      '  >> Automatic merge failed; fix conflicts and then commit the result.',
+      '> Aborting merge...',
+      '[command]git merge --abort',
+      '> There is no diff.',
+      '> Checking references diff...',
+      '[command]git fetch --prune --no-tags --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
+      '[command]git diff \'HEAD..origin/master\' --name-only',
+      '> This PR is not mergeable.',
+      '> Merging [origin/master] branch...',
+      '[command]git remote add origin',
+      '[command]git fetch --no-tags origin \'refs/heads/master:refs/remotes/origin/master\'',
+      '[command]git config \'user.name\' test-actor',
+      '[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
+      '[command]git merge --no-edit origin/master',
+      '  >> Auto-merging merge.txt',
+      '  >> CONFLICT (content): Merge conflict in merge.txt',
+      '  >> Automatic merge failed; fix conflicts and then commit the result.',
+      '> Initializing working directory...',
+      '[command]rm -rdf [Working Directory]',
+      '[command]git remote add origin',
+      '[command]git fetch --no-tags origin \'refs/heads/master:refs/remotes/origin/master\'',
+      '[command]git checkout -b master origin/master',
+      '[command]git checkout master',
+      '[command]git checkout -b change/new-topic1',
+      '> Running commands...',
+      '> Checking diff...',
+      '[command]git add --all',
+      '[command]git status --short -uno',
+      '> Closing PullRequest... [change/new-topic1]',
+      '> Deleting reference... [refs/heads/change/new-topic1]',
+      '::endgroup::',
+      '::group::Target PullRequest Ref [change/new-topic2]',
+      '::endgroup::',
+      '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
+      '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because there is no diff',
+      '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
+      '::set-output name=result::failed',
+      '::endgroup::',
     ]);
   });
 
