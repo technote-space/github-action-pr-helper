@@ -7,7 +7,6 @@ import {PullsListResponseData} from '@octokit/types';
 import {
   getActionDetail,
   isDisabledDeletePackage,
-  filterExtension,
   getPrHeadRef,
   getContextBranch,
   getGitFilterStatus,
@@ -154,7 +153,7 @@ export const getRefDiff = async(compare: string, helper: GitHelper, logger: Logg
   logger.startProcess('Checking references diff...');
 
   await helper.fetchBranch(getWorkspace(), compare, context.actionContext);
-  return (await helper.getRefDiff(getWorkspace(), 'HEAD', compare, getGitFilterStatus(context), '..')).filter(line => filterExtension(line, context));
+  return (await helper.getRefDiff(getWorkspace(), 'HEAD', compare, getGitFilterStatus(context), '..'));
 };
 
 const initDirectory = async(helper: GitHelper, logger: Logger): Promise<void> => {
