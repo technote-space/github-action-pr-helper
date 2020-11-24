@@ -50,18 +50,8 @@ export const clone = async(helper: GitHelper, logger: Logger, octokit: Octokit, 
 };
 
 export const checkBranch = async(helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<boolean> => {
-  let clonedBranch = await helper.getCurrentBranchName(getWorkspace());
-  const branchName = await getPrBranchName(helper, octokit, context);
-  if (branchName !== clonedBranch) {
-    await helper.runCommand(getWorkspace(), {
-      command: 'git checkout',
-      args: [branchName],
-      suppressError: true,
-      stderrToStdout: true,
-    });
-    clonedBranch = await helper.getCurrentBranchName(getWorkspace());
-  }
-
+  const clonedBranch = await helper.getCurrentBranchName(getWorkspace());
+  const branchName   = await getPrBranchName(helper, octokit, context);
   if (branchName === clonedBranch) {
     await helper.runCommand(getWorkspace(),
       {

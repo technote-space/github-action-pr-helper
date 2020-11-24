@@ -108,6 +108,7 @@ describe('clone', () => {
       'git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\' || :',
       'git reset --hard || :',
       'git checkout -b hello-world/test-branch origin/hello-world/test-branch || :',
+      'git checkout hello-world/test-branch || :',
     ]);
     stdoutCalledWith(mockStdout, [
       '::group::Fetching...',
@@ -121,6 +122,8 @@ describe('clone', () => {
       '::endgroup::',
       '::group::Switching branch to [hello-world/test-branch]...',
       '[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
+      '  >> stdout',
+      '[command]git checkout hello-world/test-branch',
       '  >> stdout',
     ]);
   });
@@ -159,11 +162,10 @@ describe('checkBranch', () => {
 
     execCalledWith(mockExec, [
       'git rev-parse --abbrev-ref HEAD || :',
-      'git checkout hello-world/test-branch || :',
-      'git rev-parse --abbrev-ref HEAD || :',
       'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
       'git checkout -b feature/new-feature origin/feature/new-feature || :',
+      'git checkout feature/new-feature || :',
       'git checkout -b hello-world/test-branch',
       'ls -la',
     ]);
@@ -368,6 +370,7 @@ describe('getChangedFiles', () => {
       '::endgroup::',
       '::group::Switching branch to [hello-world/test-branch]...',
       '[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
+      '[command]git checkout hello-world/test-branch',
       '[command]git rev-parse --abbrev-ref HEAD',
       '  >> hello-world/test-branch',
       '[command]git merge --no-edit origin/hello-world/test-branch',
@@ -452,6 +455,7 @@ describe('getChangedFiles', () => {
       '::endgroup::',
       '::group::Switching branch to [hello-world/test-branch]...',
       '[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
+      '[command]git checkout hello-world/test-branch',
       '[command]git rev-parse --abbrev-ref HEAD',
       '  >> hello-world/test-branch',
       '[command]git merge --no-edit origin/hello-world/test-branch',
@@ -565,6 +569,7 @@ describe('getChangedFiles', () => {
       '::endgroup::',
       '::group::Switching branch to [hello-world/test-branch]...',
       '[command]git checkout -b hello-world/test-branch origin/hello-world/test-branch',
+      '[command]git checkout hello-world/test-branch',
       '[command]git rev-parse --abbrev-ref HEAD',
       '  >> hello-world/test-branch',
       '[command]git merge --no-edit origin/hello-world/test-branch',
@@ -874,6 +879,7 @@ describe('resolveConflicts', () => {
       'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
       'git checkout -b feature/new-feature origin/feature/new-feature || :',
+      'git checkout feature/new-feature || :',
       'git checkout -b hello-world/test-branch',
       'yarn upgrade',
       'git add --all',
@@ -927,6 +933,7 @@ describe('resolveConflicts', () => {
       'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
       'git checkout -b feature/new-feature origin/feature/new-feature || :',
+      'git checkout feature/new-feature || :',
       'git checkout -b hello-world/test-branch',
       'yarn upgrade',
       'git add --all',
