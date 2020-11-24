@@ -7,6 +7,7 @@ import {PullsListResponseData} from '@octokit/types';
 import {
   getActionDetail,
   isDisabledDeletePackage,
+  getPrBaseRef,
   getPrHeadRef,
   getContextBranch,
   getGitFilterStatus,
@@ -30,7 +31,7 @@ const {getWorkspace, useNpm, getOctokit} = Utils;
 const {getLocalRefspec, getRefspec}      = Utils;
 const {getRepository, isPush}            = ContextHelper;
 
-export const getApiHelper = (octokit: Octokit, context: ActionContext, logger?: Logger): ApiHelper => new ApiHelper(octokit, context.actionContext, logger);
+export const getApiHelper = (octokit: Octokit, context: ActionContext, logger?: Logger, refForUpdate?: string): ApiHelper => new ApiHelper(octokit, context.actionContext, logger, {refForUpdate});
 
 export const clone = async(helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
   const branchName = await getPrBranchName(helper, octokit, context);
@@ -367,7 +368,7 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
     }
     await commit(helper, logger, context);
     await forcePush(branchName, helper, logger, context);
-    await getApiHelper(getOctokit(getApiToken()), context, logger).pullsCreateOrUpdate(branchName, {
+    await getApiHelper(getOctokit(getApiToken()), context, logger, getPrBaseRef(context)).pullsCreateOrUpdate(branchName, {
       title: await getPrTitle(helper, octokit, context),
       body: await getPrBody(false, files, output, helper, octokit, context),
     });
