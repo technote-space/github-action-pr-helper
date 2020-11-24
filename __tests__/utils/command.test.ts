@@ -159,6 +159,8 @@ describe('checkBranch', () => {
 
     execCalledWith(mockExec, [
       'git rev-parse --abbrev-ref HEAD || :',
+      'git checkout hello-world/test-branch || :',
+      'git rev-parse --abbrev-ref HEAD || :',
       'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' > /dev/null 2>&1 || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
       'git checkout -b feature/new-feature origin/feature/new-feature || :',
