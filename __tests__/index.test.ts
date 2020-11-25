@@ -94,7 +94,7 @@ describe('main', () => {
       '::endgroup::',
       '==================================================',
       '',
-      '> This is not target event.',
+      '> This is not a target event.',
     ]);
   });
 

@@ -162,7 +162,7 @@ const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger
   }
 
   if (isClose) {
-    return getResult('not changed', 'This is close event', context);
+    return getResult('not changed', 'This is a close event', context);
   }
 
   await push(branchName, helper, logger, context);
@@ -197,7 +197,7 @@ const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger
   if (isClose) {
     return {
       mergeable: false,
-      result: getResult('not changed', 'This is close event', context),
+      result: getResult('not changed', 'This is a close event', context),
     };
   }
 
@@ -230,7 +230,7 @@ const diffProcess = async(files: string[], output: CommandOutput[], branchName: 
   if (isClose) {
     return {
       mergeable: false,
-      result: getResult('not changed', 'This is close event', context),
+      result: getResult('not changed', 'This is a close event', context),
     };
   }
 
@@ -246,7 +246,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
   }
 
   if (!isActionPr(context) && !await isTargetBranch(getPrHeadRef(context), octokit, context)) {
-    return getResult('skipped', 'This is not target branch', context);
+    return getResult('skipped', 'This is not a target branch', context);
   }
 
   if (isActionPr(context) || isNotCreatePR(context)) {
