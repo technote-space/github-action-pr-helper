@@ -34,7 +34,7 @@ export async function main(option: MainArguments): Promise<void> {
 
   const octokit = Utils.getOctokit();
   if (!await isTargetContext(octokit, await getActionContext(option))) {
-    getLogger(option.logger).info(option.notTargetEventMessage ?? 'This is not target event.');
+    getLogger(option.logger).info(option.notTargetEventMessage ?? 'This is not a target event.');
     return;
   }
 

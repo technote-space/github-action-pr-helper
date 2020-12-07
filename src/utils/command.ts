@@ -3,7 +3,7 @@ import {Octokit} from '@technote-space/github-action-helper/dist/types';
 import {GitHelper, Utils, ContextHelper, ApiHelper} from '@technote-space/github-action-helper';
 import {Logger} from '@technote-space/github-action-log-helper';
 import {RestEndpointMethods} from '@octokit/plugin-rest-endpoint-methods/dist-types/generated/method-types';
-import {PullsListResponseData} from '@octokit/types';
+import {components} from '@octokit/openapi-types';
 import {
   getActionDetail,
   isDisabledDeletePackage,
@@ -27,9 +27,10 @@ import {
 } from './variables';
 import {ActionContext, CommandOutput, ExecuteTask, Null} from '../types';
 
-const {getWorkspace, useNpm, getOctokit} = Utils;
-const {getLocalRefspec, getRefspec}      = Utils;
-const {getRepository, isPush}            = ContextHelper;
+type PullsListResponseData = components['schemas']['pull-request-simple'];
+const {getWorkspace, getLocalRefspec, getRefspec} = Utils;
+const {getOctokit, ensureNotNullValue, useNpm}    = Utils;
+const {getRepository, isPush}                     = ContextHelper;
 
 export const getApiHelper = (octokit: Octokit, context: ActionContext, logger?: Logger, refForUpdate?: string): ApiHelper => new ApiHelper(octokit, context.actionContext, logger, {refForUpdate});
 
@@ -209,11 +210,11 @@ export const isMergeable = async(number: number, octokit: Octokit, context: Acti
   owner: context.actionContext.repo.owner,
   repo: context.actionContext.repo.repo,
   'pull_number': number,
-}), async() => (await (octokit as RestEndpointMethods).pulls.get({
+}), async() => ensureNotNullValue((await (octokit as RestEndpointMethods).pulls.get({
   owner: context.actionContext.repo.owner,
   repo: context.actionContext.repo.repo,
   'pull_number': number,
-})).data.mergeable, context);
+})).data.mergeable, false), context);
 
 export const afterCreatePr = async(branchName: string, number: number, helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
   if (context.actionDetail.labels?.length) {
@@ -389,4 +390,4 @@ export const getNewMinorVersion = async(octokit: Octokit, context: ActionContext
 
 export const getNewMajorVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-major-version'), async() => await getApiHelper(octokit, context).getNewMajorVersion(), context);
 
-export const findPR = async(branchName: string, octokit: Octokit, context: ActionContext): Promise<PullsListResponseData[number] | Null> => getCache(getCacheKey('pr', {branchName}), async() => getApiHelper(octokit, context).findPullRequest(branchName), context);
+export const findPR = async(branchName: string, octokit: Octokit, context: ActionContext): Promise<PullsListResponseData | Null> => getCache(getCacheKey('pr', {branchName}), async() => getApiHelper(octokit, context).findPullRequest(branchName), context);

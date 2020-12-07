@@ -35,9 +35,9 @@ import {getPrBranchName} from './variables';
 import {INTERVAL_MS} from '../constant';
 import {ActionContext, ProcessResult, AllProcessResult, PullsParams, CommandOutput} from '../types';
 
-const {sleep, getBranch} = Utils;
-const {isPr, isPush}     = ContextHelper;
-const commonLogger       = new Logger(replaceDirectory);
+const {sleep, getBranch, objectGet} = Utils;
+const {isPr, isPush}                = ContextHelper;
+const commonLogger                  = new Logger(replaceDirectory);
 
 const getResult = (result: 'succeeded' | 'failed' | 'skipped' | 'not changed', detail: string, context: ActionContext, fork?: string): ProcessResult => ({
   result,
@@ -162,7 +162,7 @@ const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger
   }
 
   if (isClose) {
-    return getResult('not changed', 'This is close event', context);
+    return getResult('not changed', 'This is a close event', context);
   }
 
   await push(branchName, helper, logger, context);
@@ -197,7 +197,7 @@ const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger
   if (isClose) {
     return {
       mergeable: false,
-      result: getResult('not changed', 'This is close event', context),
+      result: getResult('not changed', 'This is a close event', context),
     };
   }
 
@@ -230,7 +230,7 @@ const diffProcess = async(files: string[], output: CommandOutput[], branchName: 
   if (isClose) {
     return {
       mergeable: false,
-      result: getResult('not changed', 'This is close event', context),
+      result: getResult('not changed', 'This is a close event', context),
     };
   }
 
@@ -246,7 +246,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
   }
 
   if (!isActionPr(context) && !await isTargetBranch(getPrHeadRef(context), octokit, context)) {
-    return getResult('skipped', 'This is not target branch', context);
+    return getResult('skipped', 'This is not a target branch', context);
   }
 
   if (isActionPr(context) || isNotCreatePR(context)) {
@@ -330,8 +330,8 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
 
   for await (const pull of getPulls(octokit, context)) {
     const actionContext = await getActionContext(pull, octokit, context);
-    if (pull.head.user.login !== context.actionContext.repo.owner) {
-      results.push(getResult('skipped', 'PR from fork', actionContext, pull.head.user.login));
+    if (objectGet(pull.head.user, 'login') !== context.actionContext.repo.owner) {
+      results.push(getResult('skipped', 'PR from fork', actionContext, objectGet(pull.head.user, 'login')));
       continue;
     }
 
