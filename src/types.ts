@@ -79,7 +79,7 @@ export type PayloadPullsParams = {
   [key: string]: any;
   number: number;
   'html_url'?: string;
-  body?: string;
+  body?: string | null;
 };
 
 export type PullsParams = PayloadPullsParams & {
@@ -89,14 +89,14 @@ export type PullsParams = PayloadPullsParams & {
     ref: string;
     user: {
       login: string;
-    };
+    } | null;
   };
   base: {
     repo: {
       name: string;
       owner: {
         login: string;
-      };
+      } | null;
     };
     ref: string;
   };

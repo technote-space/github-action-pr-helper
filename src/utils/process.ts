@@ -35,9 +35,9 @@ import {getPrBranchName} from './variables';
 import {INTERVAL_MS} from '../constant';
 import {ActionContext, ProcessResult, AllProcessResult, PullsParams, CommandOutput} from '../types';
 
-const {sleep, getBranch} = Utils;
-const {isPr, isPush}     = ContextHelper;
-const commonLogger       = new Logger(replaceDirectory);
+const {sleep, getBranch, objectGet} = Utils;
+const {isPr, isPush}                = ContextHelper;
+const commonLogger                  = new Logger(replaceDirectory);
 
 const getResult = (result: 'succeeded' | 'failed' | 'skipped' | 'not changed', detail: string, context: ActionContext, fork?: string): ProcessResult => ({
   result,
@@ -330,8 +330,8 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
 
   for await (const pull of getPulls(octokit, context)) {
     const actionContext = await getActionContext(pull, octokit, context);
-    if (pull.head.user.login !== context.actionContext.repo.owner) {
-      results.push(getResult('skipped', 'PR from fork', actionContext, pull.head.user.login));
+    if (objectGet(pull.head.user, 'login') !== context.actionContext.repo.owner) {
+      results.push(getResult('skipped', 'PR from fork', actionContext, objectGet(pull.head.user, 'login')));
       continue;
     }
 
