@@ -258,7 +258,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
     return createCommit(isActionPr(context), isClose, logger, octokit, context);
   }
 
-  const {files, output}                   = await getChangedFiles(helper, logger, octokit, context);
+  const {files, output, aborted}          = await getChangedFiles(helper, logger, octokit, context);
   const branchName                        = await getPrBranchName(helper, octokit, context);
   let result: 'succeeded' | 'not changed' = 'succeeded';
   let detail                              = 'updated';
@@ -269,7 +269,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
       return processResult.result;
     }
 
-    mergeable = processResult.mergeable;
+    mergeable = !aborted && processResult.mergeable;
     if (mergeable) {
       result = 'not changed';
       detail = 'There is no diff';
