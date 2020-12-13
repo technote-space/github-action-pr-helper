@@ -141,7 +141,7 @@ const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger
         return getResult('succeeded', 'has been auto merged', context);
       }
 
-      if (pr && aborted && !await isMergeable(pr.number, octokit, context)) {
+      if (pr && aborted) {
         // not mergeable
         logger.info('This PR is not mergeable.');
         // Resolve conflicts if PR is not mergeable
