@@ -379,14 +379,14 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
 export const getDefaultBranch = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('repos', {
   owner: context.actionContext.repo.owner,
   repo: context.actionContext.repo.repo,
-}), async() => await getApiHelper(octokit, context).getDefaultBranch(), context);
+}), () => getApiHelper(octokit, context).getDefaultBranch(), context);
 
-export const getCurrentVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('current-version'), async() => await getApiHelper(octokit, context).getLastTag(), context);
+export const getCurrentVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('current-version'), () => getApiHelper(octokit, context).getLastTag(), context);
 
-export const getNewPatchVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-patch-version'), async() => await getApiHelper(octokit, context).getNewPatchVersion(), context);
+export const getNewPatchVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-patch-version'), () => getApiHelper(octokit, context).getNewPatchVersion(), context);
 
-export const getNewMinorVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-minor-version'), async() => await getApiHelper(octokit, context).getNewMinorVersion(), context);
+export const getNewMinorVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-minor-version'), () => getApiHelper(octokit, context).getNewMinorVersion(), context);
 
-export const getNewMajorVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-major-version'), async() => await getApiHelper(octokit, context).getNewMajorVersion(), context);
+export const getNewMajorVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-major-version'), () => getApiHelper(octokit, context).getNewMajorVersion(), context);
 
-export const findPR = async(branchName: string, octokit: Octokit, context: ActionContext): Promise<PullsListResponseData | Null> => getCache(getCacheKey('pr', {branchName}), async() => getApiHelper(octokit, context).findPullRequest(branchName), context);
+export const findPR = async(branchName: string, octokit: Octokit, context: ActionContext): Promise<PullsListResponseData | Null> => getCache(getCacheKey('pr', {branchName}), () => getApiHelper(octokit, context).findPullRequest(branchName), context);
