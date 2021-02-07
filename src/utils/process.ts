@@ -152,7 +152,7 @@ const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger
     return getResult('not changed', 'There is no diff', context);
   }
 
-  await commit(helper, logger, context);
+  await commit(helper, logger, octokit, context);
   if (context.isBatchProcess) {
     if (!(await getRefDiff(getPrBaseRef(context), helper, logger, context)).length) {
       // Close if there is no diff
@@ -217,7 +217,7 @@ const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger
 
 const diffProcess = async(files: string[], output: CommandOutput[], branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
   // Commit local diffs
-  await commit(helper, logger, context);
+  await commit(helper, logger, octokit, context);
   if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
     // Close if there is no diff
     await closePR(branchName, logger, context);
