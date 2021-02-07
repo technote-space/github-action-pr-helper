@@ -817,7 +817,7 @@ describe('resolveConflicts', () => {
       'git config \'user.name\' \'GitHub Actions\'',
       'git config \'user.email\' \'example@example.com\'',
       'git merge --no-edit origin/feature/new-feature || :',
-      'git push origin \'test:refs/heads/test\' || :',
+      'git push origin \'test:refs/heads/test\'',
     ]);
   });
 
@@ -920,7 +920,7 @@ describe('resolveConflicts', () => {
       'git config \'user.email\' \'example@example.com\'',
       'git commit -qm \'commit message\'',
       'git show \'--stat-count=10\' HEAD',
-      'git push --force origin \'test:refs/heads/test\' || :',
+      'git push --force origin \'test:refs/heads/test\'',
     ]);
   });
 });
