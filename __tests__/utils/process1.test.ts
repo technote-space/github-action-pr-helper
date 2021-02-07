@@ -115,7 +115,7 @@ describe('execute', () => {
     stdoutCalledWith(mockStdout, [
       '::group::Target PullRequest Ref [change/new-topic1]',
       '> Fetching...',
-      '[command]git config \'init.defaultBranch\' master',
+      '[command]git config --global \'init.defaultBranch\' master',
       '[command]git config \'user.name\' test-actor',
       '[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
       '[command]git remote add origin',
@@ -129,7 +129,7 @@ describe('execute', () => {
       '[command]git merge --no-edit origin/change/new-topic1',
       '[command]ls -la',
       '> Merging [origin/master] branch...',
-      '[command]git config \'init.defaultBranch\' master',
+      '[command]git config --global \'init.defaultBranch\' master',
       '[command]git config \'user.name\' test-actor',
       '[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
       '[command]git remote add origin',
@@ -199,7 +199,7 @@ describe('execute', () => {
 
     stdoutCalledWith(mockStdout, [
       '::group::Fetching...',
-      '[command]git config \'init.defaultBranch\' master',
+      '[command]git config --global \'init.defaultBranch\' master',
       '[command]git config \'user.name\' \'GitHub Actions\'',
       '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git remote add origin',
@@ -228,7 +228,7 @@ describe('execute', () => {
       '::group::Checking diff...',
       '[command]git add --all',
       '[command]git status --short -uno',
-      '[command]git config \'init.defaultBranch\' master',
+      '[command]git config --global \'init.defaultBranch\' master',
       '[command]git config \'user.name\' \'GitHub Actions\'',
       '[command]git config \'user.email\' \'example@example.com\'',
       '::endgroup::',
@@ -284,7 +284,7 @@ describe('execute', () => {
 
     stdoutCalledWith(mockStdout, [
       '::group::Fetching...',
-      '[command]git config \'init.defaultBranch\' master',
+      '[command]git config --global \'init.defaultBranch\' master',
       '  >> stdout',
       '[command]git config \'user.name\' \'GitHub Actions\'',
       '  >> stdout',
@@ -439,7 +439,7 @@ describe('execute', () => {
     stdoutCalledWith(mockStdout, [
       '::group::Target PullRequest Ref [change/new-topic1]',
       '> Fetching...',
-      '[command]git config \'init.defaultBranch\' master',
+      '[command]git config --global \'init.defaultBranch\' master',
       '[command]git config \'user.name\' \'GitHub Actions\'',
       '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git remote add origin',
@@ -453,7 +453,7 @@ describe('execute', () => {
       '[command]git merge --no-edit origin/change/new-topic1',
       '[command]ls -la',
       '> Merging [origin/master] branch...',
-      '[command]git config \'init.defaultBranch\' master',
+      '[command]git config --global \'init.defaultBranch\' master',
       '[command]git config \'user.name\' \'GitHub Actions\'',
       '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git remote add origin',
@@ -463,7 +463,7 @@ describe('execute', () => {
       '> Checking diff...',
       '[command]git add --all',
       '[command]git status --short -uno',
-      '[command]git config \'init.defaultBranch\' master',
+      '[command]git config --global \'init.defaultBranch\' master',
       '[command]git config \'user.name\' \'GitHub Actions\'',
       '[command]git config \'user.email\' \'example@example.com\'',
       '> Committing...',
@@ -647,7 +647,7 @@ describe('execute', () => {
 
     stdoutCalledWith(mockStdout, [
       '::group::Fetching...',
-      '[command]git config \'init.defaultBranch\' master',
+      '[command]git config --global \'init.defaultBranch\' master',
       '  >> stdout',
       '[command]git config \'user.name\' \'GitHub Actions\'',
       '  >> stdout',
@@ -725,7 +725,7 @@ describe('execute', () => {
 
     stdoutCalledWith(mockStdout, [
       '::group::Fetching...',
-      '[command]git config \'init.defaultBranch\' master',
+      '[command]git config --global \'init.defaultBranch\' master',
       '[command]git config \'user.name\' test-actor',
       '[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
       '[command]git remote add origin',
