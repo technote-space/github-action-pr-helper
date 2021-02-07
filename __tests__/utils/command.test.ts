@@ -105,9 +105,6 @@ describe('clone', () => {
     }));
 
     execCalledWith(mockExec, [
-      'git config --global \'init.defaultBranch\' master',
-      'git config \'user.name\' \'GitHub Actions\'',
-      'git config \'user.email\' \'example@example.com\'',
       'git init \'.\'',
       'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' || :',
       'git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\' || :',
@@ -117,12 +114,6 @@ describe('clone', () => {
     ]);
     stdoutCalledWith(mockStdout, [
       '::group::Fetching...',
-      '[command]git config --global \'init.defaultBranch\' master',
-      '  >> stdout',
-      '[command]git config \'user.name\' \'GitHub Actions\'',
-      '  >> stdout',
-      '[command]git config \'user.email\' \'example@example.com\'',
-      '  >> stdout',
       '[command]git init \'.\'',
       '  >> stdout',
       '[command]git remote add origin',
@@ -361,9 +352,6 @@ describe('getChangedFiles', () => {
     });
     stdoutCalledWith(mockStdout, [
       '::group::Fetching...',
-      '[command]git config --global \'init.defaultBranch\' master',
-      '[command]git config \'user.name\' \'GitHub Actions\'',
-      '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git remote add origin',
       '[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
       '[command]git reset --hard',
@@ -380,11 +368,10 @@ describe('getChangedFiles', () => {
       '[command]ls -la',
       '::endgroup::',
       '::group::Merging [origin/hello-world/test-branch] branch...',
-      '[command]git config --global \'init.defaultBranch\' master',
-      '[command]git config \'user.name\' \'GitHub Actions\'',
-      '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git remote add origin',
       '[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
+      '[command]git config \'user.name\' \'GitHub Actions\'',
+      '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git merge --no-edit origin/hello-world/test-branch',
       '  >> Auto-merging merge.txt',
       '  >> CONFLICT (content): Merge conflict in merge.txt',
@@ -441,9 +428,6 @@ describe('getChangedFiles', () => {
     });
     stdoutCalledWith(mockStdout, [
       '::group::Fetching...',
-      '[command]git config --global \'init.defaultBranch\' master',
-      '[command]git config \'user.name\' \'GitHub Actions\'',
-      '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git remote add origin',
       '[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
       '[command]git reset --hard',
@@ -458,11 +442,10 @@ describe('getChangedFiles', () => {
       '[command]ls -la',
       '::endgroup::',
       '::group::Merging [origin/hello-world/test-branch] branch...',
-      '[command]git config --global \'init.defaultBranch\' master',
-      '[command]git config \'user.name\' \'GitHub Actions\'',
-      '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git remote add origin',
       '[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
+      '[command]git config \'user.name\' \'GitHub Actions\'',
+      '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git merge --no-edit origin/hello-world/test-branch',
       '  >> Already up to date.',
       '::endgroup::',
@@ -559,9 +542,6 @@ describe('getChangedFiles', () => {
     });
     stdoutCalledWith(mockStdout, [
       '::group::Fetching...',
-      '[command]git config --global \'init.defaultBranch\' master',
-      '[command]git config \'user.name\' \'GitHub Actions\'',
-      '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git remote add origin',
       '[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
       '[command]git reset --hard',
@@ -576,11 +556,10 @@ describe('getChangedFiles', () => {
       '[command]ls -la',
       '::endgroup::',
       '::group::Merging [origin/hello-world/test-branch] branch...',
-      '[command]git config --global \'init.defaultBranch\' master',
-      '[command]git config \'user.name\' \'GitHub Actions\'',
-      '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git remote add origin',
       '[command]git fetch --no-tags origin \'refs/heads/hello-world/test-branch:refs/remotes/origin/hello-world/test-branch\'',
+      '[command]git config \'user.name\' \'GitHub Actions\'',
+      '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git merge --no-edit origin/hello-world/test-branch',
       '  >> Already up to date.',
       '::endgroup::',
@@ -834,12 +813,11 @@ describe('resolveConflicts', () => {
     }));
 
     execCalledWith(mockExec, [
-      'git config --global \'init.defaultBranch\' master',
-      'git config \'user.name\' \'GitHub Actions\'',
-      'git config \'user.email\' \'example@example.com\'',
       'git init \'.\'',
       'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
+      'git config \'user.name\' \'GitHub Actions\'',
+      'git config \'user.email\' \'example@example.com\'',
       'git merge --no-edit origin/feature/new-feature || :',
       'git push origin \'test:refs/heads/test\'',
     ]);
@@ -870,17 +848,13 @@ describe('resolveConflicts', () => {
     }));
 
     execCalledWith(mockExec, [
-      'git config --global \'init.defaultBranch\' master',
-      'git config \'user.name\' \'GitHub Actions\'',
-      'git config \'user.email\' \'example@example.com\'',
       'git init \'.\'',
       'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
-      'git merge --no-edit origin/feature/new-feature || :',
-      `rm -rdf ${workDir}`,
-      'git config --global \'init.defaultBranch\' master',
       'git config \'user.name\' \'GitHub Actions\'',
       'git config \'user.email\' \'example@example.com\'',
+      'git merge --no-edit origin/feature/new-feature || :',
+      `rm -rdf ${workDir}`,
       'git init \'.\'',
       'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
@@ -928,17 +902,13 @@ describe('resolveConflicts', () => {
     }));
 
     execCalledWith(mockExec, [
-      'git config --global \'init.defaultBranch\' master',
-      'git config \'user.name\' \'GitHub Actions\'',
-      'git config \'user.email\' \'example@example.com\'',
       'git init \'.\'',
       'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
-      'git merge --no-edit origin/feature/new-feature || :',
-      `rm -rdf ${workDir}`,
-      'git config --global \'init.defaultBranch\' master',
       'git config \'user.name\' \'GitHub Actions\'',
       'git config \'user.email\' \'example@example.com\'',
+      'git merge --no-edit origin/feature/new-feature || :',
+      `rm -rdf ${workDir}`,
       'git init \'.\'',
       'git remote add origin \'https://octocat:test-token@github.com/hello/world.git\' || :',
       'git fetch --no-tags origin \'refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature\' || :',
@@ -948,7 +918,6 @@ describe('resolveConflicts', () => {
       'yarn upgrade',
       'git add --all',
       'git status --short -uno',
-      'git config --global \'init.defaultBranch\' master',
       'git config \'user.name\' \'GitHub Actions\'',
       'git config \'user.email\' \'example@example.com\'',
       'git commit -qm \'commit message\'',

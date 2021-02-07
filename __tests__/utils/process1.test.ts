@@ -113,11 +113,9 @@ describe('execute', () => {
     }))).rejects.toThrow('There is a failed process.');
 
     stdoutCalledWith(mockStdout, [
+      '[command]git config --global \'init.defaultBranch\' master',
       '::group::Target PullRequest Ref [change/new-topic1]',
       '> Fetching...',
-      '[command]git config --global \'init.defaultBranch\' master',
-      '[command]git config \'user.name\' test-actor',
-      '[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
       '[command]git remote add origin',
       '[command]git fetch --no-tags origin \'refs/heads/change/new-topic1:refs/remotes/origin/change/new-topic1\'',
       '[command]git reset --hard',
@@ -129,11 +127,10 @@ describe('execute', () => {
       '[command]git merge --no-edit origin/change/new-topic1',
       '[command]ls -la',
       '> Merging [origin/master] branch...',
-      '[command]git config --global \'init.defaultBranch\' master',
-      '[command]git config \'user.name\' test-actor',
-      '[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
       '[command]git remote add origin',
       '[command]git fetch --no-tags origin \'refs/heads/master:refs/remotes/origin/master\'',
+      '[command]git config \'user.name\' test-actor',
+      '[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
       '[command]git merge --no-edit origin/master',
       '> Running commands...',
       '> Checking diff...',
@@ -198,10 +195,8 @@ describe('execute', () => {
     }));
 
     stdoutCalledWith(mockStdout, [
-      '::group::Fetching...',
       '[command]git config --global \'init.defaultBranch\' master',
-      '[command]git config \'user.name\' \'GitHub Actions\'',
-      '[command]git config \'user.email\' \'example@example.com\'',
+      '::group::Fetching...',
       '[command]git remote add origin',
       '[command]git fetch --no-tags origin \'refs/heads/Hello-World/test-21031067:refs/remotes/origin/Hello-World/test-21031067\'',
       '[command]git reset --hard',
@@ -228,7 +223,6 @@ describe('execute', () => {
       '::group::Checking diff...',
       '[command]git add --all',
       '[command]git status --short -uno',
-      '[command]git config --global \'init.defaultBranch\' master',
       '[command]git config \'user.name\' \'GitHub Actions\'',
       '[command]git config \'user.email\' \'example@example.com\'',
       '::endgroup::',
@@ -283,13 +277,9 @@ describe('execute', () => {
     }));
 
     stdoutCalledWith(mockStdout, [
-      '::group::Fetching...',
       '[command]git config --global \'init.defaultBranch\' master',
       '  >> stdout',
-      '[command]git config \'user.name\' \'GitHub Actions\'',
-      '  >> stdout',
-      '[command]git config \'user.email\' \'example@example.com\'',
-      '  >> stdout',
+      '::group::Fetching...',
       '[command]git remote add origin',
       '  >> stdout',
       '[command]git fetch --no-tags origin \'refs/heads/Hello-World/test-21031067:refs/remotes/origin/Hello-World/test-21031067\'',
@@ -374,6 +364,8 @@ describe('execute', () => {
     }, 'develop'))).rejects.toThrow('There is a failed process.');
 
     stdoutCalledWith(mockStdout, [
+      '[command]git config --global \'init.defaultBranch\' develop',
+      '  >> stdout',
       '::group::Target PullRequest Ref [change/new-topic1]',
       '> Closing PullRequest... [change/new-topic1]',
       '> Deleting reference... [refs/heads/change/new-topic1]',
@@ -437,11 +429,9 @@ describe('execute', () => {
     }))).rejects.toThrow('There is a failed process.');
 
     stdoutCalledWith(mockStdout, [
+      '[command]git config --global \'init.defaultBranch\' master',
       '::group::Target PullRequest Ref [change/new-topic1]',
       '> Fetching...',
-      '[command]git config --global \'init.defaultBranch\' master',
-      '[command]git config \'user.name\' \'GitHub Actions\'',
-      '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git remote add origin',
       '[command]git fetch --no-tags origin \'refs/heads/change/new-topic1:refs/remotes/origin/change/new-topic1\'',
       '[command]git reset --hard',
@@ -453,17 +443,15 @@ describe('execute', () => {
       '[command]git merge --no-edit origin/change/new-topic1',
       '[command]ls -la',
       '> Merging [origin/master] branch...',
-      '[command]git config --global \'init.defaultBranch\' master',
-      '[command]git config \'user.name\' \'GitHub Actions\'',
-      '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git remote add origin',
       '[command]git fetch --no-tags origin \'refs/heads/master:refs/remotes/origin/master\'',
+      '[command]git config \'user.name\' \'GitHub Actions\'',
+      '[command]git config \'user.email\' \'example@example.com\'',
       '[command]git merge --no-edit origin/master',
       '> Running commands...',
       '> Checking diff...',
       '[command]git add --all',
       '[command]git status --short -uno',
-      '[command]git config --global \'init.defaultBranch\' master',
       '[command]git config \'user.name\' \'GitHub Actions\'',
       '[command]git config \'user.email\' \'example@example.com\'',
       '> Committing...',
@@ -514,6 +502,8 @@ describe('execute', () => {
     }, 'develop'))).rejects.toThrow('There is a failed process.');
 
     stdoutCalledWith(mockStdout, [
+      '[command]git config --global \'init.defaultBranch\' develop',
+      '  >> stdout',
       '::group::Target PullRequest Ref [change/new-topic1]',
       '> Closing PullRequest... [change/new-topic1]',
       '> Deleting reference... [refs/heads/change/new-topic1]',
@@ -549,6 +539,8 @@ describe('execute', () => {
     }))).rejects.toThrow('There are failed processes.');
 
     stdoutCalledWith(mockStdout, [
+      '[command]git config --global \'init.defaultBranch\' master',
+      '  >> stdout',
       '::group::Target PullRequest Ref [change/new-topic1]',
       '::endgroup::',
       '::group::Target PullRequest Ref [change/new-topic2]',
@@ -578,6 +570,8 @@ describe('execute', () => {
     }))).rejects.toThrow('There is a failed process.');
 
     stdoutCalledWith(mockStdout, [
+      '[command]git config --global \'init.defaultBranch\' master',
+      '  >> stdout',
       '::group::Target PullRequest Ref [feature/new-topic3]',
       '::endgroup::',
       '::group::Target PullRequest Ref [feature/new-topic4]',
@@ -608,6 +602,8 @@ describe('execute', () => {
     await expect(execute(octokit, getActionContext(context('', 'schedule'), {}))).rejects.toThrow('There is a failed process.');
 
     stdoutCalledWith(mockStdout, [
+      '[command]git config --global \'init.defaultBranch\' master',
+      '  >> stdout',
       '::group::Target PullRequest Ref [master]',
       '::endgroup::',
       '::group::Total:3  Succeeded:0  Failed:1  Skipped:2',
@@ -646,13 +642,9 @@ describe('execute', () => {
     }));
 
     stdoutCalledWith(mockStdout, [
-      '::group::Fetching...',
       '[command]git config --global \'init.defaultBranch\' master',
       '  >> stdout',
-      '[command]git config \'user.name\' \'GitHub Actions\'',
-      '  >> stdout',
-      '[command]git config \'user.email\' \'example@example.com\'',
-      '  >> stdout',
+      '::group::Fetching...',
       '[command]git remote add origin',
       '  >> stdout',
       '[command]git fetch --no-tags origin \'refs/heads/Hello-World/test-21031067:refs/remotes/origin/Hello-World/test-21031067\'',
@@ -724,10 +716,8 @@ describe('execute', () => {
     }));
 
     stdoutCalledWith(mockStdout, [
-      '::group::Fetching...',
       '[command]git config --global \'init.defaultBranch\' master',
-      '[command]git config \'user.name\' test-actor',
-      '[command]git config \'user.email\' \'test-actor@users.noreply.github.com\'',
+      '::group::Fetching...',
       '[command]git remote add origin',
       '[command]git fetch --no-tags origin \'refs/heads/test/change:refs/remotes/origin/test/change\'',
       '[command]git reset --hard',
