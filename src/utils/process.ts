@@ -15,6 +15,7 @@ import {
   resolveConflicts,
   findPR,
   getDefaultBranch,
+  branchConfig,
 } from './command';
 import {
   replaceDirectory,
@@ -152,7 +153,7 @@ const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger
     return getResult('not changed', 'There is no diff', context);
   }
 
-  await commit(helper, logger, octokit, context);
+  await commit(helper, logger, context);
   if (context.isBatchProcess) {
     if (!(await getRefDiff(getPrBaseRef(context), helper, logger, context)).length) {
       // Close if there is no diff
@@ -217,7 +218,7 @@ const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger
 
 const diffProcess = async(files: string[], output: CommandOutput[], branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
   // Commit local diffs
-  await commit(helper, logger, octokit, context);
+  await commit(helper, logger, context);
   if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
     // Close if there is no diff
     await closePR(branchName, logger, context);
@@ -393,6 +394,7 @@ const runCreatePrAll = async(octokit: Octokit, context: ActionContext): Promise<
 const runCreatePrClosed = async(octokit: Octokit, context: ActionContext): Promise<void> => runCreatePr(true, getPulls, octokit, context);
 
 export const execute = async(octokit: Octokit, context: ActionContext): Promise<void> => {
+  await branchConfig(getHelper(context), octokit, context);
   if (isClosePR(context)) {
     await runCreatePrClosed(octokit, context);
   } else if (isPush(context.actionContext)) {

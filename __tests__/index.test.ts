@@ -188,6 +188,8 @@ describe('main', () => {
       '::endgroup::',
       '==================================================',
       '',
+      '[command]git config --global \'init.defaultBranch\' master',
+      '  >> stdout',
       '::group::Total:0  Succeeded:0  Failed:0  Skipped:0',
       '::set-output name=result::skipped',
       '::endgroup::',
