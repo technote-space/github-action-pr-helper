@@ -33,10 +33,13 @@ const {getRepository, isPush}                     = ContextHelper;
 
 export const getApiHelper = (octokit: Octokit, context: ActionContext, logger?: Logger): ApiHelper => new ApiHelper(octokit, context.actionContext, logger);
 
+export const config = async(helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => await helper.config(getWorkspace(), getCommitName(context), getCommitEmail(context), await getDefaultBranch(octokit, context));
+
 export const clone = async(helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
   const branchName = await getPrBranchName(helper, octokit, context);
   logger.startProcess('Fetching...');
   helper.useOrigin(true);
+  await config(helper, logger, octokit, context);
   await helper.fetchOrigin(getWorkspace(), context.actionContext, ['--no-tags'], [getRefspec(branchName)]);
 
   await helper.runCommand(getWorkspace(), {
@@ -164,12 +167,10 @@ const initDirectory = async(helper: GitHelper, logger: Logger): Promise<void> =>
   await helper.runCommand(getWorkspace(), {command: 'rm', args: ['-rdf', getWorkspace()]});
 };
 
-export const config = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => await helper.config(getWorkspace(), getCommitName(context), getCommitEmail(context));
-
-export const merge = async(branch: string, helper: GitHelper, logger: Logger, context: ActionContext): Promise<boolean> => {
+export const merge = async(branch: string, helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<boolean> => {
   logger.startProcess('Merging [%s] branch...', getLocalRefspec(branch));
+  await config(helper, logger, octokit, context);
   await helper.fetchOrigin(getWorkspace(), context.actionContext, ['--no-tags'], [getRefspec(branch)]);
-  await config(helper, logger, context);
   const results = await helper.runCommand(getWorkspace(),
     {
       command: 'git merge',
@@ -186,8 +187,8 @@ export const abortMerge = async(helper: GitHelper, logger: Logger): Promise<void
   await helper.runCommand(getWorkspace(), 'git merge --abort');
 };
 
-export const commit = async(helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
-  await config(helper, logger, context);
+export const commit = async(helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
+  await config(helper, logger, octokit, context);
 
   logger.startProcess('Committing...');
   await helper.makeCommit(getWorkspace(), getCommitMessage(context));
@@ -330,7 +331,7 @@ export const getChangedFiles = async(helper: GitHelper, logger: Logger, octokit:
 }> => {
   await clone(helper, logger, octokit, context);
   if (await checkBranch(helper, logger, octokit, context)) {
-    if (!await merge(getContextBranch(context), helper, logger, context)) {
+    if (!await merge(getContextBranch(context), helper, logger, octokit, context)) {
       await abortMerge(helper, logger);
       return {files: [], output: [], aborted: true};
     }
@@ -346,6 +347,7 @@ export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger,
   await initDirectory(helper, logger);
 
   const branchName = getContextBranch(context);
+  await config(helper, logger, octokit, context);
   await helper.fetchOrigin(getWorkspace(), context.actionContext, ['--no-tags'], [getRefspec(branchName)]);
   await helper.switchBranch(getWorkspace(), branchName);
   await helper.createBranch(getWorkspace(), await getPrBranchName(helper, octokit, context));
@@ -356,7 +358,7 @@ export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger,
 export const closePR = async(branchName: string, logger: Logger, context: ActionContext, message?: string): Promise<void> => getApiHelper(getOctokit(getApiToken()), context, logger).closePR(branchName, message ?? context.actionDetail.prCloseMessage);
 
 export const resolveConflicts = async(branchName: string, helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<string> => {
-  if (await merge(getContextBranch(context), helper, logger, context)) {
+  if (await merge(getContextBranch(context), helper, logger, octokit, context)) {
     // succeeded to merge
     await push(branchName, helper, logger, context);
   } else {
@@ -366,7 +368,7 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
       await closePR(branchName, logger, context);
       return 'has been closed because there is no diff';
     }
-    await commit(helper, logger, context);
+    await commit(helper, logger, octokit, context);
     await forcePush(branchName, helper, logger, context);
     await getApiHelper(getOctokit(getApiToken()), context, logger).pullsCreateOrUpdate(branchName, {
       title: await getPrTitle(helper, octokit, context),
