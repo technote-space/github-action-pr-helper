@@ -2,7 +2,6 @@ import {getInput} from '@actions/core' ;
 import {Octokit} from '@technote-space/github-action-helper/dist/types';
 import {GitHelper, Utils, ContextHelper, ApiHelper} from '@technote-space/github-action-helper';
 import {Logger} from '@technote-space/github-action-log-helper';
-import {RestEndpointMethods} from '@octokit/plugin-rest-endpoint-methods/dist-types/generated/method-types';
 import {components} from '@octokit/openapi-types';
 import {
   getActionDetail,
@@ -215,7 +214,7 @@ export const isMergeable = async(number: number, octokit: Octokit, context: Acti
   owner: context.actionContext.repo.owner,
   repo: context.actionContext.repo.repo,
   'pull_number': number,
-}), async() => ensureNotNullValue((await (octokit as RestEndpointMethods).pulls.get({
+}), async() => ensureNotNullValue((await octokit.rest.pulls.get({
   owner: context.actionContext.repo.owner,
   repo: context.actionContext.repo.repo,
   'pull_number': number,
@@ -225,7 +224,7 @@ export const afterCreatePr = async(branchName: string, number: number, helper: G
   if (context.actionDetail.labels?.length) {
     logger.info('Adding labels...');
     console.log(context.actionDetail.labels);
-    await (octokit as RestEndpointMethods).issues.addLabels({
+    await octokit.rest.issues.addLabels({
       ...context.actionContext.repo,
       'issue_number': number,
       labels: context.actionDetail.labels,
@@ -235,7 +234,7 @@ export const afterCreatePr = async(branchName: string, number: number, helper: G
   if (context.actionDetail.assignees?.length) {
     logger.info('Adding assignees...');
     console.log(context.actionDetail.assignees);
-    await (octokit as RestEndpointMethods).issues.addAssignees({
+    await octokit.rest.issues.addAssignees({
       ...context.actionContext.repo,
       'issue_number': number,
       assignees: context.actionDetail.assignees,
@@ -246,7 +245,7 @@ export const afterCreatePr = async(branchName: string, number: number, helper: G
     logger.info('Adding reviewers...');
     console.log(context.actionDetail.reviewers);
     console.log(context.actionDetail.teamReviewers);
-    await (octokit as RestEndpointMethods).pulls.requestReviewers({
+    await octokit.rest.pulls.requestReviewers({
       ...context.actionContext.repo,
       'pull_number': number,
       reviewers: context.actionDetail.reviewers,
