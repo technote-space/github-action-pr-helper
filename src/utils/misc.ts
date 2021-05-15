@@ -237,7 +237,7 @@ export const checkSuiteState = (checkSuiteId: number) => (suite: ChecksListSuite
 };
 
 export const isPassedAllChecks = async(octokit: Octokit, context: ActionContext): Promise<boolean> => {
-  const {data: status} = await octokit.repos.getCombinedStatusForRef({
+  const {data: status} = await octokit.rest.repos.getCombinedStatusForRef({
     ...context.actionContext.repo,
     ref: context.actionContext.sha,
   });
@@ -245,14 +245,14 @@ export const isPassedAllChecks = async(octokit: Octokit, context: ActionContext)
     return false;
   }
 
-  const checkSuiteUrl = (await octokit.actions.getWorkflowRun({
+  const checkSuiteUrl = (await octokit.rest.actions.getWorkflowRun({
     ...context.actionContext.repo,
     'run_id': Number(process.env.GITHUB_RUN_ID),
   })).data['check_suite_url'];
   const checkSuiteId  = Number(checkSuiteUrl.replace(/^.+\/(\d+)$/, '$1'));
 
   return !(await octokit.paginate(
-    octokit.checks.listSuitesForRef.endpoint.merge({
+    octokit.rest.checks.listSuitesForRef.endpoint.merge({
       ...context.actionContext.repo,
       ref: context.actionContext.sha,
     }),
