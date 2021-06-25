@@ -39,9 +39,9 @@
   "dependencies": {
     "@actions/core": "^1.4.0",
     "@actions/github": "^5.0.0",
-    "@octokit/openapi-types": "^7.3.2",
-    "@technote-space/filter-github-action": "^0.5.28",
-    "@technote-space/github-action-helper": "^5.2.9",
+    "@octokit/openapi-types": "^7.3.4",
+    "@technote-space/filter-github-action": "^0.5.30",
+    "@technote-space/github-action-helper": "^5.2.10",
     "moment": "^2.29.1"
   },
   "devDependencies": {
