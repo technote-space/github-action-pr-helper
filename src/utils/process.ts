@@ -114,7 +114,7 @@ export const autoMerge = async(pr: { 'created_at': string; number: number }, log
       ...context.actionContext.repo,
       'pull_number': pr.number,
     });
-  } catch (error) {
+  } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     logger.warn(error.message);
     return false;
   }
@@ -353,7 +353,7 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
       }
 
       results.push(result);
-    } catch (error) {
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       processed[target] = true;
       results.push(getResult('failed', error.message, actionContext));
     }
