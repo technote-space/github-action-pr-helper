@@ -1,6 +1,6 @@
 {
   "name": "@technote-space/github-action-pr-helper",
-  "version": "2.2.11",
+  "version": "2.2.12",
   "description": "PullRequest Helper for GitHub Actions.",
   "keywords": [
     "github",
@@ -39,19 +39,19 @@
   "dependencies": {
     "@actions/core": "^1.5.0",
     "@actions/github": "^5.0.0",
-    "@octokit/openapi-types": "^9.7.0",
-    "@technote-space/filter-github-action": "^0.5.45",
-    "@technote-space/github-action-helper": "^5.2.19",
+    "@octokit/openapi-types": "^10.1.1",
+    "@technote-space/filter-github-action": "^0.5.46",
+    "@technote-space/github-action-helper": "^5.2.20",
     "moment": "^2.29.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^13.1.0",
     "@commitlint/config-conventional": "^13.1.0",
-    "@technote-space/github-action-test-helper": "^0.7.26",
+    "@technote-space/github-action-test-helper": "^0.7.27",
     "@types/jest": "^27.0.1",
-    "@types/node": "^16.7.8",
-    "@typescript-eslint/eslint-plugin": "^4.30.0",
-    "@typescript-eslint/parser": "^4.30.0",
+    "@types/node": "^16.7.13",
+    "@typescript-eslint/eslint-plugin": "^4.31.0",
+    "@typescript-eslint/parser": "^4.31.0",
     "eslint": "^7.32.0",
     "husky": "^7.0.2",
     "jest": "^27.1.0",
