@@ -28,7 +28,7 @@ export const getCommitName = (context: ActionContext): string => getActionDetail
 
 export const getCommitEmail = (context: ActionContext): string => getActionDetail<string>('commitEmail', context, () => `${context.actionContext.actor}@users.noreply.github.com`);
 
-const getVariable = (index: number, context: ActionContext): string => getActionDetail<string[]>('prVariables', context)[index];
+const getVariable = (index: number, context: ActionContext): string => getActionDetail<string[]>('prVariables', context)[index]!;
 
 export const getPrLink = (context: ActionContext): string => context.actionContext.payload.pull_request ? `[${context.actionContext.payload.pull_request.title}](${context.actionContext.payload.pull_request.html_url})` : '';
 
@@ -36,12 +36,11 @@ const getDate = (index: number, context: ActionContext): string => moment().form
 
 /**
  * @param {boolean} isComment is comment?
- * @param {GitHelper} helper git helper
  * @param {Octokit} octokit octokit
  * @param {ActionContext} context context
  * @return {Promise<{string, Function}[]>} replacer
  */
-const contextVariables = async(isComment: boolean, helper: GitHelper, octokit: Types.Octokit, context: ActionContext): Promise<{ key: string; replace: () => Promise<string> }[]> => {
+const contextVariables = async(isComment: boolean, octokit: Types.Octokit, context: ActionContext): Promise<{ key: string; replace: () => Promise<string> }[]> => {
   const getContext = async(branch: string): Promise<ActionContext> => {
     if (isComment) {
       if (branch === await getDefaultBranch(octokit, context)) {
@@ -95,7 +94,7 @@ const contextVariables = async(isComment: boolean, helper: GitHelper, octokit: T
  * @param {ActionDetails} context action details
  * @return {Promise<string>} replaced
  */
-const replaceContextVariables = async(string: string, helper: GitHelper, octokit: Types.Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(string, await contextVariables(false, helper, octokit, context));
+const replaceContextVariables = async(string: string, helper: GitHelper, octokit: Types.Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(string, await contextVariables(false, octokit, context));
 
 export const getPrBranchName = async(helper: GitHelper, octokit: Types.Octokit, context: ActionContext, isDuplicateCheck = false): Promise<string> => {
   if (isPush(context.actionContext)) {
@@ -214,7 +213,7 @@ const prBodyVariables = async(isComment: boolean, files: string[], output: Comma
       key: 'ACTION_MARKETPLACE_URL',
       replace: async(): Promise<string> => `https://github.com/marketplace/actions/${context.actionDetail.actionRepo}`,
     },
-  ].concat(await contextVariables(isComment, helper, octokit, context));
+  ].concat(await contextVariables(isComment, octokit, context));
 };
 
 const replacePrBodyVariables = async(isComment: boolean, prBody: string, files: string[], output: CommandOutput[], helper: GitHelper, octokit: Types.Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(prBody, await prBodyVariables(isComment, files, output, helper, octokit, context));

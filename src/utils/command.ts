@@ -183,7 +183,7 @@ export const merge = async(branch: string, helper: GitHelper, logger: Logger, co
     },
   );
 
-  return !results[0].stdout.some(RegExp.prototype.test, /^CONFLICT /);
+  return !results[0]!.stdout.some(RegExp.prototype.test, /^CONFLICT /);
 };
 
 export const abortMerge = async(helper: GitHelper, logger: Logger): Promise<void> => {
@@ -289,7 +289,7 @@ export const updatePr = async(branchName: string, files: string[], output: Comma
 
 const runCommand = async(command: string | ExecuteTask, helper: GitHelper, logger: Logger, context: ActionContext): Promise<CommandOutput> => {
   if ('string' === typeof command) {
-    return (await helper.runCommand(getWorkspace(), command))[0];
+    return (await helper.runCommand(getWorkspace(), command))[0]!;
   }
 
   const result = await command(context, helper, logger);
