@@ -9,5 +9,5 @@ export default {
   plugins: [
     pluginTypescript(),
   ],
-  external: [],
+  external: ['@actions/core', '@actions/github/lib/context', '@technote-space/github-action-helper', '@technote-space/github-action-log-helper', '@technote-space/filter-github-action', 'moment'],
 };
