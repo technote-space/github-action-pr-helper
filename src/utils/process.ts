@@ -124,7 +124,7 @@ export const autoMerge = async(pr: { 'created_at': string; number: number }, log
 
 const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger, octokit: Types.Octokit, context: ActionContext): Promise<ProcessResult> => {
   const helper     = getHelper(context);
-  const branchName = await getPrBranchName(helper, octokit, context);
+  const branchName = await getPrBranchName(octokit, context);
 
   const {files, output, aborted} = await getChangedFiles(helper, logger, octokit, context);
   if (!files.length) {
@@ -259,7 +259,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
   }
 
   const {files, output, aborted}          = await getChangedFiles(helper, logger, octokit, context);
-  const branchName                        = await getPrBranchName(helper, octokit, context);
+  const branchName                        = await getPrBranchName(octokit, context);
   let result: 'succeeded' | 'not changed' = 'succeeded';
   let detail                              = 'updated';
   let mergeable                           = false;
@@ -339,7 +339,7 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
     const isTarget = isActionPr(actionContext) || await isTargetBranch(getPrHeadRef(actionContext), octokit, actionContext);
     let target     = '';
     if (isTarget) {
-      target = await getPrBranchName(helper, octokit, actionContext, true);
+      target = await getPrBranchName(octokit, actionContext, true);
       if (target in processed) {
         results.push(getResult('skipped', `duplicated (${target})`, actionContext));
         continue;

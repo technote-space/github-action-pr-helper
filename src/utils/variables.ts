@@ -1,5 +1,5 @@
 import moment from 'moment';
-import {Utils, ContextHelper, GitHelper} from '@technote-space/github-action-helper';
+import {Utils, ContextHelper} from '@technote-space/github-action-helper';
 import type {Types} from '@technote-space/github-action-helper';
 import {ActionContext, CommandOutput} from '../types';
 import {getNewPatchVersion, getNewMinorVersion, getNewMajorVersion, getCurrentVersion, findPR, getDefaultBranch} from './command';
@@ -89,14 +89,13 @@ const contextVariables = async(isComment: boolean, octokit: Types.Octokit, conte
 
 /**
  * @param {string} string string
- * @param {GitHelper} helper git helper
  * @param {Octokit} octokit octokit
  * @param {ActionDetails} context action details
  * @return {Promise<string>} replaced
  */
-const replaceContextVariables = async(string: string, helper: GitHelper, octokit: Types.Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(string, await contextVariables(false, octokit, context));
+const replaceContextVariables = async(string: string, octokit: Types.Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(string, await contextVariables(false, octokit, context));
 
-export const getPrBranchName = async(helper: GitHelper, octokit: Types.Octokit, context: ActionContext, isDuplicateCheck = false): Promise<string> => {
+export const getPrBranchName = async(octokit: Types.Octokit, context: ActionContext, isDuplicateCheck = false): Promise<string> => {
   if (isPush(context.actionContext)) {
     return getBranch(context.actionContext);
   }
@@ -126,21 +125,20 @@ export const getPrBranchName = async(helper: GitHelper, octokit: Types.Octokit, 
     throw error;
   }
 
-  return prefix + await replaceContextVariables(branch, helper, octokit, context);
+  return prefix + await replaceContextVariables(branch, octokit, context);
 };
 
-export const getPrTitle = async(helper: GitHelper, octokit: Types.Octokit, context: ActionContext): Promise<string> => await replaceContextVariables(
+export const getPrTitle = async(octokit: Types.Octokit, context: ActionContext): Promise<string> => await replaceContextVariables(
   (
     await isDefaultBranch(octokit, context) ?
       getActionDetail<string>('prTitleForDefaultBranch', context, () => getActionDetail<string>('prTitle', context)) :
       getActionDetail<string>('prTitle', context)
   ).trim(),
-  helper,
   octokit,
   context,
 );
 
-const prBodyVariables = async(isComment: boolean, files: string[], output: CommandOutput[], helper: GitHelper, octokit: Types.Octokit, context: ActionContext): Promise<{ key: string; replace: () => Promise<string> }[]> => {
+const prBodyVariables = async(isComment: boolean, files: string[], output: CommandOutput[], octokit: Types.Octokit, context: ActionContext): Promise<{ key: string; replace: () => Promise<string> }[]> => {
   const toCode = (string: string): string => string.length ? ['', '```Shell', string, '```', ''].join('\n') : '';
   return [
     {
@@ -216,9 +214,9 @@ const prBodyVariables = async(isComment: boolean, files: string[], output: Comma
   ].concat(await contextVariables(isComment, octokit, context));
 };
 
-const replacePrBodyVariables = async(isComment: boolean, prBody: string, files: string[], output: CommandOutput[], helper: GitHelper, octokit: Types.Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(prBody, await prBodyVariables(isComment, files, output, helper, octokit, context));
+const replacePrBodyVariables = async(isComment: boolean, prBody: string, files: string[], output: CommandOutput[], octokit: Types.Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(prBody, await prBodyVariables(isComment, files, output, octokit, context));
 
-export const getPrBody = async(isComment: boolean, files: string[], output: CommandOutput[], helper: GitHelper, octokit: Types.Octokit, context: ActionContext): Promise<string> => replacePrBodyVariables(
+export const getPrBody = async(isComment: boolean, files: string[], output: CommandOutput[], octokit: Types.Octokit, context: ActionContext): Promise<string> => replacePrBodyVariables(
   isComment,
   (
     isComment ?
@@ -231,7 +229,6 @@ export const getPrBody = async(isComment: boolean, files: string[], output: Comm
   ).trim().split(/\r?\n/).map(line => line.replace(/^[\s\t]+/, '')).join('\n'),
   files,
   output,
-  helper,
   octokit,
   context,
 );
