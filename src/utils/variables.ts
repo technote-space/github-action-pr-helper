@@ -1,7 +1,7 @@
+import type { ActionContext, CommandOutput } from '../types';
 import type { Types } from '@technote-space/github-action-helper';
 import { Utils, ContextHelper } from '@technote-space/github-action-helper';
 import moment from 'moment';
-import { ActionContext, CommandOutput } from '../types';
 import { getNewPatchVersion, getNewMinorVersion, getNewMajorVersion, getCurrentVersion, findPR, getDefaultBranch } from './command';
 import {
   getActionDetail,

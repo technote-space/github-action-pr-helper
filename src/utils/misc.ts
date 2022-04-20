@@ -1,10 +1,10 @@
+import type { ActionContext, PullsParams, PayloadPullsParams, Null } from '../types';
 import type { Types } from '@technote-space/github-action-helper';
 import { getInput } from '@actions/core';
 import { isTargetEvent, isTargetLabels } from '@technote-space/filter-github-action';
 import { Utils, ContextHelper, GitHelper } from '@technote-space/github-action-helper';
 import { Logger } from '@technote-space/github-action-log-helper';
 import { DEFAULT_TARGET_EVENTS, DEFAULT_TRIGGER_WORKFLOW_MESSAGE } from '../constant';
-import { ActionContext, PullsParams, PayloadPullsParams, Null } from '../types';
 import { getDefaultBranch } from './command';
 
 const { getWorkspace, getPrefixRegExp, getAccessToken }                     = Utils;
