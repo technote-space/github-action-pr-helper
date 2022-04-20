@@ -1,10 +1,7 @@
 /* eslint-disable no-magic-numbers */
-import { beforeEach, describe, expect, it } from 'vitest';
-import {Context} from '@actions/github/lib/context';
-import moment from 'moment';
-import nock from 'nock';
-import {resolve} from 'path';
-import {Logger} from '@technote-space/github-action-log-helper';
+import { resolve } from 'path';
+import { Context } from '@actions/github/lib/context';
+import { Logger } from '@technote-space/github-action-log-helper';
 import {
   testEnv,
   generateContext,
@@ -14,7 +11,11 @@ import {
   disableNetConnect,
   getOctokit,
 } from '@technote-space/github-action-test-helper';
-import {getCacheKey} from './misc';
+import moment from 'moment';
+import nock from 'nock';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { ActionContext, ActionDetails } from '../types';
+import { getCacheKey } from './misc';
 import {
   getCommitMessage,
   getCommitName,
@@ -24,7 +25,6 @@ import {
   getPrLink,
   getPrBody,
 } from './variables';
-import {ActionContext, ActionDetails} from '../types';
 
 beforeEach(() => {
   Logger.resetForTesting();
@@ -43,7 +43,7 @@ const getActionContext             = (context: Context, _actionDetails?: ActionD
   actionContext: context,
   actionDetail: _actionDetails ?? actionDetails,
   cache: Object.assign(cache ?? {}, {
-    [getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: defaultBranch ?? 'master',
+    [getCacheKey('repos', { owner: context.repo.owner, repo: context.repo.repo })]: defaultBranch ?? 'master',
     [getCacheKey('current-version')]: 'v1.2.3',
     [getCacheKey('new-patch-version')]: 'v1.2.4',
     [getCacheKey('new-minor-version')]: 'v1.3.0',
@@ -94,7 +94,7 @@ describe('getCommitMessage', () => {
   testEnv();
 
   it('should get commit message', () => {
-    expect(getCommitMessage(generateActionContext({}, {}, {commitMessage: 'test'}))).toBe('test');
+    expect(getCommitMessage(generateActionContext({}, {}, { commitMessage: 'test' }))).toBe('test');
   });
 
   it('should throw error', () => {
@@ -106,11 +106,11 @@ describe('getCommitName', () => {
   testEnv();
 
   it('should get commit name', () => {
-    expect(getCommitName(generateActionContext({}, {}, {commitName: 'test'}))).toBe('test');
+    expect(getCommitName(generateActionContext({}, {}, { commitName: 'test' }))).toBe('test');
   });
 
   it('should get default commit name', () => {
-    expect(getCommitName(generateActionContext({}, {actor: 'test-actor'}))).toBe('test-actor');
+    expect(getCommitName(generateActionContext({}, { actor: 'test-actor' }))).toBe('test-actor');
   });
 });
 
@@ -118,11 +118,11 @@ describe('getCommitEmail', () => {
   testEnv();
 
   it('should get commit email', () => {
-    expect(getCommitEmail(generateActionContext({}, {}, {commitEmail: 'test'}))).toBe('test');
+    expect(getCommitEmail(generateActionContext({}, {}, { commitEmail: 'test' }))).toBe('test');
   });
 
   it('should get default commit email', () => {
-    expect(getCommitEmail(generateActionContext({}, {actor: 'test-actor'}))).toBe('test-actor@users.noreply.github.com');
+    expect(getCommitEmail(generateActionContext({}, { actor: 'test-actor' }))).toBe('test-actor@users.noreply.github.com');
   });
 });
 
@@ -131,7 +131,7 @@ describe('getPrBranchName', () => {
   testChildProcess();
 
   it('should get pr branch name', async() => {
-    expect(await getPrBranchName(octokit, generateActionContext({event: 'pull_request'}, {
+    expect(await getPrBranchName(octokit, generateActionContext({ event: 'pull_request' }, {
       payload: prPayload,
     }, {
       prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
@@ -195,7 +195,7 @@ describe('getPrBranchName', () => {
   });
 
   it('should get push branch name', async() => {
-    expect(await getPrBranchName(octokit, generateActionContext({event: 'push'}, {ref: 'refs/heads/test-ref'}, {
+    expect(await getPrBranchName(octokit, generateActionContext({ event: 'push' }, { ref: 'refs/heads/test-ref' }, {
       prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
     }))).toBe('test-ref');
   });
@@ -205,7 +205,7 @@ describe('getPrBranchName', () => {
   });
 
   it('should throw error', async() => {
-    await expect(getPrBranchName(octokit, generateActionContext({event: 'pull_request'}, {}, {
+    await expect(getPrBranchName(octokit, generateActionContext({ event: 'pull_request' }, {}, {
       prBranchName: '${PR_NUMBER}::${PR_NUMBER_REF}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_TITLE}::${PR_URL}::${PR_MERGE_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
     }))).rejects.toThrow();
     await expect(getPrBranchName(octokit, generateActionContext({}))).rejects.toThrow();
@@ -218,7 +218,7 @@ describe('getPrTitle', () => {
   disableNetConnect(nock);
 
   it('should get PR title', async() => {
-    expect(await getPrTitle(octokit, generateActionContext({}, {payload: prPayload}, {
+    expect(await getPrTitle(octokit, generateActionContext({}, { payload: prPayload }, {
       prTitle: '${PR_NUMBER}::${PR_ID}::${PR_HEAD_REF}::${PR_BASE_REF}::${PR_MERGE_REF}::${PR_NUMBER_REF}::${PATCH_VERSION}::${MINOR_VERSION}::${MAJOR_VERSION}::${CURRENT_VERSION}::${PR_LINK}',
     }))).toBe('11::21031067::feature/new-feature::master::feature/new-feature -> master::#11::v1.2.4::v1.3.0::v2.0.0::v1.2.3::[test title](http://example.com)');
   });
@@ -338,8 +338,8 @@ describe('getPrBody', () => {
 `;
 
     expect(await getPrBody(false, ['README.md', 'CHANGELOG.md'], [
-      {command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: []},
-      {command: 'test2', stdout: ['test2-1', 'test2-2'], stderr: ['test2-3']},
+      { command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: [] },
+      { command: 'test2', stdout: ['test2-1', 'test2-2'], stderr: ['test2-3'] },
     ], octokit, generateActionContext({
       owner: actionDetails.actionOwner,
       repo: actionDetails.actionRepo,
@@ -430,8 +430,8 @@ describe('getPrBody', () => {
 `;
 
     expect(await getPrBody(true, ['README.md', 'CHANGELOG.md'], [
-      {command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: []},
-      {command: 'test2', stdout: ['test2-1', 'test2-2'], stderr: ['test2-3']},
+      { command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: [] },
+      { command: 'test2', stdout: ['test2-1', 'test2-2'], stderr: ['test2-3'] },
     ], octokit, generateActionContext({
       owner: actionDetails.actionOwner,
       repo: actionDetails.actionRepo,
@@ -530,8 +530,8 @@ describe('getPrBody', () => {
 `;
 
     expect(await getPrBody(false, ['README.md'], [
-      {command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: ['test1-3', 'test1-4']},
-      {command: 'test2', stdout: [], stderr: []},
+      { command: 'test1', stdout: ['test1-1', 'test1-2'], stderr: ['test1-3', 'test1-4'] },
+      { command: 'test2', stdout: [], stderr: [] },
     ], octokit, generateActionContext({}, {
       payload: prPayload,
     }, {
@@ -836,7 +836,7 @@ describe('getPrBody', () => {
     }, {
       prBody: '${PR_TITLE}',
     }, 'develop', {
-      [getCacheKey('pr', {branchName: 'master'})]: null,
+      [getCacheKey('pr', { branchName: 'master' })]: null,
     }))).rejects.toThrow();
   });
 });

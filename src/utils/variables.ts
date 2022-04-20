@@ -1,8 +1,8 @@
+import type { Types } from '@technote-space/github-action-helper';
+import { Utils, ContextHelper } from '@technote-space/github-action-helper';
 import moment from 'moment';
-import {Utils, ContextHelper} from '@technote-space/github-action-helper';
-import type {Types} from '@technote-space/github-action-helper';
-import {ActionContext, CommandOutput} from '../types';
-import {getNewPatchVersion, getNewMinorVersion, getNewMajorVersion, getCurrentVersion, findPR, getDefaultBranch} from './command';
+import { ActionContext, CommandOutput } from '../types';
+import { getNewPatchVersion, getNewMinorVersion, getNewMajorVersion, getCurrentVersion, findPR, getDefaultBranch } from './command';
 import {
   getActionDetail,
   getDefaultBranchUrl,
@@ -19,8 +19,8 @@ import {
   ParameterRequiredError,
 } from './misc';
 
-const {getBranch} = Utils;
-const {isPush}    = ContextHelper;
+const { getBranch } = Utils;
+const { isPush }    = ContextHelper;
 
 export const getCommitMessage = (context: ActionContext): string => getActionDetail<string>('commitMessage', context);
 
@@ -34,12 +34,6 @@ export const getPrLink = (context: ActionContext): string => context.actionConte
 
 const getDate = (index: number, context: ActionContext): string => moment().format(getActionDetail<string[]>('prDateFormats', context)[index]);
 
-/**
- * @param {boolean} isComment is comment?
- * @param {Octokit} octokit octokit
- * @param {ActionContext} context context
- * @return {Promise<{string, Function}[]>} replacer
- */
 const contextVariables = async(isComment: boolean, octokit: Types.Octokit, context: ActionContext): Promise<{ key: string; replace: () => Promise<string> }[]> => {
   const getContext = async(branch: string): Promise<ActionContext> => {
     if (isComment) {
@@ -63,19 +57,19 @@ const contextVariables = async(isComment: boolean, octokit: Types.Octokit, conte
   };
 
   return [
-    {key: 'PR_NUMBER', replace: getPrParamFunc(pr => pr.number)},
-    {key: 'PR_NUMBER_REF', replace: getPrParamFunc(async(pr) => pr.number ? `#${pr.number}` : await getDefaultBranchUrl(octokit, context))},
-    {key: 'PR_ID', replace: getPrParamFunc(pr => pr.id)},
-    {key: 'PR_HEAD_REF', replace: getPrParamFunc(pr => pr.head.ref)},
-    {key: 'PR_BASE_REF', replace: getPrParamFunc(pr => pr.base.ref)},
-    {key: 'PR_TITLE', replace: getPrParamFunc(pr => pr.title)},
-    {key: 'PR_URL', replace: getPrParamFunc(pr => pr.html_url)},
-    {key: 'PR_MERGE_REF', replace: getPrParamFunc(async(pr) => pr.number ? `${pr.head.ref} -> ${pr.base.ref}` : await getDefaultBranch(octokit, context))},
-    {key: 'PR_LINK', replace: async(): Promise<string> => getPrLink(context)},
-    {key: 'CURRENT_VERSION', replace: async(): Promise<string> => getCurrentVersion(octokit, context)},
-    {key: 'PATCH_VERSION', replace: async(): Promise<string> => getNewPatchVersion(octokit, context)},
-    {key: 'MINOR_VERSION', replace: async(): Promise<string> => getNewMinorVersion(octokit, context)},
-    {key: 'MAJOR_VERSION', replace: async(): Promise<string> => getNewMajorVersion(octokit, context)},
+    { key: 'PR_NUMBER', replace: getPrParamFunc(pr => pr.number) },
+    { key: 'PR_NUMBER_REF', replace: getPrParamFunc(async(pr) => pr.number ? `#${pr.number}` : await getDefaultBranchUrl(octokit, context)) },
+    { key: 'PR_ID', replace: getPrParamFunc(pr => pr.id) },
+    { key: 'PR_HEAD_REF', replace: getPrParamFunc(pr => pr.head.ref) },
+    { key: 'PR_BASE_REF', replace: getPrParamFunc(pr => pr.base.ref) },
+    { key: 'PR_TITLE', replace: getPrParamFunc(pr => pr.title) },
+    { key: 'PR_URL', replace: getPrParamFunc(pr => pr.html_url) },
+    { key: 'PR_MERGE_REF', replace: getPrParamFunc(async(pr) => pr.number ? `${pr.head.ref} -> ${pr.base.ref}` : await getDefaultBranch(octokit, context)) },
+    { key: 'PR_LINK', replace: async(): Promise<string> => getPrLink(context) },
+    { key: 'CURRENT_VERSION', replace: async(): Promise<string> => getCurrentVersion(octokit, context) },
+    { key: 'PATCH_VERSION', replace: async(): Promise<string> => getNewPatchVersion(octokit, context) },
+    { key: 'MINOR_VERSION', replace: async(): Promise<string> => getNewMinorVersion(octokit, context) },
+    { key: 'MAJOR_VERSION', replace: async(): Promise<string> => getNewMajorVersion(octokit, context) },
     // eslint-disable-next-line no-magic-numbers
   ].concat([...Array(context.actionDetail.prVariables?.length ?? 0).keys()].map(index => ({
     // eslint-disable-next-line no-magic-numbers
@@ -87,12 +81,6 @@ const contextVariables = async(isComment: boolean, octokit: Types.Octokit, conte
   })));
 };
 
-/**
- * @param {string} string string
- * @param {Octokit} octokit octokit
- * @param {ActionDetails} context action details
- * @return {Promise<string>} replaced
- */
 const replaceContextVariables = async(string: string, octokit: Types.Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(string, await contextVariables(false, octokit, context));
 
 export const getPrBranchName = async(octokit: Types.Octokit, context: ActionContext, isDuplicateCheck = false): Promise<string> => {
@@ -104,7 +92,8 @@ export const getPrBranchName = async(octokit: Types.Octokit, context: ActionCont
     return getPrHeadRef(context);
   }
 
-  let prefix: string, branch: string;
+  let prefix: string;
+  let branch: string;
   if (await isDefaultBranch(octokit, context)) {
     prefix = getPrBranchPrefixForDefaultBranch(context);
   } else {

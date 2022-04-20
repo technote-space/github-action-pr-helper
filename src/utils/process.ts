@@ -1,7 +1,9 @@
-import {setOutput} from '@actions/core';
-import {Utils, ContextHelper, GitHelper} from '@technote-space/github-action-helper';
-import {Logger} from '@technote-space/github-action-log-helper';
-import type {Types} from '@technote-space/github-action-helper';
+import type { Types } from '@technote-space/github-action-helper';
+import { setOutput } from '@actions/core';
+import { Utils, ContextHelper, GitHelper } from '@technote-space/github-action-helper';
+import { Logger } from '@technote-space/github-action-log-helper';
+import { INTERVAL_MS } from '../constant';
+import { ActionContext, ProcessResult, AllProcessResult, PullsParams, CommandOutput } from '../types';
 import {
   getApiHelper,
   getChangedFiles,
@@ -31,13 +33,11 @@ import {
   isPassedAllChecks,
   isNotCreatePR,
 } from './misc';
-import {getPrBranchName} from './variables';
-import {INTERVAL_MS} from '../constant';
-import {ActionContext, ProcessResult, AllProcessResult, PullsParams, CommandOutput} from '../types';
+import { getPrBranchName } from './variables';
 
-const {sleep, getBranch, objectGet} = Utils;
-const {isPr, isPush}                = ContextHelper;
-const commonLogger                  = new Logger(replaceDirectory);
+const { sleep, getBranch, objectGet } = Utils;
+const { isPr, isPush }                = ContextHelper;
+const commonLogger                    = new Logger(replaceDirectory);
 
 const getResult = (result: 'succeeded' | 'failed' | 'skipped' | 'not changed', detail: string, context: ActionContext, fork?: string): ProcessResult => ({
   result,
@@ -126,7 +126,7 @@ const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger
   const helper     = getHelper(context);
   const branchName = await getPrBranchName(octokit, context);
 
-  const {files, output, aborted} = await getChangedFiles(helper, logger, octokit, context);
+  const { files, output, aborted } = await getChangedFiles(helper, logger, octokit, context);
   if (!files.length) {
     logger.info('There is no diff.');
     if (context.isBatchProcess) {
@@ -258,7 +258,7 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
     return createCommit(isActionPr(context), isClose, logger, octokit, context);
   }
 
-  const {files, output, aborted}          = await getChangedFiles(helper, logger, octokit, context);
+  const { files, output, aborted }        = await getChangedFiles(helper, logger, octokit, context);
   const branchName                        = await getPrBranchName(octokit, context);
   let result: 'succeeded' | 'not changed' = 'succeeded';
   let detail                              = 'updated';
@@ -293,10 +293,10 @@ const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, 
 
 const outputResult = (result: ProcessResult, endProcess = false): void => {
   const mark = {
-    'succeeded': commonLogger.c('✔', {color: 'green'}),
-    'failed': commonLogger.c('×', {color: 'red'}),
-    'skipped': commonLogger.c('→', {color: 'yellow'}),
-    'not changed': commonLogger.c('✔', {color: 'yellow'}),
+    'succeeded': commonLogger.c('✔', { color: 'green' }),
+    'failed': commonLogger.c('×', { color: 'red' }),
+    'skipped': commonLogger.c('→', { color: 'yellow' }),
+    'not changed': commonLogger.c('✔', { color: 'yellow' }),
   };
   if (endProcess) {
     setOutput('result', result.result);
@@ -374,11 +374,6 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
   }
 };
 
-/**
- * @param {Octokit} octokit octokit
- * @param {Context} context context
- * @return {AsyncIterable} pull
- */
 async function* getPulls(octokit: Types.Octokit, context: ActionContext): AsyncIterable<PullsParams> {
   const logger = new Logger(replaceDirectory, true);
 

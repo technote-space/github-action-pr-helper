@@ -1,8 +1,9 @@
-import {getInput} from '@actions/core' ;
-import type {Types} from '@technote-space/github-action-helper';
-import {GitHelper, Utils, ContextHelper, ApiHelper} from '@technote-space/github-action-helper';
-import {Logger} from '@technote-space/github-action-log-helper';
-import {components} from '@octokit/openapi-types';
+import type { Types } from '@technote-space/github-action-helper';
+import { getInput } from '@actions/core' ;
+import { components } from '@octokit/openapi-types';
+import { GitHelper, Utils, ContextHelper, ApiHelper } from '@technote-space/github-action-helper';
+import { Logger } from '@technote-space/github-action-log-helper';
+import { ActionContext, CommandOutput, ExecuteTask, Null } from '../types';
 import {
   getActionDetail,
   isDisabledDeletePackage,
@@ -23,12 +24,11 @@ import {
   getPrTitle,
   getPrBody,
 } from './variables';
-import {ActionContext, CommandOutput, ExecuteTask, Null} from '../types';
 
 type PullsListResponseData = components['schemas']['pull-request-simple'];
-const {getWorkspace, getLocalRefspec, getRefspec} = Utils;
-const {getOctokit, ensureNotNullValue, useNpm}    = Utils;
-const {getRepository, isPush}                     = ContextHelper;
+const { getWorkspace, getLocalRefspec, getRefspec } = Utils;
+const { getOctokit, ensureNotNullValue, useNpm }    = Utils;
+const { getRepository, isPush }                     = ContextHelper;
 
 export const getApiHelper = (octokit: Types.Octokit, context: ActionContext, logger?: Logger): ApiHelper => new ApiHelper(octokit, context.actionContext, logger);
 
@@ -168,7 +168,7 @@ const initDirectory = async(helper: GitHelper, logger: Logger): Promise<void> =>
   logger.startProcess('Initializing working directory...');
 
   helper.useOrigin(true);
-  await helper.runCommand(getWorkspace(), {command: 'rm', args: ['-rdf', getWorkspace()]});
+  await helper.runCommand(getWorkspace(), { command: 'rm', args: ['-rdf', getWorkspace()] });
 };
 
 export const merge = async(branch: string, helper: GitHelper, logger: Logger, context: ActionContext): Promise<boolean> => {
@@ -277,7 +277,7 @@ export const updatePr = async(branchName: string, files: string[], output: Comma
   }
 
   logger.startProcess('Creating PullRequest...');
-  const {number} = await apiHelper.pullsCreate(branchName, {
+  const { number } = await apiHelper.pullsCreate(branchName, {
     title: await getPrTitle(octokit, context),
     body: await getPrBody(false, files, output, octokit, context),
   });
@@ -337,7 +337,7 @@ export const getChangedFiles = async(helper: GitHelper, logger: Logger, octokit:
   if (await checkBranch(helper, logger, octokit, context)) {
     if (!await merge(getContextBranch(context), helper, logger, context)) {
       await abortMerge(helper, logger);
-      return {files: [], output: [], aborted: true};
+      return { files: [], output: [], aborted: true };
     }
   }
 
@@ -366,7 +366,7 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
     await push(branchName, helper, logger, context);
   } else {
     // failed to merge
-    const {files, output} = await getChangedFilesForRebase(helper, logger, octokit, context);
+    const { files, output } = await getChangedFilesForRebase(helper, logger, octokit, context);
     if (!files.length) {
       await closePR(branchName, logger, context);
       return 'has been closed because there is no diff';
@@ -394,4 +394,4 @@ export const getNewMinorVersion = async(octokit: Types.Octokit, context: ActionC
 
 export const getNewMajorVersion = async(octokit: Types.Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-major-version'), () => getApiHelper(octokit, context).getNewMajorVersion(), context);
 
-export const findPR = async(branchName: string, octokit: Types.Octokit, context: ActionContext): Promise<PullsListResponseData | Null> => getCache(getCacheKey('pr', {branchName}), () => getApiHelper(octokit, context).findPullRequest(branchName), context);
+export const findPR = async(branchName: string, octokit: Types.Octokit, context: ActionContext): Promise<PullsListResponseData | Null> => getCache(getCacheKey('pr', { branchName }), () => getApiHelper(octokit, context).findPullRequest(branchName), context);

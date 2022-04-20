@@ -1,23 +1,17 @@
-import {getInput} from '@actions/core';
-import {Utils, ContextHelper, GitHelper} from '@technote-space/github-action-helper';
-import {Logger} from '@technote-space/github-action-log-helper';
-import type {Types} from '@technote-space/github-action-helper';
-import {isTargetEvent, isTargetLabels} from '@technote-space/filter-github-action';
-import {ActionContext, PullsParams, PayloadPullsParams, Null} from '../types';
-import {getDefaultBranch} from './command';
-import {DEFAULT_TARGET_EVENTS, DEFAULT_TRIGGER_WORKFLOW_MESSAGE} from '../constant';
+import type { Types } from '@technote-space/github-action-helper';
+import { getInput } from '@actions/core';
+import { isTargetEvent, isTargetLabels } from '@technote-space/filter-github-action';
+import { Utils, ContextHelper, GitHelper } from '@technote-space/github-action-helper';
+import { Logger } from '@technote-space/github-action-log-helper';
+import { DEFAULT_TARGET_EVENTS, DEFAULT_TRIGGER_WORKFLOW_MESSAGE } from '../constant';
+import { ActionContext, PullsParams, PayloadPullsParams, Null } from '../types';
+import { getDefaultBranch } from './command';
 
-const {getWorkspace, getPrefixRegExp, getAccessToken}                     = Utils;
-const {escapeRegExp, replaceAll, getBranch}                               = Utils;
-const {isPr, isCron, isPush, isCustomEvent, isManualEvent, isWorkflowRun} = ContextHelper;
+const { getWorkspace, getPrefixRegExp, getAccessToken }                     = Utils;
+const { escapeRegExp, replaceAll, getBranch }                               = Utils;
+const { isPr, isCron, isPush, isCustomEvent, isManualEvent, isWorkflowRun } = ContextHelper;
 
-/**
- * ParameterRequiredError
- */
 export class ParameterRequiredError extends Error {
-  /**
-   * @param {string} target target
-   */
   constructor(target: string) {
     super(`parameter [${target}] is required.`);
 
@@ -237,7 +231,7 @@ export const checkSuiteState = (checkSuiteId: number) => (suite: ChecksListSuite
 };
 
 export const isPassedAllChecks = async(octokit: Types.Octokit, context: ActionContext): Promise<boolean> => {
-  const {data: status} = await octokit.rest.repos.getCombinedStatusForRef({
+  const { data: status } = await octokit.rest.repos.getCombinedStatusForRef({
     ...context.actionContext.repo,
     ref: context.actionContext.sha,
   });

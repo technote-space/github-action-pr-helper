@@ -1,10 +1,7 @@
 /* eslint-disable no-magic-numbers */
-import { beforeEach, describe, expect, it } from 'vitest';
-import {Context} from '@actions/github/lib/context';
-import moment from 'moment';
-import nock from 'nock';
-import {resolve} from 'path';
-import {Logger} from '@technote-space/github-action-log-helper';
+import { resolve } from 'path';
+import { Context } from '@actions/github/lib/context';
+import { Logger } from '@technote-space/github-action-log-helper';
 import {
   generateContext,
   testEnv,
@@ -17,9 +14,12 @@ import {
   testChildProcess,
   getOctokit,
 } from '@technote-space/github-action-test-helper';
-import {ActionContext, ActionDetails} from '../types';
-import {execute, autoMerge} from './process';
-import {getCacheKey} from './misc';
+import moment from 'moment';
+import nock from 'nock';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { ActionContext, ActionDetails } from '../types';
+import { getCacheKey } from './misc';
+import { execute, autoMerge } from './process';
 
 const workDir   = resolve(__dirname, 'test');
 const rootDir   = resolve(__dirname, '..', 'fixtures');
@@ -38,7 +38,7 @@ const getActionContext             = (context: Context, _actionDetails?: { [key:
   actionContext: context,
   actionDetail: _actionDetails ? Object.assign({}, actionDetails, _actionDetails) : actionDetails,
   cache: {
-    [getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: branch ?? 'master',
+    [getCacheKey('repos', { owner: context.repo.owner, repo: context.repo.repo })]: branch ?? 'master',
   },
   isBatchProcess,
 });

@@ -1,5 +1,5 @@
-import { vi } from 'vitest';
 import { setupGlobal } from '@technote-space/github-action-test-helper';
+import { vi } from 'vitest';
 
 setupGlobal();
 

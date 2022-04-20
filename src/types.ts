@@ -1,6 +1,6 @@
-import {Context} from '@actions/github/lib/context';
-import {GitHelper} from '@technote-space/github-action-helper';
-import {Logger} from '@technote-space/github-action-log-helper';
+import { Context } from '@actions/github/lib/context';
+import { GitHelper } from '@technote-space/github-action-helper';
+import { Logger } from '@technote-space/github-action-log-helper';
 
 export type ExecuteTask = (context: ActionContext, helper: GitHelper, logger: Logger) => Promise<CommandOutput>;
 

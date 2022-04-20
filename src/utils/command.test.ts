@@ -1,10 +1,8 @@
 /* eslint-disable no-magic-numbers */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {Context} from '@actions/github/lib/context';
-import nock from 'nock';
-import {resolve} from 'path';
-import {GitHelper, Utils} from '@technote-space/github-action-helper';
-import {Logger} from '@technote-space/github-action-log-helper';
+import { resolve } from 'path';
+import { Context } from '@actions/github/lib/context';
+import { GitHelper, Utils } from '@technote-space/github-action-helper';
+import { Logger } from '@technote-space/github-action-log-helper';
 import {
   generateContext,
   testEnv,
@@ -19,7 +17,9 @@ import {
   getApiFixture,
   getOctokit,
 } from '@technote-space/github-action-test-helper';
-import {ActionContext, ActionDetails, CommandOutput} from '../types';
+import nock from 'nock';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ActionContext, ActionDetails, CommandOutput } from '../types';
 import {
   clone,
   checkBranch,
@@ -35,14 +35,14 @@ import {
   getNewMajorVersion,
   getCurrentVersion,
 } from './command';
-import {getCacheKey, isCached} from './misc';
+import { getCacheKey, isCached } from './misc';
 
 beforeEach(() => {
   Logger.resetForTesting();
 });
 const workDir                      = resolve(__dirname, 'test-dir');
 const logger                       = new Logger(string => Utils.replaceAll(string, workDir, '[Working Directory]'));
-const helper                       = new GitHelper(logger, {depth: -1, token: 'test-token'});
+const helper                       = new GitHelper(logger, { depth: -1, token: 'test-token' });
 const setExists                    = testFs();
 const rootDir                      = resolve(__dirname, '..', 'fixtures');
 const octokit                      = getOctokit();
@@ -79,7 +79,7 @@ const getActionContext             = (context: Context, _actionDetails?: { [key:
   actionContext: context,
   actionDetail: _actionDetails ? Object.assign({}, actionDetails, _actionDetails) : actionDetails,
   cache: {
-    [getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: defaultBranch ?? 'master',
+    [getCacheKey('repos', { owner: context.repo.owner, repo: context.repo.repo })]: defaultBranch ?? 'master',
   },
 });
 
@@ -139,7 +139,7 @@ describe('checkBranch', () => {
 
   it('should do nothing', async() => {
     process.env.GITHUB_WORKSPACE = workDir;
-    setChildProcessParams({stdout: 'hello-world/test-branch'});
+    setChildProcessParams({ stdout: 'hello-world/test-branch' });
     const mockExec = spyOnSpawn();
     setExists(true);
 
@@ -156,7 +156,7 @@ describe('checkBranch', () => {
 
   it('should checkout new branch', async() => {
     process.env.GITHUB_WORKSPACE = workDir;
-    setChildProcessParams({stdout: 'test-branch2'});
+    setChildProcessParams({ stdout: 'test-branch2' });
     const mockExec = spyOnSpawn();
     setExists(true);
 
@@ -184,7 +184,7 @@ describe('getDiff', () => {
     process.env.GITHUB_WORKSPACE        = workDir;
     process.env.INPUT_FILTER_GIT_STATUS = 'M';
     process.env.INPUT_FILTER_EXTENSIONS = 'md';
-    setChildProcessParams({stdout: 'M  test1.txt\nM  test2.md\nA  test3.md'});
+    setChildProcessParams({ stdout: 'M  test1.txt\nM  test2.md\nA  test3.md' });
     const mockExec = spyOnSpawn();
 
     expect(await getDiff(helper, logger)).toEqual(['test1.txt', 'test2.md', 'test3.md']);
@@ -207,7 +207,7 @@ describe('getChangedFiles', () => {
 
   it('should get changed files 1', async() => {
     process.env.GITHUB_WORKSPACE = workDir;
-    setChildProcessParams({stdout: 'M  file1\nA  file2\nD  file3\n   file4\n\nB  file5\n'});
+    setChildProcessParams({ stdout: 'M  file1\nA  file2\nD  file3\n   file4\n\nB  file5\n' });
 
     expect(await getChangedFiles(helper, logger, octokit, getActionContext(_context, {
       executeCommands: ['yarn upgrade'],
@@ -231,7 +231,7 @@ describe('getChangedFiles', () => {
   it('should get changed files 2', async() => {
     process.env.GITHUB_WORKSPACE      = workDir;
     process.env.INPUT_PACKAGE_MANAGER = 'yarn';
-    setChildProcessParams({stdout: 'M  file1\nA  file2\nD  file3\n   file4\n\nB  file5\n'});
+    setChildProcessParams({ stdout: 'M  file1\nA  file2\nD  file3\n   file4\n\nB  file5\n' });
 
     expect(await getChangedFiles(helper, logger, octokit, getActionContext(_context, {
       executeCommands: ['yarn upgrade'],
@@ -272,7 +272,7 @@ describe('getChangedFiles', () => {
 
   it('should return empty 1', async() => {
     process.env.GITHUB_WORKSPACE = workDir;
-    setChildProcessParams({stdout: 'test'});
+    setChildProcessParams({ stdout: 'test' });
 
     expect(await getChangedFiles(helper, logger, octokit, getActionContext(_context, {
       executeCommands: ['npm update'],
@@ -983,7 +983,7 @@ describe('getNewPatchVersion', () => {
   });
 
   it('should get new patch version from cache', async() => {
-    const actionContext = Object.assign({}, getActionContext(context({})), {newPatchVersion: 'v1.2.5'});
+    const actionContext = Object.assign({}, getActionContext(context({})), { newPatchVersion: 'v1.2.5' });
     expect(actionContext.newPatchVersion).toBe('v1.2.5');
 
     await getNewPatchVersion(octokit, actionContext);
@@ -1010,7 +1010,7 @@ describe('getNewMinorVersion', () => {
   });
 
   it('should get new minor version from cache', async() => {
-    const actionContext = Object.assign({}, getActionContext(context({})), {newPatchVersion: 'v1.3.0'});
+    const actionContext = Object.assign({}, getActionContext(context({})), { newPatchVersion: 'v1.3.0' });
     expect(actionContext.newPatchVersion).toBe('v1.3.0');
 
     await getNewMinorVersion(octokit, actionContext);
@@ -1037,7 +1037,7 @@ describe('getNewMajorVersion', () => {
   });
 
   it('should get new major version from cache', async() => {
-    const actionContext = Object.assign({}, getActionContext(context({})), {newPatchVersion: 'v2.0.0'});
+    const actionContext = Object.assign({}, getActionContext(context({})), { newPatchVersion: 'v2.0.0' });
     expect(actionContext.newPatchVersion).toBe('v2.0.0');
 
     await getNewMajorVersion(octokit, actionContext);
@@ -1064,7 +1064,7 @@ describe('getCurrentVersion', () => {
   });
 
   it('should get current version from cache', async() => {
-    const actionContext = Object.assign({}, getActionContext(context({})), {newPatchVersion: 'v2.0.0'});
+    const actionContext = Object.assign({}, getActionContext(context({})), { newPatchVersion: 'v2.0.0' });
     expect(actionContext.newPatchVersion).toBe('v2.0.0');
 
     await getCurrentVersion(octokit, actionContext);
