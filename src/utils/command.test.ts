@@ -1,4 +1,5 @@
 /* eslint-disable no-magic-numbers */
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {Context} from '@actions/github/lib/context';
 import nock from 'nock';
 import {resolve} from 'path';
@@ -18,7 +19,7 @@ import {
   getApiFixture,
   getOctokit,
 } from '@technote-space/github-action-test-helper';
-import {ActionContext, ActionDetails, CommandOutput} from '../../src/types';
+import {ActionContext, ActionDetails, CommandOutput} from '../types';
 import {
   clone,
   checkBranch,
@@ -33,8 +34,8 @@ import {
   getNewMinorVersion,
   getNewMajorVersion,
   getCurrentVersion,
-} from '../../src/utils/command';
-import {getCacheKey, isCached} from '../../src/utils/misc';
+} from './command';
+import {getCacheKey, isCached} from './misc';
 
 beforeEach(() => {
   Logger.resetForTesting();
@@ -590,7 +591,7 @@ describe('isMergeable', () => {
   disableNetConnect(nock);
 
   it('should use cache', async() => {
-    const fn            = jest.fn();
+    const fn            = vi.fn();
     const actionContext = getActionContext(context({}));
     nock('https://api.github.com')
       .persist()
@@ -696,7 +697,7 @@ describe('afterCreatePr', () => {
   disableNetConnect(nock);
 
   it('should add labels', async() => {
-    const fn = jest.fn();
+    const fn = vi.fn();
     nock('https://api.github.com')
       .persist()
       .post('/repos/hello/world/issues/123/labels', body => {
@@ -719,7 +720,7 @@ describe('afterCreatePr', () => {
   });
 
   it('should add assignees', async() => {
-    const fn = jest.fn();
+    const fn = vi.fn();
     nock('https://api.github.com')
       .persist()
       .post('/repos/hello/world/issues/123/assignees', body => {
@@ -742,7 +743,7 @@ describe('afterCreatePr', () => {
   });
 
   it('should add reviewers', async() => {
-    const fn = jest.fn();
+    const fn = vi.fn();
     nock('https://api.github.com')
       .persist()
       .post('/repos/hello/world/pulls/123/requested_reviewers', body => {
@@ -765,7 +766,7 @@ describe('afterCreatePr', () => {
   });
 
   it('should add team reviewers', async() => {
-    const fn = jest.fn();
+    const fn = vi.fn();
     nock('https://api.github.com')
       .persist()
       .post('/repos/hello/world/pulls/123/requested_reviewers', body => {

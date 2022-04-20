@@ -1,4 +1,5 @@
 /* eslint-disable no-magic-numbers */
+import { beforeEach, describe, expect, it } from 'vitest';
 import {Context} from '@actions/github/lib/context';
 import moment from 'moment';
 import nock from 'nock';
@@ -16,9 +17,9 @@ import {
   testChildProcess,
   getOctokit,
 } from '@technote-space/github-action-test-helper';
-import {ActionContext, ActionDetails} from '../../src/types';
-import {execute, autoMerge} from '../../src/utils/process';
-import {getCacheKey} from '../../src/utils/misc';
+import {ActionContext, ActionDetails} from '../types';
+import {execute, autoMerge} from './process';
+import {getCacheKey} from './misc';
 
 const workDir   = resolve(__dirname, 'test');
 const rootDir   = resolve(__dirname, '..', 'fixtures');

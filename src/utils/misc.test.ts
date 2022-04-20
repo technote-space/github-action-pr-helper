@@ -1,4 +1,5 @@
 /* eslint-disable no-magic-numbers */
+import { beforeEach, describe, expect, it } from 'vitest';
 import {Context} from '@actions/github/lib/context';
 import nock from 'nock';
 import {resolve} from 'path';
@@ -24,9 +25,9 @@ import {
   isActiveTriggerWorkflow,
   getTriggerWorkflowMessage,
   isPassedAllChecks,
-} from '../../src/utils/misc';
-import {ActionContext, ActionDetails} from '../../src/types';
-import {DEFAULT_TRIGGER_WORKFLOW_MESSAGE} from '../../src/constant';
+} from './misc';
+import {ActionContext, ActionDetails} from '../types';
+import {DEFAULT_TRIGGER_WORKFLOW_MESSAGE} from '../constant';
 
 beforeEach(() => {
   Logger.resetForTesting();

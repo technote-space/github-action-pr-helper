@@ -1,4 +1,5 @@
 /* eslint-disable no-magic-numbers */
+import { beforeEach, describe, it } from 'vitest';
 import nock from 'nock';
 import {resolve} from 'path';
 import {Logger} from '@technote-space/github-action-log-helper';
@@ -14,7 +15,7 @@ import {
   getLogStdout,
 } from '@technote-space/github-action-test-helper';
 import {main} from '../src';
-import {MainArguments} from '../src/types';
+import {MainArguments} from './types';
 
 testFs();
 beforeEach(() => {

@@ -1,4 +1,5 @@
 /* eslint-disable no-magic-numbers */
+import { beforeEach, describe, expect, it } from 'vitest';
 import {Context} from '@actions/github/lib/context';
 import moment from 'moment';
 import nock from 'nock';
@@ -14,7 +15,7 @@ import {
   disableNetConnect,
   getOctokit,
 } from '@technote-space/github-action-test-helper';
-import {getCacheKey} from '../../src/utils/misc';
+import {getCacheKey} from './misc';
 import {
   getCommitMessage,
   getCommitName,
@@ -23,8 +24,8 @@ import {
   getPrTitle,
   getPrLink,
   getPrBody,
-} from '../../src/utils/variables';
-import {ActionContext, ActionDetails} from '../../src/types';
+} from './variables';
+import {ActionContext, ActionDetails} from '../types';
 
 beforeEach(() => {
   Logger.resetForTesting();
