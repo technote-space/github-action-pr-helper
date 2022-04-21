@@ -1,8 +1,10 @@
-import {getInput} from '@actions/core' ;
-import {Octokit} from '@technote-space/github-action-helper/dist/types';
-import {GitHelper, Utils, ContextHelper, ApiHelper} from '@technote-space/github-action-helper';
-import {Logger} from '@technote-space/github-action-log-helper';
-import {components} from '@octokit/openapi-types';
+import type { ActionContext, CommandOutput, ExecuteTask, Null } from '../types';
+import type { components } from '@octokit/openapi-types';
+import type { Types } from '@technote-space/github-action-helper';
+import type { GitHelper } from '@technote-space/github-action-helper';
+import type { Logger } from '@technote-space/github-action-log-helper';
+import { getInput } from '@actions/core' ;
+import { Utils, ContextHelper, ApiHelper } from '@technote-space/github-action-helper';
 import {
   getActionDetail,
   isDisabledDeletePackage,
@@ -23,25 +25,24 @@ import {
   getPrTitle,
   getPrBody,
 } from './variables';
-import {ActionContext, CommandOutput, ExecuteTask, Null} from '../types';
 
 type PullsListResponseData = components['schemas']['pull-request-simple'];
-const {getWorkspace, getLocalRefspec, getRefspec} = Utils;
-const {getOctokit, ensureNotNullValue, useNpm}    = Utils;
-const {getRepository, isPush}                     = ContextHelper;
+const { getWorkspace, getLocalRefspec, getRefspec } = Utils;
+const { getOctokit, ensureNotNullValue, useNpm }    = Utils;
+const { getRepository, isPush }                     = ContextHelper;
 
-export const getApiHelper = (octokit: Octokit, context: ActionContext, logger?: Logger): ApiHelper => new ApiHelper(octokit, context.actionContext, logger);
+export const getApiHelper = (octokit: Types.Octokit, context: ActionContext, logger?: Logger): ApiHelper => new ApiHelper(octokit, context.actionContext, logger);
 
 export const userConfig   = async(helper: GitHelper, context: ActionContext): Promise<void> => await helper.config(getWorkspace(), {
   name: getCommitName(context),
   email: getCommitEmail(context),
 });
-export const branchConfig = async(helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<void> => await helper.config(getWorkspace(), {
+export const branchConfig = async(helper: GitHelper, octokit: Types.Octokit, context: ActionContext): Promise<void> => await helper.config(getWorkspace(), {
   defaultBranch: await getDefaultBranch(octokit, context),
 });
 
-export const clone = async(helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
-  const branchName = await getPrBranchName(helper, octokit, context);
+export const clone = async(helper: GitHelper, logger: Logger, octokit: Types.Octokit, context: ActionContext): Promise<void> => {
+  const branchName = await getPrBranchName(octokit, context);
   logger.startProcess('Fetching...');
   helper.useOrigin(true);
   await helper.fetchOrigin(getWorkspace(), context.actionContext, ['--no-tags'], [getRefspec(branchName)]);
@@ -56,9 +57,9 @@ export const clone = async(helper: GitHelper, logger: Logger, octokit: Octokit, 
   await helper.switchBranch(getWorkspace(), branchName);
 };
 
-export const checkBranch = async(helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<boolean> => {
+export const checkBranch = async(helper: GitHelper, logger: Logger, octokit: Types.Octokit, context: ActionContext): Promise<boolean> => {
   const clonedBranch = await helper.getCurrentBranchName(getWorkspace());
-  const branchName   = await getPrBranchName(helper, octokit, context);
+  const branchName   = await getPrBranchName(octokit, context);
   if (branchName === clonedBranch) {
     await helper.runCommand(getWorkspace(),
       {
@@ -168,7 +169,7 @@ const initDirectory = async(helper: GitHelper, logger: Logger): Promise<void> =>
   logger.startProcess('Initializing working directory...');
 
   helper.useOrigin(true);
-  await helper.runCommand(getWorkspace(), {command: 'rm', args: ['-rdf', getWorkspace()]});
+  await helper.runCommand(getWorkspace(), { command: 'rm', args: ['-rdf', getWorkspace()] });
 };
 
 export const merge = async(branch: string, helper: GitHelper, logger: Logger, context: ActionContext): Promise<boolean> => {
@@ -183,7 +184,7 @@ export const merge = async(branch: string, helper: GitHelper, logger: Logger, co
     },
   );
 
-  return !results[0].stdout.some(RegExp.prototype.test, /^CONFLICT /);
+  return !results[0]!.stdout.some(RegExp.prototype.test, /^CONFLICT /);
 };
 
 export const abortMerge = async(helper: GitHelper, logger: Logger): Promise<void> => {
@@ -210,7 +211,7 @@ const forcePush = async(branchName: string, helper: GitHelper, logger: Logger, c
   await helper.forcePush(getWorkspace(), branchName, context.actionContext);
 };
 
-export const isMergeable = async(number: number, octokit: Octokit, context: ActionContext): Promise<boolean> => getCache<boolean>(getCacheKey('pulls.get', {
+export const isMergeable = async(number: number, octokit: Types.Octokit, context: ActionContext): Promise<boolean> => getCache<boolean>(getCacheKey('pulls.get', {
   owner: context.actionContext.repo.owner,
   repo: context.actionContext.repo.repo,
   'pull_number': number,
@@ -220,7 +221,7 @@ export const isMergeable = async(number: number, octokit: Octokit, context: Acti
   'pull_number': number,
 })).data.mergeable, false), context);
 
-export const afterCreatePr = async(branchName: string, number: number, helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<void> => {
+export const afterCreatePr = async(branchName: string, number: number, helper: GitHelper, logger: Logger, octokit: Types.Octokit, context: ActionContext): Promise<void> => {
   if (context.actionDetail.labels?.length) {
     logger.info('Adding labels...');
     console.log(context.actionDetail.labels);
@@ -267,19 +268,19 @@ export const afterCreatePr = async(branchName: string, number: number, helper: G
   }
 };
 
-export const updatePr = async(branchName: string, files: string[], output: CommandOutput[], helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<boolean> => {
+export const updatePr = async(branchName: string, files: string[], output: CommandOutput[], helper: GitHelper, logger: Logger, octokit: Types.Octokit, context: ActionContext): Promise<boolean> => {
   const apiHelper = getApiHelper(getOctokit(getApiToken()), context, logger);
   const pr        = await apiHelper.findPullRequest(branchName);
   if (pr) {
     logger.startProcess('Creating comment to PullRequest...');
-    await apiHelper.createCommentToPr(branchName, await getPrBody(true, files, output, helper, octokit, context));
+    await apiHelper.createCommentToPr(branchName, await getPrBody(true, files, output, octokit, context));
     return isMergeable(pr.number, octokit, context);
   }
 
   logger.startProcess('Creating PullRequest...');
-  const {number} = await apiHelper.pullsCreate(branchName, {
-    title: await getPrTitle(helper, octokit, context),
-    body: await getPrBody(false, files, output, helper, octokit, context),
+  const { number } = await apiHelper.pullsCreate(branchName, {
+    title: await getPrTitle(octokit, context),
+    body: await getPrBody(false, files, output, octokit, context),
   });
 
   await afterCreatePr(branchName, number, helper, logger, octokit, context);
@@ -289,7 +290,7 @@ export const updatePr = async(branchName: string, files: string[], output: Comma
 
 const runCommand = async(command: string | ExecuteTask, helper: GitHelper, logger: Logger, context: ActionContext): Promise<CommandOutput> => {
   if ('string' === typeof command) {
-    return (await helper.runCommand(getWorkspace(), command))[0];
+    return (await helper.runCommand(getWorkspace(), command))[0]!;
   }
 
   const result = await command(context, helper, logger);
@@ -328,7 +329,7 @@ const runCommands = async(helper: GitHelper, logger: Logger, context: ActionCont
   };
 };
 
-export const getChangedFiles = async(helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<{
+export const getChangedFiles = async(helper: GitHelper, logger: Logger, octokit: Types.Octokit, context: ActionContext): Promise<{
   files: string[];
   output: CommandOutput[];
   aborted?: boolean;
@@ -337,14 +338,14 @@ export const getChangedFiles = async(helper: GitHelper, logger: Logger, octokit:
   if (await checkBranch(helper, logger, octokit, context)) {
     if (!await merge(getContextBranch(context), helper, logger, context)) {
       await abortMerge(helper, logger);
-      return {files: [], output: [], aborted: true};
+      return { files: [], output: [], aborted: true };
     }
   }
 
   return runCommands(helper, logger, context);
 };
 
-export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<{
+export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger, octokit: Types.Octokit, context: ActionContext): Promise<{
   files: string[];
   output: CommandOutput[];
 }> => {
@@ -353,20 +354,20 @@ export const getChangedFilesForRebase = async(helper: GitHelper, logger: Logger,
   const branchName = getContextBranch(context);
   await helper.fetchOrigin(getWorkspace(), context.actionContext, ['--no-tags'], [getRefspec(branchName)]);
   await helper.switchBranch(getWorkspace(), branchName);
-  await helper.createBranch(getWorkspace(), await getPrBranchName(helper, octokit, context));
+  await helper.createBranch(getWorkspace(), await getPrBranchName(octokit, context));
 
   return runCommands(helper, logger, context);
 };
 
 export const closePR = async(branchName: string, logger: Logger, context: ActionContext, message?: string): Promise<void> => getApiHelper(getOctokit(getApiToken()), context, logger).closePR(branchName, message ?? context.actionDetail.prCloseMessage);
 
-export const resolveConflicts = async(branchName: string, helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<string> => {
+export const resolveConflicts = async(branchName: string, helper: GitHelper, logger: Logger, octokit: Types.Octokit, context: ActionContext): Promise<string> => {
   if (await merge(getContextBranch(context), helper, logger, context)) {
     // succeeded to merge
     await push(branchName, helper, logger, context);
   } else {
     // failed to merge
-    const {files, output} = await getChangedFilesForRebase(helper, logger, octokit, context);
+    const { files, output } = await getChangedFilesForRebase(helper, logger, octokit, context);
     if (!files.length) {
       await closePR(branchName, logger, context);
       return 'has been closed because there is no diff';
@@ -374,24 +375,24 @@ export const resolveConflicts = async(branchName: string, helper: GitHelper, log
     await commit(helper, logger, context);
     await forcePush(branchName, helper, logger, context);
     await getApiHelper(getOctokit(getApiToken()), context, logger).pullsCreateOrUpdate(branchName, {
-      title: await getPrTitle(helper, octokit, context),
-      body: await getPrBody(false, files, output, helper, octokit, context),
+      title: await getPrTitle(octokit, context),
+      body: await getPrBody(false, files, output, octokit, context),
     });
   }
   return 'updated';
 };
 
-export const getDefaultBranch = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('repos', {
+export const getDefaultBranch = async(octokit: Types.Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('repos', {
   owner: context.actionContext.repo.owner,
   repo: context.actionContext.repo.repo,
 }), () => getApiHelper(octokit, context).getDefaultBranch(), context);
 
-export const getCurrentVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('current-version'), () => getApiHelper(octokit, context).getLastTag(), context);
+export const getCurrentVersion = async(octokit: Types.Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('current-version'), () => getApiHelper(octokit, context).getLastTag(), context);
 
-export const getNewPatchVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-patch-version'), () => getApiHelper(octokit, context).getNewPatchVersion(), context);
+export const getNewPatchVersion = async(octokit: Types.Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-patch-version'), () => getApiHelper(octokit, context).getNewPatchVersion(), context);
 
-export const getNewMinorVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-minor-version'), () => getApiHelper(octokit, context).getNewMinorVersion(), context);
+export const getNewMinorVersion = async(octokit: Types.Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-minor-version'), () => getApiHelper(octokit, context).getNewMinorVersion(), context);
 
-export const getNewMajorVersion = async(octokit: Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-major-version'), () => getApiHelper(octokit, context).getNewMajorVersion(), context);
+export const getNewMajorVersion = async(octokit: Types.Octokit, context: ActionContext): Promise<string> => getCache<string>(getCacheKey('new-major-version'), () => getApiHelper(octokit, context).getNewMajorVersion(), context);
 
-export const findPR = async(branchName: string, octokit: Octokit, context: ActionContext): Promise<PullsListResponseData | Null> => getCache(getCacheKey('pr', {branchName}), () => getApiHelper(octokit, context).findPullRequest(branchName), context);
+export const findPR = async(branchName: string, octokit: Types.Octokit, context: ActionContext): Promise<PullsListResponseData | Null> => getCache(getCacheKey('pr', { branchName }), () => getApiHelper(octokit, context).findPullRequest(branchName), context);

@@ -1,8 +1,8 @@
+import type { ActionContext, CommandOutput } from '../types';
+import type { Types } from '@technote-space/github-action-helper';
+import { Utils, ContextHelper } from '@technote-space/github-action-helper';
 import moment from 'moment';
-import {Utils, ContextHelper, GitHelper} from '@technote-space/github-action-helper';
-import {Octokit} from '@technote-space/github-action-helper/dist/types';
-import {ActionContext, CommandOutput} from '../types';
-import {getNewPatchVersion, getNewMinorVersion, getNewMajorVersion, getCurrentVersion, findPR, getDefaultBranch} from './command';
+import { getNewPatchVersion, getNewMinorVersion, getNewMajorVersion, getCurrentVersion, findPR, getDefaultBranch } from './command';
 import {
   getActionDetail,
   getDefaultBranchUrl,
@@ -19,8 +19,8 @@ import {
   ParameterRequiredError,
 } from './misc';
 
-const {getBranch} = Utils;
-const {isPush}    = ContextHelper;
+const { getBranch } = Utils;
+const { isPush }    = ContextHelper;
 
 export const getCommitMessage = (context: ActionContext): string => getActionDetail<string>('commitMessage', context);
 
@@ -28,20 +28,13 @@ export const getCommitName = (context: ActionContext): string => getActionDetail
 
 export const getCommitEmail = (context: ActionContext): string => getActionDetail<string>('commitEmail', context, () => `${context.actionContext.actor}@users.noreply.github.com`);
 
-const getVariable = (index: number, context: ActionContext): string => getActionDetail<string[]>('prVariables', context)[index];
+const getVariable = (index: number, context: ActionContext): string => getActionDetail<string[]>('prVariables', context)[index]!;
 
 export const getPrLink = (context: ActionContext): string => context.actionContext.payload.pull_request ? `[${context.actionContext.payload.pull_request.title}](${context.actionContext.payload.pull_request.html_url})` : '';
 
 const getDate = (index: number, context: ActionContext): string => moment().format(getActionDetail<string[]>('prDateFormats', context)[index]);
 
-/**
- * @param {boolean} isComment is comment?
- * @param {GitHelper} helper git helper
- * @param {Octokit} octokit octokit
- * @param {ActionContext} context context
- * @return {Promise<{string, Function}[]>} replacer
- */
-const contextVariables = async(isComment: boolean, helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<{ key: string; replace: () => Promise<string> }[]> => {
+const contextVariables = async(isComment: boolean, octokit: Types.Octokit, context: ActionContext): Promise<{ key: string; replace: () => Promise<string> }[]> => {
   const getContext = async(branch: string): Promise<ActionContext> => {
     if (isComment) {
       if (branch === await getDefaultBranch(octokit, context)) {
@@ -64,19 +57,19 @@ const contextVariables = async(isComment: boolean, helper: GitHelper, octokit: O
   };
 
   return [
-    {key: 'PR_NUMBER', replace: getPrParamFunc(pr => pr.number)},
-    {key: 'PR_NUMBER_REF', replace: getPrParamFunc(async(pr) => pr.number ? `#${pr.number}` : await getDefaultBranchUrl(octokit, context))},
-    {key: 'PR_ID', replace: getPrParamFunc(pr => pr.id)},
-    {key: 'PR_HEAD_REF', replace: getPrParamFunc(pr => pr.head.ref)},
-    {key: 'PR_BASE_REF', replace: getPrParamFunc(pr => pr.base.ref)},
-    {key: 'PR_TITLE', replace: getPrParamFunc(pr => pr.title)},
-    {key: 'PR_URL', replace: getPrParamFunc(pr => pr.html_url)},
-    {key: 'PR_MERGE_REF', replace: getPrParamFunc(async(pr) => pr.number ? `${pr.head.ref} -> ${pr.base.ref}` : await getDefaultBranch(octokit, context))},
-    {key: 'PR_LINK', replace: async(): Promise<string> => getPrLink(context)},
-    {key: 'CURRENT_VERSION', replace: async(): Promise<string> => getCurrentVersion(octokit, context)},
-    {key: 'PATCH_VERSION', replace: async(): Promise<string> => getNewPatchVersion(octokit, context)},
-    {key: 'MINOR_VERSION', replace: async(): Promise<string> => getNewMinorVersion(octokit, context)},
-    {key: 'MAJOR_VERSION', replace: async(): Promise<string> => getNewMajorVersion(octokit, context)},
+    { key: 'PR_NUMBER', replace: getPrParamFunc(pr => pr.number) },
+    { key: 'PR_NUMBER_REF', replace: getPrParamFunc(async(pr) => pr.number ? `#${pr.number}` : await getDefaultBranchUrl(octokit, context)) },
+    { key: 'PR_ID', replace: getPrParamFunc(pr => pr.id) },
+    { key: 'PR_HEAD_REF', replace: getPrParamFunc(pr => pr.head.ref) },
+    { key: 'PR_BASE_REF', replace: getPrParamFunc(pr => pr.base.ref) },
+    { key: 'PR_TITLE', replace: getPrParamFunc(pr => pr.title) },
+    { key: 'PR_URL', replace: getPrParamFunc(pr => pr.html_url) },
+    { key: 'PR_MERGE_REF', replace: getPrParamFunc(async(pr) => pr.number ? `${pr.head.ref} -> ${pr.base.ref}` : await getDefaultBranch(octokit, context)) },
+    { key: 'PR_LINK', replace: async(): Promise<string> => getPrLink(context) },
+    { key: 'CURRENT_VERSION', replace: async(): Promise<string> => getCurrentVersion(octokit, context) },
+    { key: 'PATCH_VERSION', replace: async(): Promise<string> => getNewPatchVersion(octokit, context) },
+    { key: 'MINOR_VERSION', replace: async(): Promise<string> => getNewMinorVersion(octokit, context) },
+    { key: 'MAJOR_VERSION', replace: async(): Promise<string> => getNewMajorVersion(octokit, context) },
     // eslint-disable-next-line no-magic-numbers
   ].concat([...Array(context.actionDetail.prVariables?.length ?? 0).keys()].map(index => ({
     // eslint-disable-next-line no-magic-numbers
@@ -88,16 +81,9 @@ const contextVariables = async(isComment: boolean, helper: GitHelper, octokit: O
   })));
 };
 
-/**
- * @param {string} string string
- * @param {GitHelper} helper git helper
- * @param {Octokit} octokit octokit
- * @param {ActionDetails} context action details
- * @return {Promise<string>} replaced
- */
-const replaceContextVariables = async(string: string, helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(string, await contextVariables(false, helper, octokit, context));
+const replaceContextVariables = async(string: string, octokit: Types.Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(string, await contextVariables(false, octokit, context));
 
-export const getPrBranchName = async(helper: GitHelper, octokit: Octokit, context: ActionContext, isDuplicateCheck = false): Promise<string> => {
+export const getPrBranchName = async(octokit: Types.Octokit, context: ActionContext, isDuplicateCheck = false): Promise<string> => {
   if (isPush(context.actionContext)) {
     return getBranch(context.actionContext);
   }
@@ -106,7 +92,8 @@ export const getPrBranchName = async(helper: GitHelper, octokit: Octokit, contex
     return getPrHeadRef(context);
   }
 
-  let prefix: string, branch: string;
+  let prefix: string;
+  let branch: string;
   if (await isDefaultBranch(octokit, context)) {
     prefix = getPrBranchPrefixForDefaultBranch(context);
   } else {
@@ -127,21 +114,20 @@ export const getPrBranchName = async(helper: GitHelper, octokit: Octokit, contex
     throw error;
   }
 
-  return prefix + await replaceContextVariables(branch, helper, octokit, context);
+  return prefix + await replaceContextVariables(branch, octokit, context);
 };
 
-export const getPrTitle = async(helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<string> => await replaceContextVariables(
+export const getPrTitle = async(octokit: Types.Octokit, context: ActionContext): Promise<string> => await replaceContextVariables(
   (
     await isDefaultBranch(octokit, context) ?
       getActionDetail<string>('prTitleForDefaultBranch', context, () => getActionDetail<string>('prTitle', context)) :
       getActionDetail<string>('prTitle', context)
   ).trim(),
-  helper,
   octokit,
   context,
 );
 
-const prBodyVariables = async(isComment: boolean, files: string[], output: CommandOutput[], helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<{ key: string; replace: () => Promise<string> }[]> => {
+const prBodyVariables = async(isComment: boolean, files: string[], output: CommandOutput[], octokit: Types.Octokit, context: ActionContext): Promise<{ key: string; replace: () => Promise<string> }[]> => {
   const toCode = (string: string): string => string.length ? ['', '```Shell', string, '```', ''].join('\n') : '';
   return [
     {
@@ -214,12 +200,12 @@ const prBodyVariables = async(isComment: boolean, files: string[], output: Comma
       key: 'ACTION_MARKETPLACE_URL',
       replace: async(): Promise<string> => `https://github.com/marketplace/actions/${context.actionDetail.actionRepo}`,
     },
-  ].concat(await contextVariables(isComment, helper, octokit, context));
+  ].concat(await contextVariables(isComment, octokit, context));
 };
 
-const replacePrBodyVariables = async(isComment: boolean, prBody: string, files: string[], output: CommandOutput[], helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(prBody, await prBodyVariables(isComment, files, output, helper, octokit, context));
+const replacePrBodyVariables = async(isComment: boolean, prBody: string, files: string[], output: CommandOutput[], octokit: Types.Octokit, context: ActionContext): Promise<string> => Utils.replaceVariables(prBody, await prBodyVariables(isComment, files, output, octokit, context));
 
-export const getPrBody = async(isComment: boolean, files: string[], output: CommandOutput[], helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<string> => replacePrBodyVariables(
+export const getPrBody = async(isComment: boolean, files: string[], output: CommandOutput[], octokit: Types.Octokit, context: ActionContext): Promise<string> => replacePrBodyVariables(
   isComment,
   (
     isComment ?
@@ -232,7 +218,6 @@ export const getPrBody = async(isComment: boolean, files: string[], output: Comm
   ).trim().split(/\r?\n/).map(line => line.replace(/^[\s\t]+/, '')).join('\n'),
   files,
   output,
-  helper,
   octokit,
   context,
 );

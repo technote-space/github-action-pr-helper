@@ -1,9 +1,12 @@
 /* eslint-disable no-magic-numbers */
-import {Context} from '@actions/github/lib/context';
+import { resolve } from 'path';
+import { Context } from '@actions/github/lib/context';
+import { Logger } from '@technote-space/github-action-log-helper';
+import { testEnv, generateContext, testFs, getOctokit, disableNetConnect, getApiFixture } from '@technote-space/github-action-test-helper';
 import nock from 'nock';
-import {resolve} from 'path';
-import {Logger} from '@technote-space/github-action-log-helper';
-import {testEnv, generateContext, testFs, getOctokit, disableNetConnect, getApiFixture} from '@technote-space/github-action-test-helper';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { DEFAULT_TRIGGER_WORKFLOW_MESSAGE } from '../constant';
+import { ActionContext, ActionDetails } from '../types';
 import {
   getActionDetail,
   replaceDirectory,
@@ -24,9 +27,7 @@ import {
   isActiveTriggerWorkflow,
   getTriggerWorkflowMessage,
   isPassedAllChecks,
-} from '../../src/utils/misc';
-import {ActionContext, ActionDetails} from '../../src/types';
-import {DEFAULT_TRIGGER_WORKFLOW_MESSAGE} from '../../src/constant';
+} from './misc';
 
 beforeEach(() => {
   Logger.resetForTesting();
@@ -43,7 +44,7 @@ const getActionContext             = (context: Context, _actionDetails?: ActionD
   actionContext: context,
   actionDetail: _actionDetails ?? actionDetails,
   cache: {
-    [getCacheKey('repos', {owner: context.repo.owner, repo: context.repo.repo})]: defaultBranch ?? 'master',
+    [getCacheKey('repos', { owner: context.repo.owner, repo: context.repo.repo })]: defaultBranch ?? 'master',
   },
 });
 const generateActionContext        = (
@@ -111,13 +112,13 @@ describe('isTargetContext', () => {
     }, {
       payload: {
         'pull_request': {
-          labels: [{name: 'label1'}, {name: 'label2'}],
+          labels: [{ name: 'label1' }, { name: 'label2' }],
           head: {
             ref: 'change',
           },
         },
       },
-    }, {includeLabels: ['label2']}))).toBe(true);
+    }, { includeLabels: ['label2'] }))).toBe(true);
   });
 
   it('should return true 3', async() => {
@@ -127,13 +128,13 @@ describe('isTargetContext', () => {
     }, {
       payload: {
         'pull_request': {
-          labels: [{name: 'label2'}],
+          labels: [{ name: 'label2' }],
           head: {
             ref: 'change',
           },
         },
       },
-    }, {includeLabels: ['label1', 'label2', 'label3']}))).toBe(true);
+    }, { includeLabels: ['label1', 'label2', 'label3'] }))).toBe(true);
   });
 
   it('should return true 4', async() => {
@@ -196,7 +197,7 @@ describe('isTargetContext', () => {
     expect(await isTargetContext(octokit, generateActionContext({
       ref: 'refs/heads/test/change',
       event: 'push',
-    }, {}, {targetBranchPrefix: 'test/', targetEvents: {push: '*'}}))).toBe(true);
+    }, {}, { targetBranchPrefix: 'test/', targetEvents: { push: '*' } }))).toBe(true);
   });
 
   it('should return true 11', async() => {
@@ -284,13 +285,13 @@ describe('isTargetContext', () => {
     }, {
       payload: {
         'pull_request': {
-          labels: [{name: 'label1'}],
+          labels: [{ name: 'label1' }],
           head: {
             ref: 'change',
           },
         },
       },
-    }, {includeLabels: 'test2'}))).toBe(false);
+    }, { includeLabels: 'test2' }))).toBe(false);
   });
 
   it('should return false 3', async() => {
@@ -301,13 +302,13 @@ describe('isTargetContext', () => {
     }, {
       payload: {
         'pull_request': {
-          labels: [{name: 'label2'}],
+          labels: [{ name: 'label2' }],
           head: {
             ref: 'change',
           },
         },
       },
-    }, {includeLabels: 'test1'}))).toBe(false);
+    }, { includeLabels: 'test1' }))).toBe(false);
   });
 
   it('should return false 4', async() => {
@@ -394,7 +395,7 @@ describe('isActionPr', () => {
           },
         },
       },
-    }, {prBranchPrefix: 'prefix/'}))).toBe(true);
+    }, { prBranchPrefix: 'prefix/' }))).toBe(true);
   });
 
   it('should return false 1', () => {
@@ -606,7 +607,7 @@ describe('isActiveTriggerWorkflow', () => {
 
   it('should return true 2', () => {
     process.env.INPUT_API_TOKEN = 'test-token';
-    expect(isActiveTriggerWorkflow(generateActionContext({}, undefined, {triggerWorkflowMessage: 'test'}))).toBe(true);
+    expect(isActiveTriggerWorkflow(generateActionContext({}, undefined, { triggerWorkflowMessage: 'test' }))).toBe(true);
   });
 
   it('should return false 1', () => {
@@ -615,13 +616,13 @@ describe('isActiveTriggerWorkflow', () => {
 
   it('should return false 2', () => {
     process.env.INPUT_API_TOKEN = 'test-token';
-    expect(isActiveTriggerWorkflow(generateActionContext({}, undefined, {triggerWorkflowMessage: ''}))).toBe(false);
+    expect(isActiveTriggerWorkflow(generateActionContext({}, undefined, { triggerWorkflowMessage: '' }))).toBe(false);
   });
 });
 
 describe('getTriggerWorkflowMessage', () => {
   it('should get message', () => {
-    expect(getTriggerWorkflowMessage(generateActionContext({}, undefined, {triggerWorkflowMessage: 'test'}))).toBe('test');
+    expect(getTriggerWorkflowMessage(generateActionContext({}, undefined, { triggerWorkflowMessage: 'test' }))).toBe('test');
   });
 
   it('should get default message', () => {

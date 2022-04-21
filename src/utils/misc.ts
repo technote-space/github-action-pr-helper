@@ -1,23 +1,17 @@
-import {getInput} from '@actions/core';
-import {Utils, ContextHelper, GitHelper} from '@technote-space/github-action-helper';
-import {Logger} from '@technote-space/github-action-log-helper';
-import {Octokit} from '@technote-space/github-action-helper/dist/types';
-import {isTargetEvent, isTargetLabels} from '@technote-space/filter-github-action';
-import {ActionContext, PullsParams, PayloadPullsParams, Null} from '../types';
-import {getDefaultBranch} from './command';
-import {DEFAULT_TARGET_EVENTS, DEFAULT_TRIGGER_WORKFLOW_MESSAGE} from '../constant';
+import type { ActionContext, PullsParams, PayloadPullsParams, Null } from '../types';
+import type { Types } from '@technote-space/github-action-helper';
+import { getInput } from '@actions/core';
+import { isTargetEvent, isTargetLabels } from '@technote-space/filter-github-action';
+import { Utils, ContextHelper, GitHelper } from '@technote-space/github-action-helper';
+import { Logger } from '@technote-space/github-action-log-helper';
+import { DEFAULT_TARGET_EVENTS, DEFAULT_TRIGGER_WORKFLOW_MESSAGE } from '../constant';
+import { getDefaultBranch } from './command';
 
-const {getWorkspace, getPrefixRegExp, getAccessToken}                     = Utils;
-const {escapeRegExp, replaceAll, getBranch}                               = Utils;
-const {isPr, isCron, isPush, isCustomEvent, isManualEvent, isWorkflowRun} = ContextHelper;
+const { getWorkspace, getPrefixRegExp, getAccessToken }                     = Utils;
+const { escapeRegExp, replaceAll, getBranch }                               = Utils;
+const { isPr, isCron, isPush, isCustomEvent, isManualEvent, isWorkflowRun } = ContextHelper;
 
-/**
- * ParameterRequiredError
- */
 export class ParameterRequiredError extends Error {
-  /**
-   * @param {string} target target
-   */
   constructor(target: string) {
     super(`parameter [${target}] is required.`);
 
@@ -44,7 +38,7 @@ export const replaceDirectory = (message: string): string => {
   return replaceAll(replaceAll(message, ` -C ${workDir}`, ''), workDir, '[Working Directory]');
 };
 
-export const getDefaultBranchUrl = async(octokit: Octokit, context: ActionContext): Promise<string> => `https://github.com/${context.actionContext.repo.owner}/${context.actionContext.repo.repo}/tree/${await getDefaultBranch(octokit, context)}`;
+export const getDefaultBranchUrl = async(octokit: Types.Octokit, context: ActionContext): Promise<string> => `https://github.com/${context.actionContext.repo.owner}/${context.actionContext.repo.repo}/tree/${await getDefaultBranch(octokit, context)}`;
 
 export const getPrHeadRef = (context: ActionContext): string => context.actionContext.payload.pull_request?.head.ref ?? '';
 
@@ -58,7 +52,7 @@ export const isActionPr = (context: ActionContext): boolean => getPrefixRegExp(g
 
 export const getContextBranch = (context: ActionContext): string => context.isBatchProcess ? getPrBaseRef(context) : (getBranch(context.actionContext) || getPrHeadRef(context));
 
-export const isDefaultBranch = async(octokit: Octokit, context: ActionContext): Promise<boolean> => await getDefaultBranch(octokit, context) === getContextBranch(context);
+export const isDefaultBranch = async(octokit: Types.Octokit, context: ActionContext): Promise<boolean> => await getDefaultBranch(octokit, context) === getContextBranch(context);
 
 export const checkDefaultBranch = (context: ActionContext): boolean => context.actionDetail.checkDefaultBranch ?? true;
 
@@ -70,7 +64,7 @@ export const isClosePR = (context: ActionContext): boolean => isPr(context.actio
 
 export const isNotCreatePR = (context: ActionContext): boolean => true === context.actionDetail.notCreatePr;
 
-export const isTargetBranch = async(branchName: string, octokit: Octokit, context: ActionContext): Promise<boolean> => {
+export const isTargetBranch = async(branchName: string, octokit: Types.Octokit, context: ActionContext): Promise<boolean> => {
   if (branchName === await getDefaultBranch(octokit, context)) {
     return checkDefaultBranch(context);
   }
@@ -83,7 +77,7 @@ export const isTargetBranch = async(branchName: string, octokit: Octokit, contex
   return !checkOnlyDefaultBranch(context);
 };
 
-export const isTargetContext = async(octokit: Octokit, context: ActionContext): Promise<boolean> => {
+export const isTargetContext = async(octokit: Types.Octokit, context: ActionContext): Promise<boolean> => {
   if (!isTargetEvent(context.actionDetail.targetEvents ?? DEFAULT_TARGET_EVENTS, context.actionContext)) {
     return false;
   }
@@ -142,7 +136,7 @@ export const getHelper = (context: ActionContext): GitHelper => new GitHelper(ne
   filter: (line: string): boolean => filterGitStatus(line, context) && filterExtension(line, context),
 });
 
-export const getPullsArgsForDefaultBranch = async(octokit: Octokit, context: ActionContext): Promise<PullsParams> => ({
+export const getPullsArgsForDefaultBranch = async(octokit: Types.Octokit, context: ActionContext): Promise<PullsParams> => ({
   number: 0,
   id: 0,
   head: {
@@ -164,9 +158,9 @@ export const getPullsArgsForDefaultBranch = async(octokit: Octokit, context: Act
   'html_url': await getDefaultBranchUrl(octokit, context),
 });
 
-export const ensureGetPulls = async(pull: PayloadPullsParams | Null, octokit: Octokit, context: ActionContext): Promise<PayloadPullsParams> => pull ?? await getPullsArgsForDefaultBranch(octokit, context);
+export const ensureGetPulls = async(pull: PayloadPullsParams | Null, octokit: Types.Octokit, context: ActionContext): Promise<PayloadPullsParams> => pull ?? await getPullsArgsForDefaultBranch(octokit, context);
 
-export const getActionContext = async(pull: PayloadPullsParams | Null, octokit: Octokit, context: ActionContext): Promise<ActionContext> => {
+export const getActionContext = async(pull: PayloadPullsParams | Null, octokit: Types.Octokit, context: ActionContext): Promise<ActionContext> => {
   const _pull = await ensureGetPulls(pull, octokit, context);
   return {
     ...context,
@@ -236,8 +230,8 @@ export const checkSuiteState = (checkSuiteId: number) => (suite: ChecksListSuite
   return suite.id !== checkSuiteId;
 };
 
-export const isPassedAllChecks = async(octokit: Octokit, context: ActionContext): Promise<boolean> => {
-  const {data: status} = await octokit.rest.repos.getCombinedStatusForRef({
+export const isPassedAllChecks = async(octokit: Types.Octokit, context: ActionContext): Promise<boolean> => {
+  const { data: status } = await octokit.rest.repos.getCombinedStatusForRef({
     ...context.actionContext.repo,
     ref: context.actionContext.sha,
   });
