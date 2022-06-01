@@ -1,4 +1,4 @@
-import type { Context } from '@actions/github/lib/context';
+import type { Context } from '@actions/github/lib/context.js';
 import { GitHelper } from '@technote-space/github-action-helper';
 import { Logger } from '@technote-space/github-action-log-helper';
 

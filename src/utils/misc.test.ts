@@ -1,12 +1,12 @@
 /* eslint-disable no-magic-numbers */
 import { resolve } from 'path';
-import { Context } from '@actions/github/lib/context';
+import { Context } from '@actions/github/lib/context.js';
 import { Logger } from '@technote-space/github-action-log-helper';
 import { testEnv, generateContext, testFs, getOctokit, disableNetConnect, getApiFixture } from '@technote-space/github-action-test-helper';
 import nock from 'nock';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DEFAULT_TRIGGER_WORKFLOW_MESSAGE } from '../constant';
-import { ActionContext, ActionDetails } from '../types';
+import { DEFAULT_TRIGGER_WORKFLOW_MESSAGE } from '../constant.js';
+import { ActionContext, ActionDetails } from '../types.js';
 import {
   getActionDetail,
   replaceDirectory,
@@ -27,7 +27,7 @@ import {
   isActiveTriggerWorkflow,
   getTriggerWorkflowMessage,
   isPassedAllChecks,
-} from './misc';
+} from './misc.js';
 
 beforeEach(() => {
   Logger.resetForTesting();

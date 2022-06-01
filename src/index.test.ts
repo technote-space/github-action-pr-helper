@@ -14,8 +14,8 @@ import {
 } from '@technote-space/github-action-test-helper';
 import nock from 'nock';
 import { beforeEach, describe, it } from 'vitest';
-import { main } from '../src';
-import { MainArguments } from './types';
+import { MainArguments } from './types.js';
+import { main } from './index.js';
 
 testFs();
 beforeEach(() => {

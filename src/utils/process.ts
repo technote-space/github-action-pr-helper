@@ -1,11 +1,11 @@
-import type { ActionContext, ProcessResult, PullsParams, CommandOutput } from '../types';
-import type { Types } from '@technote-space/github-action-helper';
+import type { ActionContext, ProcessResult, PullsParams, CommandOutput } from '../types.js';
+import type { Octokit } from '@technote-space/github-action-helper';
 import type { GitHelper } from '@technote-space/github-action-helper';
 import { setOutput } from '@actions/core';
 import { Utils, ContextHelper } from '@technote-space/github-action-helper';
 import { Logger } from '@technote-space/github-action-log-helper';
-import { INTERVAL_MS } from '../constant';
-import { AllProcessResult } from '../types';
+import { INTERVAL_MS } from '../constant.js';
+import { AllProcessResult } from '../types.js';
 import {
   getApiHelper,
   getChangedFiles,
@@ -19,7 +19,7 @@ import {
   findPR,
   getDefaultBranch,
   branchConfig,
-} from './command';
+} from './command.js';
 import {
   replaceDirectory,
   isActionPr,
@@ -34,8 +34,8 @@ import {
   getAutoMergeThresholdDays,
   isPassedAllChecks,
   isNotCreatePR,
-} from './misc';
-import { getPrBranchName } from './variables';
+} from './misc.js';
+import { getPrBranchName } from './variables.js';
 
 const { sleep, getBranch, objectGet } = Utils;
 const { isPr, isPush }                = ContextHelper;
@@ -47,7 +47,7 @@ const getResult = (result: 'succeeded' | 'failed' | 'skipped' | 'not changed', d
   branch: (fork ? `${fork}:` : '') + (getPrHeadRef(context) || getBranch(context.actionContext)),
 });
 
-const checkActionPr = async(logger: Logger, octokit: Types.Octokit, context: ActionContext): Promise<ProcessResult | true> => {
+const checkActionPr = async(logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult | true> => {
   const defaultBranch = await getDefaultBranch(octokit, context);
   if (defaultBranch === getPrHeadRef(context)) {
     return true;
@@ -76,7 +76,7 @@ const checkActionPr = async(logger: Logger, octokit: Types.Octokit, context: Act
   return true;
 };
 
-export const autoMerge = async(pr: { 'created_at': string; number: number }, logger: Logger, octokit: Types.Octokit, context: ActionContext): Promise<boolean> => {
+export const autoMerge = async(pr: { 'created_at': string; number: number }, logger: Logger, octokit: Octokit, context: ActionContext): Promise<boolean> => {
   const threshold = getAutoMergeThresholdDays(context);
   // eslint-disable-next-line no-magic-numbers
   if (threshold <= 0) {
@@ -124,7 +124,7 @@ export const autoMerge = async(pr: { 'created_at': string; number: number }, log
   return true;
 };
 
-const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger, octokit: Types.Octokit, context: ActionContext): Promise<ProcessResult> => {
+const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult> => {
   const helper     = getHelper(context);
   const branchName = await getPrBranchName(octokit, context);
 
@@ -175,7 +175,7 @@ const createCommit = async(addComment: boolean, isClose: boolean, logger: Logger
   return getResult('succeeded', 'updated', context);
 };
 
-const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: Types.Octokit, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
+const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
   logger.info('There is no diff.');
   const refDiffExists = !!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length;
   const pr            = await findPR(branchName, octokit, context);
@@ -217,7 +217,7 @@ const noDiffProcess = async(branchName: string, isClose: boolean, logger: Logger
   };
 };
 
-const diffProcess = async(files: string[], output: CommandOutput[], branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: Types.Octokit, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
+const diffProcess = async(files: string[], output: CommandOutput[], branchName: string, isClose: boolean, logger: Logger, helper: GitHelper, octokit: Octokit, context: ActionContext): Promise<{ mergeable: boolean; result?: ProcessResult }> => {
   // Commit local diffs
   await commit(helper, logger, context);
   if (!(await getRefDiff(getPrHeadRef(context), helper, logger, context)).length) {
@@ -242,7 +242,7 @@ const diffProcess = async(files: string[], output: CommandOutput[], branchName: 
   };
 };
 
-const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, logger: Logger, octokit: Types.Octokit, context: ActionContext): Promise<ProcessResult> => {
+const createPr = async(makeGroup: boolean, isClose: boolean, helper: GitHelper, logger: Logger, octokit: Octokit, context: ActionContext): Promise<ProcessResult> => {
   if (makeGroup) {
     commonLogger.startProcess('Target PullRequest Ref [%s]', getPrHeadRef(context));
   }
@@ -325,7 +325,7 @@ const outputResults = (results: ProcessResult[]): void => {
   setOutput('result', getOutputResult(results));
 };
 
-const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) => AsyncIterable<PullsParams>, octokit: Types.Octokit, context: ActionContext): Promise<void> => {
+const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) => AsyncIterable<PullsParams>, octokit: Octokit, context: ActionContext): Promise<void> => {
   const logger                   = new Logger(replaceDirectory, true);
   const results: ProcessResult[] = [];
   const processed                = {};
@@ -376,7 +376,7 @@ const runCreatePr = async(isClose: boolean, getPulls: (Octokit, ActionContext) =
   }
 };
 
-async function* getPulls(octokit: Types.Octokit, context: ActionContext): AsyncIterable<PullsParams> {
+async function* getPulls(octokit: Octokit, context: ActionContext): AsyncIterable<PullsParams> {
   const logger = new Logger(replaceDirectory, true);
 
   yield* await getApiHelper(octokit, context, logger).pullsList({});
@@ -385,11 +385,11 @@ async function* getPulls(octokit: Types.Octokit, context: ActionContext): AsyncI
   }
 }
 
-const runCreatePrAll = async(octokit: Types.Octokit, context: ActionContext): Promise<void> => runCreatePr(false, getPulls, octokit, context);
+const runCreatePrAll = async(octokit: Octokit, context: ActionContext): Promise<void> => runCreatePr(false, getPulls, octokit, context);
 
-const runCreatePrClosed = async(octokit: Types.Octokit, context: ActionContext): Promise<void> => runCreatePr(true, getPulls, octokit, context);
+const runCreatePrClosed = async(octokit: Octokit, context: ActionContext): Promise<void> => runCreatePr(true, getPulls, octokit, context);
 
-export const execute = async(octokit: Types.Octokit, context: ActionContext): Promise<void> => {
+export const execute = async(octokit: Octokit, context: ActionContext): Promise<void> => {
   await branchConfig(getHelper(context), octokit, context);
   if (isClosePR(context)) {
     await runCreatePrClosed(octokit, context);

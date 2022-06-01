@@ -1,6 +1,6 @@
 /* eslint-disable no-magic-numbers */
 import { resolve } from 'path';
-import { Context } from '@actions/github/lib/context';
+import { Context } from '@actions/github/lib/context.js';
 import { Logger } from '@technote-space/github-action-log-helper';
 import {
   generateContext,
@@ -18,9 +18,9 @@ import {
 import moment from 'moment';
 import nock from 'nock';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ActionContext, ActionDetails } from '../types';
-import { getCacheKey } from './misc';
-import { execute } from './process';
+import { ActionContext, ActionDetails } from '../types.js';
+import { getCacheKey } from './misc.js';
+import { execute } from './process.js';
 
 const workDir   = resolve(__dirname, 'test');
 const rootDir   = resolve(__dirname, '..', 'fixtures');
