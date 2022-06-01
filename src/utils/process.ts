@@ -1,11 +1,11 @@
-import type { ActionContext, ProcessResult, PullsParams, CommandOutput } from '../types';
+import type { ActionContext, ProcessResult, PullsParams, CommandOutput } from '../types.js';
 import type { Types } from '@technote-space/github-action-helper';
 import type { GitHelper } from '@technote-space/github-action-helper';
 import { setOutput } from '@actions/core';
 import { Utils, ContextHelper } from '@technote-space/github-action-helper';
 import { Logger } from '@technote-space/github-action-log-helper';
-import { INTERVAL_MS } from '../constant';
-import { AllProcessResult } from '../types';
+import { INTERVAL_MS } from '../constant.js';
+import { AllProcessResult } from '../types.js';
 import {
   getApiHelper,
   getChangedFiles,
@@ -19,7 +19,7 @@ import {
   findPR,
   getDefaultBranch,
   branchConfig,
-} from './command';
+} from './command.js';
 import {
   replaceDirectory,
   isActionPr,
@@ -34,8 +34,8 @@ import {
   getAutoMergeThresholdDays,
   isPassedAllChecks,
   isNotCreatePR,
-} from './misc';
-import { getPrBranchName } from './variables';
+} from './misc.js';
+import { getPrBranchName } from './variables.js';
 
 const { sleep, getBranch, objectGet } = Utils;
 const { isPr, isPush }                = ContextHelper;

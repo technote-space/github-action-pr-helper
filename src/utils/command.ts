@@ -1,4 +1,4 @@
-import type { ActionContext, CommandOutput, ExecuteTask, Null } from '../types';
+import type { ActionContext, CommandOutput, ExecuteTask, Null } from '../types.js';
 import type { components } from '@octokit/openapi-types';
 import type { Types } from '@technote-space/github-action-helper';
 import type { GitHelper } from '@technote-space/github-action-helper';
@@ -16,7 +16,7 @@ import {
   isActiveTriggerWorkflow,
   getTriggerWorkflowMessage,
   getApiToken,
-} from './misc';
+} from './misc.js';
 import {
   getPrBranchName,
   getCommitName,
@@ -24,7 +24,7 @@ import {
   getCommitMessage,
   getPrTitle,
   getPrBody,
-} from './variables';
+} from './variables.js';
 
 type PullsListResponseData = components['schemas']['pull-request-simple'];
 const { getWorkspace, getLocalRefspec, getRefspec } = Utils;

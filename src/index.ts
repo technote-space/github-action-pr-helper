@@ -1,10 +1,10 @@
-import type { ActionContext, MainArguments } from './types';
+import type { ActionContext, MainArguments } from './types.js';
 import { setFailed } from '@actions/core';
-import { Context } from '@actions/github/lib/context';
+import { Context } from '@actions/github/lib/context.js';
 import { ContextHelper, Utils } from '@technote-space/github-action-helper';
 import { Logger } from '@technote-space/github-action-log-helper';
-import { isTargetContext } from './utils/misc';
-import { execute } from './utils/process';
+import { isTargetContext } from './utils/misc.js';
+import { execute } from './utils/process.js';
 
 const { showActionInfo } = ContextHelper;
 const getLogger          = (logger?: Logger): Logger => logger ?? new Logger();

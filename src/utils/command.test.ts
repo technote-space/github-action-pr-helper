@@ -1,6 +1,6 @@
 /* eslint-disable no-magic-numbers */
 import { resolve } from 'path';
-import { Context } from '@actions/github/lib/context';
+import { Context } from '@actions/github/lib/context.js';
 import { GitHelper, Utils } from '@technote-space/github-action-helper';
 import { Logger } from '@technote-space/github-action-log-helper';
 import {
@@ -19,7 +19,7 @@ import {
 } from '@technote-space/github-action-test-helper';
 import nock from 'nock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ActionContext, ActionDetails, CommandOutput } from '../types';
+import { ActionContext, ActionDetails, CommandOutput } from '../types.js';
 import {
   clone,
   checkBranch,
@@ -34,8 +34,8 @@ import {
   getNewMinorVersion,
   getNewMajorVersion,
   getCurrentVersion,
-} from './command';
-import { getCacheKey, isCached } from './misc';
+} from './command.js';
+import { getCacheKey, isCached } from './misc.js';
 
 beforeEach(() => {
   Logger.resetForTesting();

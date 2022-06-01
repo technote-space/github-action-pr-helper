@@ -1,8 +1,8 @@
-import type { ActionContext, CommandOutput } from '../types';
+import type { ActionContext, CommandOutput } from '../types.js';
 import type { Types } from '@technote-space/github-action-helper';
 import { Utils, ContextHelper } from '@technote-space/github-action-helper';
 import moment from 'moment';
-import { getNewPatchVersion, getNewMinorVersion, getNewMajorVersion, getCurrentVersion, findPR, getDefaultBranch } from './command';
+import { getNewPatchVersion, getNewMinorVersion, getNewMajorVersion, getCurrentVersion, findPR, getDefaultBranch } from './command.js';
 import {
   getActionDetail,
   getDefaultBranchUrl,
@@ -17,7 +17,7 @@ import {
   getPrBranchPrefixForDefaultBranch,
   isNotCreatePR,
   ParameterRequiredError,
-} from './misc';
+} from './misc.js';
 
 const { getBranch } = Utils;
 const { isPush }    = ContextHelper;
