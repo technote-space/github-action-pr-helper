@@ -5,7 +5,7 @@ const common = {
   plugins: [
     pluginTypescript(),
   ],
-  external: ['@actions/core', '@actions/github/lib/context', '@technote-space/github-action-helper', '@technote-space/github-action-log-helper', '@technote-space/filter-github-action', 'moment'],
+  external: ['@actions/core', '@actions/github/lib/context.js', '@technote-space/github-action-helper', '@technote-space/github-action-log-helper', '@technote-space/filter-github-action', 'moment'],
 };
 
 export default [
