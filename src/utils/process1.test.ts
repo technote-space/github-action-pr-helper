@@ -9,6 +9,8 @@ import {
   disableNetConnect,
   spyOnStdout,
   stdoutCalledWith,
+  spyOnSetOutput,
+  setOutputCalledWith,
   getApiFixture,
   setChildProcessParams,
   testChildProcess,
@@ -77,6 +79,7 @@ describe('execute', () => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.includes(' rev-parse')) {
@@ -149,10 +152,9 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
       '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because there is no reference diff',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should close pull request (no ref diff)', async() => {
@@ -160,6 +162,7 @@ describe('execute', () => {
     process.env.GITHUB_REPOSITORY  = 'octocat/Hello-World';
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.endsWith('status --short -uno')) {
@@ -240,10 +243,9 @@ describe('execute', () => {
       '::endgroup::',
       '::group::Deleting reference... [refs/heads/Hello-World/test-21031067]',
       '::endgroup::',
-      '',
-      '::set-output name=result::succeeded',
       '> \x1b[32;40m✔\x1b[0m\t[feature/new-feature] has been closed because there is no reference diff',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'succeeded' }]);
   });
 
   it('should close pull request (no diff, no ref diff)', async() => {
@@ -251,6 +253,7 @@ describe('execute', () => {
     process.env.GITHUB_REPOSITORY  = 'octocat/Hello-World';
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.includes(' diff ')) {
@@ -333,16 +336,16 @@ describe('execute', () => {
       '::endgroup::',
       '::group::Deleting reference... [refs/heads/Hello-World/test-21031067]',
       '::endgroup::',
-      '',
-      '::set-output name=result::succeeded',
       '> \x1b[32;40m✔\x1b[0m\t[feature/new-feature] has been closed because there is no reference diff',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'succeeded' }]);
   });
 
   it('should close pull request (base pull request has been closed)', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
 
     nock('https://api.github.com')
       .persist()
@@ -379,16 +382,16 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
       '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because base PullRequest has been closed',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should close pull request (no ref diff, is action pr)', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.endsWith('status --short -uno')) {
@@ -473,16 +476,16 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
       '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because there is no reference diff',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should do nothing (action base pull request not found)', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
 
     nock('https://api.github.com')
       .persist()
@@ -519,16 +522,16 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
       '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because base PullRequest does not exist',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should do nothing (action pull request not found)', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
 
     nock('https://api.github.com')
       .persist()
@@ -555,16 +558,16 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:2  Skipped:0',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic1] not found',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should do nothing (not target branch)', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
 
     nock('https://api.github.com')
       .persist()
@@ -590,16 +593,16 @@ describe('execute', () => {
       '> \x1b[33;40m→\x1b[0m\t[feature/new-topic3] This is not a target branch',
       '> \x1b[33;40m→\x1b[0m\t[feature/new-topic4] This is not a target branch',
       '> \x1b[31;40m×\x1b[0m\t[master] parameter [prBranchName] is required.',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should do nothing (PR from fork)', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
 
     nock('https://api.github.com')
       .persist()
@@ -619,16 +622,16 @@ describe('execute', () => {
       '> \x1b[33;40m→\x1b[0m\t[fork1:feature/new-topic3] PR from fork',
       '> \x1b[33;40m→\x1b[0m\t[fork2:feature/new-topic4] PR from fork',
       '> \x1b[31;40m×\x1b[0m\t[master] parameter [prBranchName] is required.',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should do nothing (no diff)', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.includes(' diff ')) {
@@ -700,17 +703,17 @@ describe('execute', () => {
       '[command]git fetch --prune --no-tags --no-recurse-submodules origin +refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature',
       '  >> stdout',
       '[command]git diff \'HEAD..origin/feature/new-feature\' --name-only',
-      '',
-      '::set-output name=result::not changed',
       '::endgroup::',
       '> \x1b[33;40m✔\x1b[0m\t[feature/new-feature] There is no diff',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'not changed' }]);
   });
 
   it('should do nothing (no diff (push)))', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.includes(' rev-parse')) {
@@ -748,11 +751,10 @@ describe('execute', () => {
       '[command]git add --all',
       '[command]git status --short -uno',
       '> There is no diff.',
-      '',
-      '::set-output name=result::not changed',
       '::endgroup::',
       '> \x1b[33;40m✔\x1b[0m\t[test/change] There is no diff',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'not changed' }]);
   });
 });
 

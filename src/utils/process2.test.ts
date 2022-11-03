@@ -9,6 +9,8 @@ import {
   disableNetConnect,
   spyOnStdout,
   stdoutCalledWith,
+  spyOnSetOutput,
+  setOutputCalledWith,
   getApiFixture,
   setChildProcessParams,
   testChildProcess,
@@ -78,6 +80,7 @@ describe('execute', () => {
     process.env.GITHUB_REPOSITORY  = 'octocat/Hello-World';
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.endsWith('status --short -uno')) {
@@ -157,11 +160,10 @@ describe('execute', () => {
       '[command]git push origin Hello-World/test-21031067:refs/heads/Hello-World/test-21031067',
       '::endgroup::',
       '::group::Creating comment to PullRequest...',
-      '',
-      '::set-output name=result::succeeded',
       '::endgroup::',
       '> \x1b[32;40m✔\x1b[0m\t[feature/new-feature] updated',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'succeeded' }]);
   });
 
   it('should skip', async() => {
@@ -169,6 +171,7 @@ describe('execute', () => {
     process.env.GITHUB_REPOSITORY  = 'octocat/Hello-World';
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.includes(' diff ')) {
@@ -233,17 +236,17 @@ describe('execute', () => {
       '::group::Checking references diff...',
       '[command]git fetch --prune --no-tags --no-recurse-submodules origin +refs/heads/feature/new-feature:refs/remotes/origin/feature/new-feature',
       '[command]git diff \'HEAD..origin/feature/new-feature\' --name-only',
-      '',
-      '::set-output name=result::not changed',
       '::endgroup::',
       '> \x1b[33;40m✔\x1b[0m\t[feature/new-feature] There is no diff',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'not changed' }]);
   });
 
   it('should skip (close event, no diff))', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.includes(' diff ')) {
@@ -343,16 +346,16 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] This is a close event',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic2] This is a close event',
-      '',
-      '::set-output name=result::not changed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'not changed' }]);
   });
 
   it('should skip (close event, diff)', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.endsWith('status --short -uno')) {
@@ -425,16 +428,16 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:0  Skipped:2',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] This is a close event',
       '> \x1b[33;40m→\x1b[0m\t[change/new-topic2] duplicated (test/test-branch)',
-      '',
-      '::set-output name=result::not changed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'not changed' }]);
   });
 
   it('should skip (action pull request)', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.endsWith('status --short -uno')) {
@@ -518,10 +521,9 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] This is a close event',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should create commit', async() => {
@@ -529,6 +531,7 @@ describe('execute', () => {
     process.env.GITHUB_REPOSITORY  = 'octocat/Hello-World';
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.endsWith('status --short -uno')) {
@@ -579,11 +582,10 @@ describe('execute', () => {
       '::endgroup::',
       '::group::Pushing to octocat/Hello-World@test...',
       '[command]git push origin test:refs/heads/test',
-      '',
-      '::set-output name=result::succeeded',
       '::endgroup::',
       '> \x1b[32;40m✔\x1b[0m\t[test] updated',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'succeeded' }]);
   });
 
   it('should create commit (pull request)', async() => {
@@ -591,6 +593,7 @@ describe('execute', () => {
     process.env.GITHUB_REPOSITORY  = 'octocat/Hello-World';
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.endsWith('status --short -uno')) {
@@ -659,17 +662,17 @@ describe('execute', () => {
       '::endgroup::',
       '::group::Pushing to octocat/Hello-World@feature/new-feature...',
       '[command]git push origin feature/new-feature:refs/heads/feature/new-feature',
-      '',
-      '::set-output name=result::succeeded',
       '::endgroup::',
       '> \x1b[32;40m✔\x1b[0m\t[feature/new-feature] updated',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'succeeded' }]);
   });
 
   it('should create commit (action pull request)', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.endsWith('status --short -uno')) {
@@ -756,10 +759,9 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
       '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] updated',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should do schedule', async() => {
@@ -767,6 +769,7 @@ describe('execute', () => {
     process.env.GITHUB_REPOSITORY  = 'octocat/Hello-World';
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.endsWith('status --short -uno')) {
@@ -853,16 +856,16 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:0  Skipped:1',
       '> \x1b[32;40m✔\x1b[0m\t[feature/new-topic3] updated',
       '> \x1b[33;40m→\x1b[0m\t[feature/new-topic4] duplicated (Hello-World/test-branch)',
-      '',
-      '::set-output name=result::succeeded',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'succeeded' }]);
   });
 
   it('should do schedule (action base pull request has not been closed)', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.includes(' rev-parse')) {
@@ -945,16 +948,16 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] There is no diff',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should do schedule (action base pull request is default branch)', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.includes(' rev-parse')) {
@@ -1035,10 +1038,9 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] There is no diff',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should process default branch (not create pr)', async() => {
@@ -1046,6 +1048,7 @@ describe('execute', () => {
     process.env.GITHUB_REPOSITORY  = 'octocat/Hello-World';
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.endsWith('status --short -uno')) {
@@ -1129,10 +1132,9 @@ describe('execute', () => {
       '> \x1b[33;40m→\x1b[0m\t[change/new-topic1] This is not a target branch',
       '> \x1b[33;40m→\x1b[0m\t[change/new-topic2] This is not a target branch',
       '> \x1b[32;40m✔\x1b[0m\t[master] updated',
-      '',
-      '::set-output name=result::succeeded',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'succeeded' }]);
   });
 
   it('should do fail', async() => {
@@ -1140,6 +1142,7 @@ describe('execute', () => {
     process.env.GITHUB_REPOSITORY  = 'octocat/Hello-World';
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.endsWith('status --short -uno')) {
@@ -1205,10 +1208,9 @@ describe('execute', () => {
       '> \x1b[31;40m×\x1b[0m\t[feature/new-topic3] command [git status] exited with code undefined. message: test error',
       '> \x1b[33;40m→\x1b[0m\t[feature/new-topic4] duplicated (Hello-World/test-branch)',
       '> \x1b[33;40m→\x1b[0m\t[master] duplicated (Hello-World/test-branch)',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should do fail (closed action)', async() => {
@@ -1216,6 +1218,7 @@ describe('execute', () => {
     process.env.GITHUB_REPOSITORY  = 'octocat/Hello-World';
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.endsWith('status --short -uno')) {
@@ -1314,10 +1317,9 @@ describe('execute', () => {
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic1] command [git status] exited with code undefined. message: test error',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
       '> \x1b[31;40m×\x1b[0m\t[master] command [git status] exited with code undefined. message: test error',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should resolve conflicts 1', async() => {
@@ -1325,6 +1327,7 @@ describe('execute', () => {
     process.env.GITHUB_REPOSITORY  = 'octocat/Hello-World';
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.startsWith('git merge')) {
@@ -1403,17 +1406,17 @@ describe('execute', () => {
       '::endgroup::',
       '::group::Pushing to octocat/Hello-World@Hello-World/test-21031067...',
       '[command]git push origin Hello-World/test-21031067:refs/heads/Hello-World/test-21031067',
-      '',
-      '::set-output name=result::succeeded',
       '::endgroup::',
       '> \x1b[32;40m✔\x1b[0m\t[feature/new-feature] updated',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'succeeded' }]);
   });
 
   it('should resolve conflicts 2', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.includes(' rev-parse')) {
@@ -1512,10 +1515,9 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
       '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been closed because there is no diff',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should throw error if push branch not found', async() => {
@@ -1610,6 +1612,7 @@ describe('execute', () => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.endsWith('status --short -uno')) {
@@ -1661,17 +1664,17 @@ describe('execute', () => {
       '::endgroup::',
       '::group::Pushing to octocat/Hello-World@test/change...',
       '[command]git push origin test/change:refs/heads/test/change',
-      '',
-      '::set-output name=result::succeeded',
       '::endgroup::',
       '> \x1b[32;40m✔\x1b[0m\t[test/change] updated',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'succeeded' }]);
   });
 
   it('should create pr (no diff, ref diff exists)', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setExists(true);
 
     nock('https://api.github.com')
@@ -1748,11 +1751,10 @@ describe('execute', () => {
       '::group::Creating PullRequest...',
       '> Adding labels...',
       getLogStdout(['label1', 'label2']),
-      '',
-      '::set-output name=result::succeeded',
       '::endgroup::',
       '> \x1b[32;40m✔\x1b[0m\t[feature/new-feature] PullRequest created',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'succeeded' }]);
   });
 
   it('should auto merge', async() => {
@@ -1760,6 +1762,7 @@ describe('execute', () => {
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     process.env.GITHUB_RUN_ID      = '123';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.includes(' rev-parse')) {
@@ -1863,16 +1866,16 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:1  Failed:1  Skipped:0',
       '> \x1b[32;40m✔\x1b[0m\t[change/new-topic1] has been auto merged',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 
   it('should not auto merge', async() => {
     process.env.GITHUB_WORKSPACE   = workDir;
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
     setChildProcessParams({
       stdout: (command: string): string => {
         if (command.includes(' rev-parse')) {
@@ -1970,9 +1973,8 @@ describe('execute', () => {
       '::group::Total:2  Succeeded:0  Failed:1  Skipped:1',
       '> \x1b[33;40m✔\x1b[0m\t[change/new-topic1] There is no diff',
       '> \x1b[31;40m×\x1b[0m\t[change/new-topic2] not found',
-      '',
-      '::set-output name=result::failed',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'failed' }]);
   });
 });
