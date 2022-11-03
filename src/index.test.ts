@@ -8,6 +8,8 @@ import {
   disableNetConnect,
   spyOnStdout,
   stdoutCalledWith,
+  spyOnSetOutput,
+  setOutputCalledWith,
   testChildProcess,
   getApiFixture,
   getLogStdout,
@@ -133,6 +135,7 @@ describe('main', () => {
     process.env.GITHUB_REPOSITORY  = 'hello/world';
     process.env.INPUT_GITHUB_TOKEN = 'test-token';
     const mockStdout               = spyOnStdout();
+    const mockOutput               = spyOnSetOutput();
 
     nock('https://api.github.com')
       .persist()
@@ -198,9 +201,8 @@ describe('main', () => {
       '[command]git config --global \'init.defaultBranch\' master',
       '  >> stdout',
       '::group::Total:0  Succeeded:0  Failed:0  Skipped:0',
-      '',
-      '::set-output name=result::skipped',
       '::endgroup::',
     ]);
+    setOutputCalledWith(mockOutput, [{ name: 'result', value: 'skipped' }]);
   });
 });
