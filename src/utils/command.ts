@@ -196,7 +196,7 @@ export const commit = async(helper: GitHelper, logger: Logger, context: ActionCo
   await userConfig(helper, context);
 
   logger.startProcess('Committing...');
-  await helper.makeCommit(getWorkspace(), getCommitMessage(context));
+  await helper.makeCommit(getWorkspace(), getCommitMessage(context), { args: context.actionDetail.signoff ? ['--signoff'] : undefined });
 };
 
 export const push = async(branchName: string, helper: GitHelper, logger: Logger, context: ActionContext): Promise<void> => {
