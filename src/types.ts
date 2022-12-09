@@ -42,6 +42,7 @@ export type ActionDetails = {
   reviewers?: string[];
   teamReviewers?: string[];
   notCreatePr?: boolean;
+  signoff?: boolean;
 }
 
 export type MainArguments = ActionDetails & {

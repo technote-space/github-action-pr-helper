@@ -434,6 +434,7 @@ describe('execute', () => {
       prCloseMessage: 'close message',
       checkDefaultBranch: false,
       prBranchPrefix: 'change/',
+      signoff: true,
     }))).rejects.toThrow('There is a failed process.');
 
     stdoutCalledWith(mockStdout, [
@@ -463,7 +464,7 @@ describe('execute', () => {
       '[command]git config \'user.name\' \'GitHub Actions\'',
       '[command]git config \'user.email\' \'example@example.com\'',
       '> Committing...',
-      '[command]git commit -qm \'test: create pull request\'',
+      '[command]git commit --signoff -qm \'test: create pull request\'',
       '[command]git show \'--stat-count=10\' HEAD',
       '> Checking references diff...',
       '[command]git fetch --prune --no-tags --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master',
